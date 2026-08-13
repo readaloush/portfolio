@@ -1,13 +1,92 @@
 /* ==================================================================
    REFINEMENTS
-   These load after style.css on purpose: later rules win, so this file
-   adjusts the earlier ones without touching them.
+   These come last on purpose: later rules win, so this block adjusts
+   the earlier ones without touching them.
    ================================================================== */
 
+
+/* ==================================================================
+   PALETTE — paper and ink
+   Away from the black-plus-cyan-gradient look that every generated
+   portfolio wears. This is an engineer's notebook: bone paper, dense
+   ink, and one burnt red that does all the pointing. No gradients
+   between two hues; where a gradient is needed it stays within the
+   same red so it reads as ink density, not decoration.
+
+   Light is now the default. The switch turns the lamp off and gives
+   you the same page at night: warm charcoal, never blue-black.
+   ================================================================== */
+
+html[data-theme="light"] {
+  --bg:        #F1EEE7;   /* bone paper */
+  --bg2:       #FBFAF6;   /* card stock */
+  --surface:   rgba(20,17,13,.032);
+  --surface-2: rgba(20,17,13,.06);
+  --line:      rgba(20,17,13,.15);
+  --text:      #14110D;   /* ink */
+  --muted:     #6A6357;   /* pencil */
+  --accent:    #B4361F;   /* burnt red */
+  --accent2:   #8A2716;   /* deeper red, same family */
+  --net-line:  20,17,13;
+  --shadow:    0 18px 44px rgba(20,17,13,.10);
+}
+
+html[data-theme="dark"] {
+  --bg:        #141210;   /* warm charcoal, not blue-black */
+  --bg2:       #1C1916;
+  --surface:   rgba(241,238,231,.045);
+  --surface-2: rgba(241,238,231,.075);
+  --line:      rgba(241,238,231,.14);
+  --text:      #F1EEE7;
+  --muted:     #9C9488;
+  --accent:    #E0553B;   /* the same red, lifted for dark */
+  --accent2:   #C2452E;
+  --net-line:  241,238,231;
+  --shadow:    0 26px 64px rgba(0,0,0,.5);
+}
+
+/* The name was a two-hue gradient; make it solid ink with the red
+   reserved for the words that matter. */
+.hero-name {
+  background: none;
+  color: var(--text);
+  animation: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Buttons and chips: one flat red, no rainbow. */
+.btn-primary,
+.orb-core,
+.chat-avatar,
+.msg.me .bubble,
+.chat-form button,
+.modal-lock span,
+.badge {
+  background: var(--accent) !important;
+  color: #FBFAF6 !important;
+}
+.msg .go { background: var(--accent) !important; color: #FBFAF6 !important; }
+::-webkit-scrollbar-thumb { background: var(--accent); }
+.bar i { background: var(--accent); box-shadow: none; }
+#scrollBar { background: var(--accent); box-shadow: none; }
+
+/* The aurora blobs were the most generated-looking thing on the page.
+   Keep a whisper of warmth instead of two coloured lamps. */
+.aurora span:nth-child(1) { background: var(--accent); opacity: .07; }
+.aurora span:nth-child(2) { background: #8A7B5F; opacity: .07; }
+.aurora span:nth-child(3) { display: none; }
+html[data-theme="dark"] .aurora span { opacity: .10; }
+
+/* Paper wants a little more grain and none of the glow. */
+html[data-theme="light"] .grain { opacity: .07; }
+.sig-live path, .sig-live-dot { filter: none; }
+.photo-signature { filter: none; }
+.switch-glow { box-shadow: 0 0 6px var(--accent); }
+
 /* ---- edge flicker -------------------------------------------------
-   The grain layer was exactly viewport-sized and shifted by plus/minus
-   4% four times a second, so every step uncovered a dark strip along
-   the edges. Oversizing it means the movement can never reach an edge. */
+   The grain layer was exactly viewport-sized and shifted by ±4% four
+   times a second, so every step uncovered a dark strip along the
+   edges. Oversizing it means the movement can never reach an edge. */
 .grain { inset: -15%; }
 
 /* ---- the switch actually flips ------------------------------------
@@ -55,14 +134,32 @@ html[data-theme="light"] .switch-glow { bottom: 26px; }
 }
 #cursorRing.pressed { width: 22px; height: 22px; margin: -11px 0 0 -11px; }
 
-/* ---- sections arrive from the sides ------------------------------- */
+/* ---- sections arrive from outside the page ------------------------
+   The cards start well beyond the screen edge and set back in depth,
+   then fly in and settle. html gets overflow-x: clip so nothing can
+   create a horizontal scrollbar while it is out there.
+
+   Note: the trigger cannot use IntersectionObserver here, because a
+   card parked outside the viewport never intersects and would stay
+   invisible for ever. extras.js measures layout position instead. */
+html { overflow-x: clip; }
+
 .reveal-x {
   opacity: 0;
-  transform: translate3d(var(--from, 70px), 14px, 0);
-  transition: opacity .85s var(--ease), transform .85s var(--ease);
+  transform:
+    perspective(1400px)
+    translate3d(var(--from, 70vw), var(--fromY, 0px), var(--fromZ, -420px))
+    rotateY(var(--rot, -14deg))
+    scale(var(--fromScale, .92));
+  transition:
+    opacity .7s cubic-bezier(.22,1,.36,1),
+    transform 1.05s cubic-bezier(.22,1,.36,1);
   will-change: transform, opacity;
 }
-.reveal-x.in { opacity: 1; transform: translate3d(0, 0, 0); }
+.reveal-x.in {
+  opacity: 1;
+  transform: perspective(1400px) translate3d(0, 0, 0) rotateY(0deg) scale(1);
+}
 
 /* ---- keyboard hint ------------------------------------------------ */
 .kbd-hint {

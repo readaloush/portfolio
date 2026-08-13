@@ -1,32 +1,19 @@
-# Render blueprint — Render reads this file and configures everything itself.
+# Render blueprint - Render reads this file and configures everything itself.
 # https://render.com/docs/blueprint-spec
 services:
   - type: web
     name: read-alallos-portfolio
     runtime: node
     plan: free
-    region: frankfurt          # closest region to Türkiye
-    buildCommand: echo "no build step — this project has no dependencies"
+    region: frankfurt
+    buildCommand: echo "no build step - this project has no dependencies"
     startCommand: node server.js
     healthCheckPath: /healthz
-
-    # A persistent disk, so the database and uploaded photos survive redeploys.
-    disk:
-      name: portfolio-data
-      mountPath: /var/data
-      sizeGB: 1
-
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORTFOLIO_DATA_DIR
-        value: /var/data
-      - key: PORTFOLIO_UPLOAD_DIR
-        value: /var/data/uploads
       - key: ADMIN_USERNAME
         value: read
-      # Render generates a strong random password on first deploy.
-      # Read it under: Dashboard → your service → Environment.
       - key: ADMIN_PASSWORD
         generateValue: true
       - key: JWT_SECRET

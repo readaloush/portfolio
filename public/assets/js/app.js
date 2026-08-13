@@ -515,6 +515,7 @@
     /* hero */
     $('#heroAvailability').textContent = p.availability || 'Available';
     $('#heroName').textContent = p.name || '';
+     $('#heroName').dataset.realName = p.name || '';
     $('#heroTagline').textContent = p.tagline || '';
     $('#heroSummary').textContent = p.summary || '';
     $('#photoCaption').textContent = p.location || '';
@@ -733,7 +734,7 @@
 
     document.addEventListener('loader:done', () => {
       const name = $('#heroName');
-      if (name && !reduced) scramble(name, name.textContent, 1500);
+      if (name && !reduced && !name.dataset.settled) { name.dataset.settled = '1'; scramble(name, name.dataset.realName || name.textContent, 1500); }
       window.SFX?.chime();   // the system comes online
       observe();
     });

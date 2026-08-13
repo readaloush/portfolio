@@ -104,6 +104,18 @@
     queueCheck();
   }
 
+  // The content arrives from the database after this file runs, so watch
+  // for it rather than assuming it is already on the page. Without these
+  // calls applySideReveals is defined and never invoked.
+  const contentWatcher = new MutationObserver(() => applySideReveals());
+  ['#projectGrid', '#timeline', '#skillGrid', '#eduGrid', '#statList'].forEach((sel) => {
+    const node = document.querySelector(sel);
+    if (node) contentWatcher.observe(node, { childList: true });
+  });
+  document.addEventListener('loader:done', () => setTimeout(applySideReveals, 60));
+  setTimeout(applySideReveals, 1200);
+  setTimeout(applySideReveals, 3000);
+
   /* ------------------------------------------- keyboard navigation */
   const SECTIONS = ['#top', '#about', '#skills', '#experience', '#projects', '#education', '#contact'];
 

@@ -1,0 +1,88 @@
+/* ==================================================================
+   REFINEMENTS
+   These load after style.css on purpose: later rules win, so this file
+   adjusts the earlier ones without touching them.
+   ================================================================== */
+
+/* ---- edge flicker -------------------------------------------------
+   The grain layer was exactly viewport-sized and shifted by plus/minus
+   4% four times a second, so every step uncovered a dark strip along
+   the edges. Oversizing it means the movement can never reach an edge. */
+.grain { inset: -15%; }
+
+/* ---- the switch actually flips ------------------------------------
+   rotateX does nothing without perspective on the parent, which is why
+   it felt like a button. Perspective plus real vertical travel gives it
+   the throw of a wall switch. */
+.switch-plate { perspective: 260px; perspective-origin: 50% 50%; }
+.switch-rocker {
+  transform-origin: 50% 50%;
+  transition: transform .34s cubic-bezier(.34,1.4,.5,1), box-shadow .34s var(--ease), background .4s;
+}
+html[data-theme="dark"] .switch-rocker {
+  transform: translateY(7px) rotateX(-34deg);
+  box-shadow: 0 -3px 0 rgba(0,0,0,.3), inset 0 -14px 16px rgba(0,0,0,.3);
+}
+html[data-theme="light"] .switch-rocker {
+  transform: translateY(-7px) rotateX(34deg);
+  box-shadow: 0 4px 0 rgba(0,0,0,.16), inset 0 14px 16px rgba(0,0,0,.12);
+}
+/* the indicator lamp follows the rocker */
+html[data-theme="dark"] .switch-glow { bottom: 4px; }
+html[data-theme="light"] .switch-glow { bottom: 26px; }
+.switch-glow { transition: bottom .34s cubic-bezier(.34,1.4,.5,1); }
+
+/* ---- a quieter, more precise cursor -------------------------------
+   Difference blending keeps it legible on any background without the
+   glow, and the ring tracks with a softer lag. */
+#cursorDot {
+  width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+  background: #fff; box-shadow: none; mix-blend-mode: difference;
+  transition: opacity .3s, transform .18s var(--ease);
+}
+#cursorRing {
+  width: 30px; height: 30px; margin: -15px 0 0 -15px;
+  border: 1px solid rgba(255,255,255,.5); background: transparent;
+  mix-blend-mode: difference;
+  transition: opacity .3s, width .35s var(--ease), height .35s var(--ease), margin .35s var(--ease), border-color .35s;
+}
+#cursorRing.hot {
+  width: 48px; height: 48px; margin: -24px 0 0 -24px;
+  background: transparent; border-color: rgba(255,255,255,.9);
+}
+#cursorLabel {
+  font-size: 8.5px; letter-spacing: 1.6px; color: #fff; mix-blend-mode: difference;
+}
+#cursorRing.pressed { width: 22px; height: 22px; margin: -11px 0 0 -11px; }
+
+/* ---- sections arrive from the sides ------------------------------- */
+.reveal-x {
+  opacity: 0;
+  transform: translate3d(var(--from, 70px), 14px, 0);
+  transition: opacity .85s var(--ease), transform .85s var(--ease);
+  will-change: transform, opacity;
+}
+.reveal-x.in { opacity: 1; transform: translate3d(0, 0, 0); }
+
+/* ---- keyboard hint ------------------------------------------------ */
+.kbd-hint {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(14px);
+  z-index: 8000; display: flex; align-items: center; gap: 9px;
+  padding: 9px 16px; border-radius: 999px;
+  background: color-mix(in srgb, var(--bg2) 88%, transparent);
+  border: 1px solid var(--line); backdrop-filter: blur(12px);
+  font-size: 12px; color: var(--muted);
+  opacity: 0; pointer-events: none;
+  transition: opacity .5s var(--ease), transform .5s var(--ease);
+}
+.kbd-hint.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.kbd-hint kbd {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text);
+  border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px;
+  padding: 2px 7px; background: var(--surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-x { opacity: 1; transform: none; }
+  .grain { animation: none; }
+}

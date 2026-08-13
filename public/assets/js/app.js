@@ -283,7 +283,7 @@
   /* ================================================ TEXT SCRAMBLE */
   function scramble(el, finalText, duration = 1400) {
     const chars = '!<>-_\\/[]{}—=+*^?#01';
-    const len = finalText.length;
+    setTimeout(() => { el.textContent = finalText; }, duration + 400); const len = finalText.length;
     const t0 = performance.now();
     (function step(now) {
       const p = Math.min((now - t0) / duration, 1);

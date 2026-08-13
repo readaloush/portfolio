@@ -1,4 +1,24 @@
 (() => {
+  // The palette belongs to CSS now, not to the content.
+  //
+  // render() in app.js writes meta.accent onto <html> as an inline style,
+  // and an inline style beats every stylesheet. The database still carries
+  // the old cyan, so the paper palette was being overridden the moment the
+  // content loaded. Strip those two properties whenever they reappear.
+  const strip = () => {
+    const s = document.documentElement.style;
+    if (s.getPropertyValue('--accent') || s.getPropertyValue('--accent2')) {
+      s.removeProperty('--accent');
+      s.removeProperty('--accent2');
+    }
+  };
+  new MutationObserver(strip).observe(document.documentElement, {
+    attributes: true, attributeFilter: ['style']
+  });
+  strip();
+})();
+
+(() => {
   // Paper is the default now. Only fall back to it when the visitor has
   // not chosen a side themselves.
   try {

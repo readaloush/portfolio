@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="pg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="100%" stop-color="#131a2e"/>
+    </linearGradient>
+    <linearGradient id="pa" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#7c5cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#pg)"/>
+  <g opacity="0.25" stroke="url(#pa)" stroke-width="1" fill="none">
+    <circle cx="200" cy="200" r="150"/>
+    <circle cx="200" cy="200" r="120"/>
+    <circle cx="200" cy="200" r="90"/>
+  </g>
+  <circle cx="200" cy="158" r="52" fill="none" stroke="url(#pa)" stroke-width="3"/>
+  <path d="M112 320c0-52 40-88 88-88s88 36 88 88" fill="none" stroke="url(#pa)" stroke-width="3" stroke-linecap="round"/>
+  <g fill="url(#pa)">
+    <circle cx="72" cy="96" r="3"/><circle cx="330" cy="120" r="3"/>
+    <circle cx="60" cy="270" r="3"/><circle cx="344" cy="286" r="3"/>
+  </g>
+  <text x="200" y="368" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="15" letter-spacing="4" fill="#5c6a86">UPLOAD YOUR PHOTO</text>
+</svg>

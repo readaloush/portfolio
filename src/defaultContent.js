@@ -1,0 +1,335 @@
+/**
+ * Default portfolio content, generated from READ LEVA ALALLOŞ's CV.
+ * This is only used to seed the database on the very first run.
+ * After that, everything is edited through the hidden admin panel.
+ */
+module.exports = {
+  "profile": {
+    "name": "READ LEVA ALALLOŞ",
+    "shortName": "Read Alalloş",
+    "title": "AI & Robotics Engineer",
+    "roles": [
+      "AI & Robotics Engineer",
+      "Computer Vision Specialist",
+      "Embedded AI Developer",
+      "Autonomous Systems Builder"
+    ],
+    "tagline": "Computer Vision · Embedded AI · Autonomous Systems",
+    "summary": "AI & Robotics Engineer and Information Technologies Master's student with proven experience in computer vision, embedded AI, and autonomous systems. Demonstrated success in deploying high-accuracy deep learning models (>97%) on edge devices such as the Raspberry Pi, and engineering TÜBİTAK-funded autonomous drone projects. Adept at bridging the gap between advanced software architectures (ROS2, TensorFlow, PyTorch) and industrial automation systems.",
+    "photo": "/assets/uploads/0-gpbx9dqnhzxv-lyi-a81ac98b.webp",
+    "location": "Konya, Türkiye",
+    "email": "readaloush@gmail.com",
+    "phone": "+90 552 676 79 83",
+    "availability": "Open to AI / Robotics roles",
+    "cvUrl": "/assets/files/cv.pdf",
+    "calendarUrl": "https://calendar.app.google/oGEBijhJ1Nf4xxVb8",
+    "calendarNote": "Pick a slot that works for you — the calendar shows my real availability, no forms, no waiting for a reply."
+  },
+  "stats": [
+    {
+      "value": 98.43,
+      "suffix": "%",
+      "decimals": 2,
+      "label": "Peak model accuracy",
+      "detail": "Brain tumor MRI classification"
+    },
+    {
+      "value": 97.69,
+      "suffix": "%",
+      "decimals": 2,
+      "label": "Edge inference accuracy",
+      "detail": "Real-time waste sorting on Raspberry Pi"
+    },
+    {
+      "value": 12000,
+      "suffix": "+",
+      "decimals": 0,
+      "label": "Images trained on",
+      "detail": "Custom CNN datasets"
+    },
+    {
+      "value": 1,
+      "suffix": "",
+      "decimals": 0,
+      "label": "TÜBİTAK 2209-A grant",
+      "detail": "Principal developer"
+    }
+  ],
+  "socials": [
+    {
+      "label": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/readaloush"
+    },
+    {
+      "label": "LinkedIn",
+      "icon": "linkedin",
+      "url": "https://linkedin.com/in/readaloush"
+    },
+    {
+      "label": "Instagram",
+      "icon": "instagram",
+      "url": "https://instagram.com/"
+    },
+    {
+      "label": "Facebook",
+      "icon": "facebook",
+      "url": "https://facebook.com/"
+    },
+    {
+      "label": "TikTok",
+      "icon": "tiktok",
+      "url": "https://tiktok.com/"
+    },
+    {
+      "label": "X",
+      "icon": "x",
+      "url": "https://x.com/"
+    },
+    {
+      "label": "YouTube",
+      "icon": "youtube",
+      "url": "https://youtube.com/"
+    },
+    {
+      "label": "Email",
+      "icon": "mail",
+      "url": "mailto:readaloush@gmail.com"
+    }
+  ],
+  "skills": [
+    {
+      "category": "Programming",
+      "items": [
+        {
+          "name": "Python",
+          "level": 95
+        },
+        {
+          "name": "C++",
+          "level": 85
+        },
+        {
+          "name": "C",
+          "level": 80
+        },
+        {
+          "name": "C#",
+          "level": 70
+        },
+        {
+          "name": "MATLAB",
+          "level": 75
+        }
+      ]
+    },
+    {
+      "category": "AI & Computer Vision",
+      "items": [
+        {
+          "name": "OpenCV",
+          "level": 93
+        },
+        {
+          "name": "TensorFlow",
+          "level": 90
+        },
+        {
+          "name": "PyTorch",
+          "level": 90
+        },
+        {
+          "name": "Deep Learning",
+          "level": 92
+        },
+        {
+          "name": "Machine Learning",
+          "level": 88
+        }
+      ]
+    },
+    {
+      "category": "Robotics & Automation",
+      "items": [
+        {
+          "name": "ROS2",
+          "level": 87
+        },
+        {
+          "name": "Pixhawk (PX4/ArduPilot)",
+          "level": 82
+        },
+        {
+          "name": "PLC — Siemens TIA Portal",
+          "level": 80
+        },
+        {
+          "name": "Control Systems",
+          "level": 84
+        }
+      ]
+    },
+    {
+      "category": "Tools & Hardware",
+      "items": [
+        {
+          "name": "Git",
+          "level": 88
+        },
+        {
+          "name": "Linux (Ubuntu)",
+          "level": 90
+        },
+        {
+          "name": "Raspberry Pi",
+          "level": 92
+        },
+        {
+          "name": "STM32",
+          "level": 78
+        },
+        {
+          "name": "Industrial Control Panels",
+          "level": 80
+        }
+      ]
+    }
+  ],
+  "languages": [
+    {
+      "name": "Arabic",
+      "level": "Native"
+    },
+    {
+      "name": "Turkish",
+      "level": "Fluent"
+    },
+    {
+      "name": "English",
+      "level": "Advanced"
+    }
+  ],
+  "experience": [
+    {
+      "role": "AI & Robotics Intern",
+      "company": "Selçuk University",
+      "period": "Feb 2026 – May 2026",
+      "tools": "Python, OpenCV",
+      "bullets": [
+        "Led the development of an end-to-end computer vision pipeline on Raspberry Pi, classifying waste across 5 distinct categories.",
+        "Optimized and deployed edge AI models, achieving 97.69% real-time classification accuracy.",
+        "Integrated image recognition software with physical conveyor automation systems."
+      ]
+    },
+    {
+      "role": "Computer Vision & AI Intern",
+      "company": "Selçuk University",
+      "period": "Jun 2025 – Aug 2025",
+      "tools": "TensorFlow, PyTorch",
+      "bullets": [
+        "Designed and trained CNN architectures for medical image analysis, reaching 98.43% accuracy in tumor classification.",
+        "Curated and preprocessed a dataset of 2,867 high-resolution MRI images with robust augmentation to eliminate overfitting.",
+        "Enhanced clinical image analysis performance by benchmarking precision and recall against standard medical datasets."
+      ]
+    },
+    {
+      "role": "Automation Department Intern",
+      "company": "Mizan Mekatronik",
+      "period": "Jun 2024 – Aug 2024",
+      "tools": "Siemens TIA Portal",
+      "bullets": [
+        "Programmed PLC systems and designed HMI screens using Siemens TIA Portal.",
+        "Assembled and wired industrial control panels and sensor distribution networks.",
+        "Diagnosed and resolved hardware/software faults during system commissioning."
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "title": "AI-Powered Automated Waste Sorting System",
+      "period": "Feb 2026 – May 2026",
+      "image": "/assets/img/project-waste.svg",
+      "tags": [
+        "CNN",
+        "Raspberry Pi",
+        "ROS2",
+        "OpenCV"
+      ],
+      "link": "",
+      "bullets": [
+        "Engineered an automated recycling system by training custom CNN models on a dataset of 12,000+ images.",
+        "Optimized memory footprint for Raspberry Pi deployment, achieving 97.69% accuracy across 5 waste streams.",
+        "Developed a ROS2 communication bridge to stream real-time inferences directly to conveyor control units."
+      ]
+    },
+    {
+      "title": "Brain Tumor MRI Analysis System",
+      "period": "Jun 2025 – Aug 2025",
+      "image": "/assets/img/project-mri.svg",
+      "tags": [
+        "PyTorch",
+        "Medical Imaging",
+        "Segmentation",
+        "Attention"
+      ],
+      "link": "",
+      "bullets": [
+        "Developed an end-to-end deep learning platform for automated tumor classification and lesion segmentation.",
+        "Attained a peak accuracy of 98.43% on 2,867 clinical MRI scans using PyTorch and spatial attention.",
+        "Implemented OpenCV image processing filters to enhance soft-tissue contrast before model training."
+      ]
+    },
+    {
+      "title": "Foldable-Wing Autonomous Drone",
+      "period": "Aug 2025 – Jan 2026",
+      "image": "/assets/img/project-drone.svg",
+      "tags": [
+        "UAV",
+        "Pixhawk",
+        "Telemetry ML",
+        "TÜBİTAK 2209-A"
+      ],
+      "link": "",
+      "bullets": [
+        "Designed a foldable-wing autonomous UAV with a multi-sensor payload for real-time air quality tracking.",
+        "Applied machine learning algorithms to parse telemetry data and predict local environmental pollution patterns.",
+        "Awarded research funding as principal developer under the TÜBİTAK 2209-A Undergraduate Research Project program."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "Master's Student in computer engineer",
+      "school": "Selçuk University",
+      "period": "2026 – Present",
+      "note": ""
+    },
+    {
+      "degree": "Bachelor of Mechatronics Engineering",
+      "school": "Selçuk University",
+      "period": "2022 – 2026",
+      "note": "Relevant coursework: Robotics, Artificial Intelligence, Computer Vision, Embedded Systems, Control Systems, Industrial Automation."
+    }
+  ],
+  "sections": {
+    "aboutTitle": "About",
+    "aboutKicker": "Who is behind the signature",
+    "skillsTitle": "Skills",
+    "skillsKicker": "The stack I build with",
+    "experienceTitle": "Experience",
+    "experienceKicker": "Where I have shipped",
+    "projectsTitle": "Projects",
+    "projectsKicker": "Things I built and measured",
+    "educationTitle": "Education",
+    "educationKicker": "Academic background",
+    "contactTitle": "Let us talk",
+    "contactKicker": "Book a slot, not a contact form"
+  },
+  "meta": {
+    "siteTitle": "Read Leva Alalloş — AI & Robotics Engineer",
+    "metaDescription": "Portfolio of Read Leva Alalloş, AI & Robotics Engineer specialising in computer vision, embedded AI and autonomous systems.",
+    "footerNote": "Designed, coded and signed by Read Leva Alalloş.",
+    "accent": "#00e5ff",
+    "accent2": "#7c5cff"
+  }
+};

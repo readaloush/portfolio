@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Keep the control room out of search results.
+Disallow: /admin
+Disallow: /console
+Disallow: /api/

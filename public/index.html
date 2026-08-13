@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read Leva Alalloş — AI &amp; Robotics Engineer</title>
+<meta name="description" id="metaDescription" content="Portfolio of Read Leva Alalloş, AI &amp; Robotics Engineer specialising in computer vision, embedded AI and autonomous systems.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;600;800&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css?v=2">
+</head>
+<body class="is-loading">
+
+<!-- ══════════════ PREMIUM SIGNATURE LOADING SCREEN ══════════════ -->
+<div id="site-loader">
+  <div class="signature-wrap" id="sigContainer">
+    <svg class="sig-svg" viewBox="0 0 772 317" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="sigClip"><path id="clipMaskPath" d=""></path></clipPath>
+        <linearGradient id="shineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="rgba(255,255,255,0)"></stop>
+          <stop offset="50%" stop-color="rgba(255,255,255,0.6)"></stop>
+          <stop offset="100%" stop-color="rgba(255,255,255,0)"></stop>
+        </linearGradient>
+      </defs>
+      <path id="drawingPath" class="premium-sig-stroke" d=""></path>
+      <path id="spinePath" fill="none" stroke="none" d=""></path>
+      <g id="glowPointer">
+        <circle r="6" fill="#ffffff" filter="drop-shadow(0 0 5px #ffffff) drop-shadow(0 0 10px #ffffff)"></circle>
+      </g>
+      <g clip-path="url(#sigClip)">
+        <rect id="shineBar" x="-200" y="0" width="120" height="320"></rect>
+      </g>
+    </svg>
+    <div class="sig-counter-wrap">
+      <span class="sig-counter" id="loaderCounter">00</span>
+      <div class="sig-progress-bar"><div class="sig-progress-line" id="loaderLine"></div></div>
+    </div>
+  </div>
+</div>
+<!-- ══════════════ END LOADING SCREEN ══════════════ -->
+
+<!-- animated network background -->
+<canvas id="netCanvas" aria-hidden="true"></canvas>
+<div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+<div class="grain" aria-hidden="true"></div>
+
+<!-- custom mouse cursor -->
+<div id="cursorRing" aria-hidden="true"><span id="cursorLabel"></span></div>
+<div id="cursorDot" aria-hidden="true"></div>
+
+<!-- scroll progress -->
+<div id="scrollBar" aria-hidden="true"></div>
+
+<!-- ─────────────────────────── NAV ─────────────────────────── -->
+<header id="nav">
+  <a href="#top" class="nav-logo" data-cursor="home" aria-label="Home">
+    <span class="nav-logo-sig" id="navSignature"></span>
+  </a>
+
+  <nav class="nav-links" id="navLinks">
+    <a href="#about"><span>About</span></a>
+    <a href="#skills"><span>Skills</span></a>
+    <a href="#experience"><span>Experience</span></a>
+    <a href="#projects"><span>Projects</span></a>
+    <a href="#education"><span>Education</span></a>
+    <a href="#contact"><span>Contact</span></a>
+  </nav>
+
+  <div class="nav-actions">
+    <!-- sound: every tone is generated live, nothing is downloaded -->
+    <button class="sound-btn" id="soundBtn" aria-label="Sound" data-cursor="sound">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 5 6 9H3v6h3l5 4V5z"/>
+        <path class="wave w1" d="M15.5 8.5a5 5 0 0 1 0 7"/>
+        <path class="wave w2" d="M18.5 5.5a9 9 0 0 1 0 13"/>
+        <path class="mute" d="M16 9l5 6M21 9l-5 6"/>
+      </svg>
+      <span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    </button>
+
+    <!-- electric wall switch -->
+    <button class="switch" id="themeSwitch" aria-label="Toggle light" data-cursor="flip">
+      <span class="switch-plate">
+        <span class="switch-screw t"></span><span class="switch-screw b"></span>
+        <span class="switch-rocker"><span class="switch-glow"></span></span>
+      </span>
+      <span class="switch-spark" aria-hidden="true"></span>
+    </button>
+
+    <a class="btn btn-cv magnetic" id="cvButton" href="/assets/files/cv.pdf" target="_blank" rel="noopener" data-cursor="open">
+      <span class="btn-shine"></span>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 11l5 5 5-5M4 20h16"/></svg>
+      <span>CV</span>
+    </a>
+
+    <button class="nav-burger" id="navBurger" aria-label="Menu"><i></i><i></i><i></i></button>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ─────────────────────────── HERO ─────────────────────────── -->
+  <section class="hero" id="hero">
+    <div class="hero-inner">
+      <div class="hero-text parallax" data-depth="14">
+        <p class="kicker reveal"><span class="dot"></span><span id="heroAvailability">Open to AI / Robotics roles</span></p>
+        <h1 class="hero-name reveal" id="heroName" data-scramble>READ LEVA ALALLOŞ</h1>
+        <h2 class="hero-role reveal">
+          <span class="typed" id="typedRole"></span><span class="caret"></span>
+        </h2>
+        <p class="hero-tagline reveal" id="heroTagline"></p>
+        <p class="hero-summary reveal" id="heroSummary"></p>
+
+        <div class="hero-cta reveal">
+          <a href="#projects" class="btn btn-primary magnetic" data-cursor="view"><span class="btn-shine"></span><span>See the work</span></a>
+          <a href="#contact" class="btn btn-ghost magnetic" data-cursor="book"><span>Book a meeting</span></a>
+        </div>
+
+        <ul class="socials" id="socialList"></ul>
+      </div>
+
+      <div class="hero-visual parallax" data-depth="-22">
+        <!-- 5 clicks on this photo open the hidden admin login -->
+        <div class="photo-frame tilt" id="photoFrame" data-cursor="">
+          <div class="photo-ring"></div>
+          <div class="photo-ring r2"></div>
+          <div class="photo-scan"></div>
+          <img id="profilePhoto" src="/assets/img/profile.svg" alt="Read Leva Alalloş">
+          <div class="photo-glare"></div>
+        </div>
+        <!-- the signature lives under the photo and never stops moving -->
+        <div class="photo-signature" id="photoSignature" aria-hidden="true"></div>
+        <p class="photo-caption" id="photoCaption">Konya, Türkiye</p>
+      </div>
+    </div>
+
+    <ul class="stats" id="statList"></ul>
+
+    <div class="scroll-hint" aria-hidden="true"><span></span>scroll</div>
+  </section>
+
+  <!-- ─────────────────────────── ABOUT ─────────────────────────── -->
+  <section id="about" class="section">
+    <header class="section-head reveal">
+      <p class="section-kicker" id="aboutKicker"></p>
+      <h2 class="section-title" id="aboutTitle">About</h2>
+    </header>
+    <div class="about-grid">
+      <div class="about-copy reveal" id="aboutCopy"></div>
+      <aside class="about-side reveal">
+        <div class="card glow tilt">
+          <h3>Languages</h3>
+          <ul class="lang-list" id="langList"></ul>
+        </div>
+        <div class="card glow tilt">
+          <h3>Contact</h3>
+          <ul class="contact-list" id="contactQuick"></ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── SKILLS ─────────────────────────── -->
+  <section id="skills" class="section">
+    <header class="section-head reveal">
+      <p class="section-kicker" id="skillsKicker"></p>
+      <h2 class="section-title" id="skillsTitle">Skills</h2>
+    </header>
+    <div class="skill-grid" id="skillGrid"></div>
+  </section>
+
+  <!-- ─────────────────────────── EXPERIENCE ─────────────────────────── -->
+  <section id="experience" class="section">
+    <header class="section-head reveal">
+      <p class="section-kicker" id="experienceKicker"></p>
+      <h2 class="section-title" id="experienceTitle">Experience</h2>
+    </header>
+    <div class="timeline" id="timeline"><span class="timeline-rail"><i id="timelineFill"></i></span></div>
+  </section>
+
+  <!-- ─────────────────────────── PROJECTS ─────────────────────────── -->
+  <section id="projects" class="section">
+    <header class="section-head reveal">
+      <p class="section-kicker" id="projectsKicker"></p>
+      <h2 class="section-title" id="projectsTitle">Projects</h2>
+    </header>
+    <div class="project-grid" id="projectGrid"></div>
+  </section>
+
+  <!-- ─────────────────────────── EDUCATION ─────────────────────────── -->
+  <section id="education" class="section">
+    <header class="section-head reveal">
+      <p class="section-kicker" id="educationKicker"></p>
+      <h2 class="section-title" id="educationTitle">Education</h2>
+    </header>
+    <div class="edu-grid" id="eduGrid"></div>
+  </section>
+
+  <!-- ─────────────────────────── CONTACT ─────────────────────────── -->
+  <section id="contact" class="section">
+    <header class="section-head reveal">
+      <p class="section-kicker" id="contactKicker"></p>
+      <h2 class="section-title" id="contactTitle">Let us talk</h2>
+    </header>
+
+    <div class="contact-wrap">
+      <div class="contact-side reveal">
+        <p class="contact-note" id="calendarNote"></p>
+        <ul class="contact-list big" id="contactBig"></ul>
+        <ul class="socials wide" id="socialList2"></ul>
+      </div>
+      <div class="calendar-box reveal tilt" id="calendarBox"></div>
+    </div>
+  </section>
+</main>
+
+<footer id="footer">
+  <div class="footer-sig" id="footerSignature" aria-hidden="true"></div>
+  <p id="footerNote"></p>
+  <p class="footer-small">© <span id="year"></span> · Built with an unreasonable amount of animation.</p>
+</footer>
+
+<!-- ─────────────── HIDDEN ADMIN LOGIN (5 clicks on the photo) ───────────────
+     No username or password exists anywhere in this file.
+     The form only POSTs to /api/auth/login, which checks a scrypt hash
+     stored in the SQLite database on the server.
+------------------------------------------------------------------------- -->
+<div class="modal" id="loginModal" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <form class="modal-card" id="loginForm" autocomplete="off">
+    <button type="button" class="modal-x" data-close aria-label="Close">×</button>
+    <div class="modal-lock"><span></span></div>
+    <h3>Restricted area</h3>
+    <p class="modal-sub">Credentials are verified on the server. Nothing is stored in this page.</p>
+    <label>Username<input type="text" name="username" required autocomplete="username"></label>
+    <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
+    <p class="modal-error" id="loginError" hidden></p>
+    <button class="btn btn-primary wide" type="submit"><span class="btn-shine"></span><span>Unlock</span></button>
+  </form>
+</div>
+
+<!-- ─────────────── ASSISTANT ───────────────
+     Answers come from the CV in the database. There is no language
+     model and no API key, so it is instant, free, and cannot invent
+     anything that is not on this site.
+--------------------------------------------------------------- -->
+<button class="orb" id="chatOrb" aria-label="Ask about Read" data-cursor="ask">
+  <span class="orb-core">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3.2"/>
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>
+    </svg>
+  </span>
+  <span class="orb-ring"></span>
+  <span class="orb-ring d2"></span>
+  <span class="orb-badge" id="orbBadge">1</span>
+</button>
+
+<section class="chat" id="chatPanel" hidden aria-label="Assistant">
+  <header class="chat-head">
+    <span class="chat-avatar"><i></i></span>
+    <div class="chat-who">
+      <strong>Ask about Read</strong>
+      <span id="chatStatus">answers from his CV · no AI bills</span>
+    </div>
+    <button class="chat-x" id="chatClose" aria-label="Close">×</button>
+  </header>
+
+  <div class="chat-log" id="chatLog" role="log" aria-live="polite"></div>
+
+  <div class="chat-chips" id="chatChips"></div>
+
+  <form class="chat-form" id="chatForm" autocomplete="off">
+    <input type="text" id="chatInput" placeholder="Ask me anything about him…" maxlength="500" aria-label="Your question">
+    <button type="submit" aria-label="Send">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 12h14M13 6l6 6-6 6"/>
+      </svg>
+    </button>
+  </form>
+</section>
+
+<div class="toast" id="toast" hidden><span id="toastText"></span></div>
+<div class="blackout" id="blackout" aria-hidden="true"></div>
+
+<script src="/assets/js/sound.js?v=4"></script>
+<script src="/assets/js/signature.js?v=4"></script>
+<script src="/assets/js/loader.js?v=4"></script>
+<script src="/assets/js/app.js?v=4"></script>
+<script src="/assets/js/chat.js?v=4"></script>
+</body>
+</html>

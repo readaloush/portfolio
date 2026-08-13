@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Control room</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔒</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;600;800&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/admin.css?v=2">
+</head>
+<body>
+
+<!-- ── gate ─────────────────────────────────────────────── -->
+<div id="gate" class="gate">
+  <form id="gateForm" class="gate-card" autocomplete="off">
+    <div class="gate-lock"><span></span></div>
+    <h1>Control room</h1>
+    <p class="gate-sub">Credentials are checked on the server against a scrypt hash in the database. They do not exist in this page.</p>
+    <label>Username<input type="text" name="username" required autocomplete="username"></label>
+    <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
+    <p class="err" id="gateError" hidden></p>
+    <button class="btn primary wide" type="submit">Unlock</button>
+    <a class="gate-back" href="/">← back to the portfolio</a>
+  </form>
+</div>
+
+<!-- ── app ──────────────────────────────────────────────── -->
+<div id="app" hidden>
+  <header class="bar">
+    <div class="bar-l">
+      <span class="badge">ADMIN</span>
+      <strong id="whoami"></strong>
+    </div>
+    <div class="bar-r">
+      <span class="saved" id="savedAt"></span>
+      <a class="btn ghost" href="/" target="_blank" rel="noopener">Preview ↗</a>
+      <button class="btn primary" id="saveBtn">Save changes</button>
+      <button class="btn ghost" id="logoutBtn">Log out</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side">
+      <nav id="tabs">
+        <button data-tab="profile" class="on">Profile</button>
+        <button data-tab="stats">Stats</button>
+        <button data-tab="socials">Social links</button>
+        <button data-tab="skills">Skills</button>
+        <button data-tab="languages">Languages</button>
+        <button data-tab="experience">Experience</button>
+        <button data-tab="projects">Projects</button>
+        <button data-tab="education">Education</button>
+        <button data-tab="sections">Section titles</button>
+        <button data-tab="meta">Theme &amp; SEO</button>
+        <button data-tab="media">Media library</button>
+        <button data-tab="security">Security</button>
+      </nav>
+      <p class="hint">Tip: on the homepage, click your photo <b>5&nbsp;times</b> to open the login box. Or press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd>.</p>
+    </aside>
+
+    <main class="pane" id="pane"></main>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden><span id="toastText"></span></div>
+<input type="file" id="hiddenFile" hidden accept="image/*,application/pdf">
+
+<script src="/assets/js/admin.js?v=2"></script>
+</body>
+</html>

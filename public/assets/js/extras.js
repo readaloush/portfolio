@@ -1,57 +1,88 @@
+(() => {
+  // Paper is the default now. Only fall back to it when the visitor has
+  // not chosen a side themselves.
+  try {
+    if (!localStorage.getItem('theme')) document.documentElement.dataset.theme = 'light';
+  } catch (e) { document.documentElement.dataset.theme = 'light'; }
+})();
+
 /* ==================================================================
    Side-entry reveals and keyboard navigation.
 
-   Kept as its own file so it runs after the main script has rendered
+   Kept as its own block so it runs after the main script has rendered
    the page, and so it can be reasoned about on its own.
    ================================================================== */
 (() => {
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ---------------------------------------- arrive from left / right */
-  const sideObserver = new IntersectionObserver(
-    (entries) => entries.forEach((e) => {
-      if (!e.isIntersecting) return;
-      e.target.classList.add('in');
-      sideObserver.unobserve(e.target);
-    }),
-    { threshold: 0.12, rootMargin: '0px 0px -6% 0px' }
-  );
+  /* ------------------------------- arrive from outside the page ------
+     A card parked off-screen never intersects the viewport, so an
+     IntersectionObserver would never fire for it. The trigger therefore
+     uses the element's LAYOUT position (offsetTop ignores transforms).  */
+
+  const pending = [];
+
+  /** Distance from the top of the document, unaffected by any transform. */
+  function layoutTop(el) {
+    let y = 0;
+    let n = el;
+    while (n) { y += n.offsetTop; n = n.offsetParent; }
+    return y;
+  }
+
+  let ticking = false;
+  function checkPending() {
+    ticking = false;
+    if (!pending.length) return;
+    const line = scrollY + innerHeight * 0.86;   // trigger a little before centre
+    for (let i = pending.length - 1; i >= 0; i--) {
+      const el = pending[i];
+      if (layoutTop(el) < line) {
+        el.classList.add('in');
+        pending.splice(i, 1);
+      }
+    }
+  }
+  const queueCheck = () => { if (!ticking) { ticking = true; requestAnimationFrame(checkPending); } };
+  addEventListener('scroll', queueCheck, { passive: true });
+  addEventListener('resize', queueCheck);
 
   /** Alternate the direction so the page zig-zags as you scroll. */
   function applySideReveals() {
     if (reduced) return;
     const groups = [
-      { sel: '.project', alternate: true },
-      { sel: '.tl-item', alternate: false, from: -80 },
-      { sel: '.skill-card', alternate: true },
-      { sel: '.edu-card', alternate: true },
-      { sel: '.stats li', alternate: true, distance: 45 }
+      { sel: '.project',    alternate: true,  dist: 75, rot: 16 },
+      { sel: '.tl-item',    alternate: false, from: -60, rot: 12 },
+      { sel: '.skill-card', alternate: true,  dist: 65, rot: 14 },
+      { sel: '.edu-card',   alternate: true,  dist: 65, rot: 14 },
+      { sel: '.stats li',   alternate: true,  dist: 45, rot: 10 }
     ];
 
-    groups.forEach(({ sel, alternate, from, distance = 80 }) => {
+    groups.forEach(({ sel, alternate, from, dist = 70, rot = 14 }) => {
       $$(sel).forEach((el, i) => {
         if (el.dataset.sideBound) return;
         el.dataset.sideBound = '1';
-        const dx = from !== undefined ? from : (alternate && i % 2 ? -distance : distance);
-        el.style.setProperty('--from', dx + 'px');
+
+        const vw = from !== undefined ? from : (alternate && i % 2 ? -dist : dist);
+        el.style.setProperty('--from', vw + 'vw');
+        el.style.setProperty('--rot', (vw > 0 ? -rot : rot) + 'deg');
+
+        // this element is ours now: drop the old fade-up system so the two
+        // cannot fight over the same transform
+        el.classList.remove('reveal', 'in');
         el.classList.add('reveal-x');
-        // already on screen when the page loads? show it immediately
-        const r = el.getBoundingClientRect();
-        if (r.top < innerHeight * 0.9) el.classList.add('in');
-        else sideObserver.observe(el);
+
+        if (layoutTop(el) < scrollY + innerHeight * 0.86) {
+          // already in view — play it on the next frame rather than snapping
+          requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('in')));
+        } else {
+          pending.push(el);
+        }
       });
     });
+    queueCheck();
   }
-
-  // content arrives asynchronously, so watch for it
-  const contentWatcher = new MutationObserver(() => applySideReveals());
-  ['#projectGrid', '#timeline', '#skillGrid', '#eduGrid', '#statList'].forEach((sel) => {
-    const node = document.querySelector(sel);
-    if (node) contentWatcher.observe(node, { childList: true });
-  });
-  document.addEventListener('loader:done', () => setTimeout(applySideReveals, 60));
-  setTimeout(applySideReveals, 1200);
 
   /* ------------------------------------------- keyboard navigation */
   const SECTIONS = ['#top', '#about', '#skills', '#experience', '#projects', '#education', '#contact'];
@@ -73,7 +104,7 @@
     const el = document.querySelector(SECTIONS[clamped]);
     if (!el) return;
     el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
-    if (window.SFX) window.SFX.hover();
+    window.SFX?.hover();
   }
 
   /** Typing somewhere? Then the arrows belong to that field, not the page. */
@@ -84,10 +115,9 @@
 
   addEventListener('keydown', (e) => {
     if (isTyping() || e.metaKey || e.ctrlKey || e.altKey) return;
-    const chatPanel = document.getElementById('chatPanel');
-    const loginModal = document.getElementById('loginModal');
-    const chatOpen = chatPanel && !chatPanel.hidden;
-    if (loginModal && !loginModal.hidden) return;
+    const chatOpen = !document.getElementById('chatPanel')?.hidden;
+    const modalOpen = !document.getElementById('loginModal')?.hidden;
+    if (modalOpen) return;
 
     switch (e.key) {
       case 'ArrowRight':
@@ -103,11 +133,7 @@
       case 'End':
         e.preventDefault(); goTo(SECTIONS.length - 1); break;
       case '/':
-        if (!chatOpen) {
-          e.preventDefault();
-          const orb = document.getElementById('chatOrb');
-          if (orb) orb.click();
-        }
+        if (!chatOpen) { e.preventDefault(); document.getElementById('chatOrb')?.click(); }
         break;
       default:
         return;
@@ -118,19 +144,19 @@
   /* ------------------------------------------------------ the hint */
   const hint = document.createElement('div');
   hint.className = 'kbd-hint';
-  hint.innerHTML = '<kbd>&larr;</kbd><kbd>&rarr;</kbd> move between sections <kbd>/</kbd> ask a question';
+  hint.innerHTML = '<kbd>←</kbd><kbd>→</kbd> move between sections <kbd>/</kbd> ask a question';
   document.body.appendChild(hint);
 
   let hintTimer;
   function showHint() {
-    try { if (localStorage.getItem('rp_kbd_hint') === 'seen') return; } catch (e) { /* ignore */ }
+    try { if (localStorage.getItem('rp_kbd_hint') === 'seen') return; } catch { /* ignore */ }
     hint.classList.add('show');
     hintTimer = setTimeout(hideHint, 7000);
   }
   function hideHint() {
     clearTimeout(hintTimer);
     hint.classList.remove('show');
-    try { localStorage.setItem('rp_kbd_hint', 'seen'); } catch (e) { /* ignore */ }
+    try { localStorage.setItem('rp_kbd_hint', 'seen'); } catch { /* ignore */ }
   }
   document.addEventListener('loader:done', () => setTimeout(showHint, 2200));
 })();

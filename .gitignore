@@ -1,0 +1,7 @@
+# NEVER upload these two - they hold your password hash and session secret.
+data/
+.env
+
+node_modules/
+*.log
+.DS_Store

@@ -648,3 +648,151 @@ html[data-mode="paper"] .project-media { overflow: hidden; border-radius: 2px; }
 
 html[data-mode="paper"] .card:not(.edu-card)::before,
 html[data-mode="paper"] .glow::after { display: none !important; }
+
+
+/* ==================================================================
+   ==================  N E U R A L   M O D E  =======================
+
+   The third mode. A network trains, becomes a robot, greets you, and
+   then stays behind the site for as long as you are reading it.
+
+   Two custom properties carry the colours into the canvas, because a
+   canvas cannot read a stylesheet: --neuro-node for the live parts
+   (eyes, core, signals) and --neuro-link for the structure.
+   ================================================================== */
+
+html[data-mode="neural"][data-theme="dark"] {
+  --bg:        #0E0D0C;
+  --bg2:       #17140F;
+  --surface:   rgba(241,238,231,.05);
+  --surface-2: rgba(241,238,231,.08);
+  --line:      rgba(241,238,231,.15);
+  --text:      #F1EEE7;
+  --muted:     #98907F;
+  --accent:    #E0553B;
+  --accent2:   #C2452E;
+  --shadow:    0 26px 64px rgba(0,0,0,.6);
+  --neuro-node: 224,85,59;
+  --neuro-link: 241,238,231;
+}
+html[data-mode="neural"][data-theme="light"] {
+  --bg:        #F1EEE7;
+  --bg2:       #FBFAF6;
+  --text:      #14110D;
+  --muted:     #6A6357;
+  --accent:    #B4361F;
+  --accent2:   #8A2716;
+  --neuro-node: 180,54,31;
+  --neuro-link: 20,17,13;
+}
+
+/* the old dot-field would be a second network arguing with the robot */
+html[data-mode="neural"] #netCanvas { display: none !important; }
+
+/* ---- the stage --------------------------------------------------- */
+.neuro {
+  position: fixed; inset: 0; z-index: 9500;
+  background: var(--bg);
+  transition: background .6s var(--ease);
+}
+.neuro-canvas { position: absolute; inset: 0; display: block; }
+
+/* Once the intro is over the same canvas keeps running, but it stops
+   being a screen and becomes wallpaper: behind everything, dimmed,
+   and deaf to the mouse so it can never swallow a click. */
+.neuro.done {
+  z-index: 0; background: transparent; pointer-events: none;
+}
+.neuro.done .neuro-ui { opacity: 0; pointer-events: none; }
+.neuro.done .neuro-canvas { opacity: .5; transition: opacity 1.2s var(--ease); }
+html[data-theme="light"] .neuro.done .neuro-canvas { opacity: .38; }
+
+/* while the scene is playing the site underneath is held still */
+body.neuro-intro { overflow: hidden; }
+body.neuro-intro main,
+body.neuro-intro #nav,
+body.neuro-intro #footer,
+body.neuro-intro .orb { opacity: 0; pointer-events: none; }
+body.neuro-bg main,
+body.neuro-bg #nav,
+body.neuro-bg #footer,
+body.neuro-bg .orb { animation: neuroIn 1s var(--ease) both; }
+@keyframes neuroIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* ---- the read-out ------------------------------------------------ */
+.neuro-ui {
+  position: absolute; inset: 0; display: grid;
+  align-content: center; justify-items: center; gap: 22px;
+  padding: 30px; text-align: center;
+  transition: opacity .7s var(--ease);
+}
+.neuro-hud {
+  position: absolute; top: 6vh; left: 50%; transform: translateX(-50%);
+  display: grid; gap: 5px; min-width: 216px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 1.4px;
+  color: var(--muted);
+  transition: opacity .6s var(--ease), transform .6s var(--ease);
+}
+.neuro-hud.out { opacity: 0; transform: translateX(-50%) translateY(-12px); }
+.nh-row { display: flex; justify-content: space-between; gap: 20px; }
+.nh-row b { font-weight: 400; text-transform: uppercase; opacity: .7; }
+.nh-row i { font-style: normal; color: var(--text); }
+.nh-bar { display: block; height: 2px; background: var(--surface-2); margin-top: 4px; }
+.nh-bar u { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s linear; }
+
+/* ---- what it says ------------------------------------------------ */
+.neuro-say {
+  margin-top: 34vh; max-width: 720px; min-height: 3.2em;
+  opacity: 0; transition: opacity .6s var(--ease);
+}
+.neuro-say.show { opacity: 1; }
+.neuro-say b {
+  display: block; font-weight: 300;
+  font-size: clamp(1.3rem, 3.4vw, 2.3rem); letter-spacing: .5px; color: var(--text);
+}
+.neuro-say span {
+  display: block; margin-top: 12px;
+  font-size: clamp(.85rem, 1.6vw, 1rem); color: var(--muted); line-height: 1.6;
+}
+
+/* ---- the way in -------------------------------------------------- */
+.neuro-go {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 13px 24px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--text);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  letter-spacing: 2.4px; text-transform: uppercase;
+  opacity: 0; transform: translateY(12px);
+  transition: opacity .6s var(--ease), transform .6s var(--ease), border-color .3s, background .3s;
+}
+.neuro-go.show { opacity: 1; transform: none; }
+.neuro-go:hover { border-color: var(--accent); background: var(--surface); }
+.neuro-go svg { width: 15px; height: 15px; animation: neuroNudge 1.8s var(--ease) infinite; }
+@keyframes neuroNudge { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
+.neuro-skip {
+  position: absolute; right: 22px; bottom: 20px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+  padding: 8px 12px; border-radius: 999px; border: 1px solid transparent;
+}
+.neuro-skip:hover { color: var(--text); border-color: var(--line); }
+
+@media (max-width: 620px) {
+  .neuro-say { margin-top: 40vh; }
+  .neuro-hud { top: 4vh; min-width: 180px; font-size: 10.5px; }
+}
+
+/* Someone who has asked for less motion still gets the site; the
+   scene simply is not staged for them. */
+@media (prefers-reduced-motion: reduce) {
+  .neuro-ui { display: none; }
+  body.neuro-intro { overflow: auto; }
+  body.neuro-intro main, body.neuro-intro #nav, body.neuro-intro #footer { opacity: 1; }
+  body.neuro-bg main, body.neuro-bg #nav, body.neuro-bg #footer, body.neuro-bg .orb { animation: none; }
+}
+
+/* three tabs need a little more room than two */
+@media (min-width: 981px) and (max-width: 1300px) {
+  .mode-tab { padding: 6px 9px; font-size: 9px; letter-spacing: 1px; }
+}

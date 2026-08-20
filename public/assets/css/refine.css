@@ -243,7 +243,7 @@ html[data-mode="paper"][data-theme="light"] {
   --accent:    #C0392B;   /* the red pen */
   --accent2:   #96271C;
   --shadow:    0 10px 26px rgba(26,39,64,.12);
-  --rule:      rgba(60,96,160,.20);      /* the printed lines */
+  --rule:      rgba(60,96,160,.28);      /* the printed lines */
   --margin-ln: rgba(192,57,43,.42);      /* the red margin */
   --hole:      rgba(26,39,64,.13);
 }
@@ -258,7 +258,7 @@ html[data-mode="paper"][data-theme="dark"] {
   --accent:    #E8674F;
   --accent2:   #C64832;
   --shadow:    0 16px 40px rgba(0,0,0,.55);
-  --rule:      rgba(240,234,220,.10);
+  --rule:      rgba(240,234,220,.13);
   --margin-ln: rgba(232,103,79,.36);
   --hole:      rgba(0,0,0,.4);
 }
@@ -626,3 +626,25 @@ html[data-mode="paper"] .section-title::after {
   .nav-links { gap: 4px; }
   .nav-links a { font-size: 13px; }
 }
+
+
+/* ---- two things the live page showed and the source did not ------
+
+   1. The tape strips were being drawn and then clipped out of
+      existence: every one of these cards carries overflow:hidden, so
+      a strip hanging 9px above the top edge simply never appeared.
+      Measured on the live site — the pseudo-element was there, 20px
+      tall, at top:-9px, and invisible. The card has to stop clipping;
+      the image inside it takes over that job.
+
+   2. .card::before is the frosted glow from the modern theme, and it
+      was still running on paper. It is excluded rather than replaced,
+      because on .edu-card that same pseudo-element is now the tape.
+   ================================================================== */
+html[data-mode="paper"] .project,
+html[data-mode="paper"] .edu-card { overflow: visible; }
+
+html[data-mode="paper"] .project-media { overflow: hidden; border-radius: 2px; }
+
+html[data-mode="paper"] .card:not(.edu-card)::before,
+html[data-mode="paper"] .glow::after { display: none !important; }

@@ -51,19 +51,131 @@
   const easeOut = (t) => 1 - Math.pow(1 - t, 3);
   const lerp = (a, b, t) => a + (b - a) * t;
 
+  /* ============================================ surface and light
+
+     Everything here is generated in the browser: no texture files to
+     download, nothing to 404. Three things separate a scene that looks
+     modelled from one that looks rendered, and none of them are the
+     shapes:
+
+       - an environment to reflect. Bare metal with nothing around it
+         is just a grey blob; give it something to mirror and it reads
+         as metal instantly.
+       - a surface that is not perfectly uniform. Real brushed
+         aluminium scatters light in streaks.
+       - light that is graded, not clipped. sRGB output and a filmic
+         curve are the difference between "washed out" and "shot".
+  */
+
+  /** Brushed metal: fine horizontal streaks, used for roughness and bump. */
+  function brushedTexture(T) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 256;
+    const x = c.getContext('2d');
+    x.fillStyle = '#7a7a7a';
+    x.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 2400; i++) {
+      const y = Math.random() * 256;
+      const bright = Math.random() < 0.5;
+      x.strokeStyle = bright
+        ? `rgba(255,255,255,${Math.random() * 0.07})`
+        : `rgba(0,0,0,${Math.random() * 0.07})`;
+      x.beginPath();
+      x.moveTo(0, y);
+      x.lineTo(256, y + (Math.random() - 0.5) * 1.5);
+      x.stroke();
+    }
+    const t = new T.CanvasTexture(c);
+    t.wrapS = t.wrapT = T.RepeatWrapping;
+    t.repeat.set(2, 2);
+    return t;
+  }
+
+  /** A soft round falloff, for glows and for the contact shadow. */
+  function blobTexture(T, inner, outer) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const x = c.getContext('2d');
+    const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+    g.addColorStop(0, inner);
+    g.addColorStop(0.45, outer);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = g;
+    x.fillRect(0, 0, 128, 128);
+    return new T.CanvasTexture(c);
+  }
+
+  let GLOW_TEX = null;
+  /** Additive halo. Cheaper and steadier than a full bloom pass, and it
+      cannot be broken by a CDN that does not ship the post-processing
+      files. */
+  function glow(T, color, size) {
+    if (!GLOW_TEX) GLOW_TEX = blobTexture(T, 'rgba(255,255,255,0.95)', 'rgba(255,255,255,0.25)');
+    const sp = new T.Sprite(new T.SpriteMaterial({
+      map: GLOW_TEX, color, transparent: true,
+      blending: T.AdditiveBlending, depthWrite: false, opacity: 0.85
+    }));
+    sp.scale.setScalar(size);
+    return sp;
+  }
+
+  /** Three softboxes in an otherwise dark room, baked into a reflection
+      probe. This is what the metal sees when it looks around. */
+  function buildEnvironment(T, renderer, accent) {
+    const pmrem = new T.PMREMGenerator(renderer);
+    const room = new T.Scene();
+    room.background = new T.Color(0x0A0A0C);
+
+    const panel = (w, h, color, intensity, pos, rot) => {
+      const m = new T.Mesh(
+        new T.PlaneGeometry(w, h),
+        new T.MeshBasicMaterial({ color: new T.Color(color).multiplyScalar(intensity) })
+      );
+      m.position.set(pos[0], pos[1], pos[2]);
+      m.rotation.set(rot[0], rot[1], rot[2]);
+      room.add(m);
+    };
+
+    panel(12, 8, 0xFFF3E4, 3.4, [5, 7, 5], [-Math.PI / 3, 0.6, 0]);      // key
+    panel(10, 10, 0x9FB6D8, 1.1, [-9, 3, -2], [0, Math.PI / 2, 0]);      // cool fill
+    panel(9, 5, accent, 1.6, [-4, 2, -8], [0, 0, 0]);                    // accent kick
+    panel(20, 20, 0x1A1A1E, 1, [0, -3, 0], [-Math.PI / 2, 0, 0]);        // floor bounce
+
+    const tex = pmrem.fromScene(room, 0.06).texture;
+    pmrem.dispose();
+    return tex;
+  }
+
   /* ====================================================== materials */
   let M = null;
   function materials(T) {
     const css = getComputedStyle(document.documentElement);
     const dark = document.documentElement.dataset.theme !== 'light';
     const accent = new T.Color(css.getPropertyValue('--accent').trim() || '#E0553B');
+    const brushed = brushedTexture(T);
 
     M = {
-      shell: new T.MeshStandardMaterial({ color: dark ? 0x4E463C : 0x8F8A81, metalness: 0.78, roughness: 0.42 }),
-      dark: new T.MeshStandardMaterial({ color: dark ? 0x1A1815 : 0x2C2823, metalness: 0.6, roughness: 0.55 }),
-      joint: new T.MeshStandardMaterial({ color: dark ? 0x59524A : 0x6E675E, metalness: 0.9, roughness: 0.3 }),
-      hot: new T.MeshStandardMaterial({ color: accent, emissive: accent, emissiveIntensity: 1.4, metalness: 0.2, roughness: 0.4 }),
-      glass: new T.MeshStandardMaterial({ color: 0x9FB6C9, metalness: 0.1, roughness: 0.15, transparent: true, opacity: 0.35 }),
+      shell: new T.MeshStandardMaterial({
+        color: dark ? 0x6A6156 : 0xA9A296, metalness: 0.92, roughness: 0.34,
+        roughnessMap: brushed, bumpMap: brushed, bumpScale: 0.006, envMapIntensity: 1.25
+      }),
+      dark: new T.MeshStandardMaterial({
+        color: dark ? 0x211E1A : 0x322D27, metalness: 0.7, roughness: 0.52,
+        roughnessMap: brushed, envMapIntensity: 0.8
+      }),
+      joint: new T.MeshStandardMaterial({
+        color: dark ? 0x8C8378 : 0x7A7268, metalness: 1, roughness: 0.18,
+        envMapIntensity: 1.5
+      }),
+      hot: new T.MeshStandardMaterial({
+        color: accent, emissive: accent, emissiveIntensity: 2.4,
+        metalness: 0.1, roughness: 0.35
+      }),
+      glass: new T.MeshStandardMaterial({
+        color: 0xAEC6DA, metalness: 0.05, roughness: 0.08,
+        transparent: true, opacity: 0.28, envMapIntensity: 2
+      }),
+      brushed,
       accent
     };
   }
@@ -129,12 +241,26 @@
     torso.position.set(0, 1.16, 0);
     torso.add(box(T, 0.62, 0.5, 0.34, M.shell, 0, 0.25, 0));
     torso.add(box(T, 0.5, 0.1, 0.36, M.dark, 0, 0.03, 0));
+    // Panel lines. A slab of metal reads as a slab; the same slab with
+    // seams and a chamfer reads as a part someone machined.
+    torso.add(box(T, 0.64, 0.012, 0.35, M.dark, 0, 0.44, 0));
+    torso.add(box(T, 0.012, 0.5, 0.35, M.dark, -0.2, 0.25, 0));
+    torso.add(box(T, 0.012, 0.5, 0.35, M.dark, 0.2, 0.25, 0));
+    torso.add(box(T, 0.26, 0.09, 0.02, M.dark, 0, 0.46, 0.175));
+    // shoulder caps, so the arms look socketed rather than stuck on
+    torso.add(box(T, 0.16, 0.13, 0.3, M.dark, -0.34, 0.46, 0));
+    torso.add(box(T, 0.16, 0.13, 0.3, M.dark, 0.34, 0.46, 0));
     const ring = new T.Mesh(new T.TorusGeometry(0.1, 0.026, 12, 26), M.joint);
     ring.position.set(0, 0.27, 0.18);
     ring.castShadow = true;
     PARTS.push(ring);
     torso.add(ring);
-    torso.add(ball(T, 0.06, M.hot, 0, 0.27, 0.185));
+    const coreBall = ball(T, 0.06, M.hot, 0, 0.27, 0.185);
+    torso.add(coreBall);
+    const coreGlow = glow(T, M.accent, 0.62);
+    coreGlow.position.set(0, 0.27, 0.24);
+    torso.add(coreGlow);
+    rig.coreGlow = coreGlow;
     root.add(torso);
     rig.torso = torso;
 
@@ -163,14 +289,31 @@
     head.add(box(T, 0.34, 0.14, 0.02, M.dark, 0, 0.2, 0.195));
     head.add(ball(T, 0.042, M.hot, -0.085, 0.2, 0.205));
     head.add(ball(T, 0.042, M.hot, 0.085, 0.2, 0.205));
+    rig.eyeGlow = [];
+    [-0.085, 0.085].forEach((x) => {
+      const gl = glow(T, M.accent, 0.3);
+      gl.position.set(x, 0.2, 0.24);
+      head.add(gl);
+      rig.eyeGlow.push(gl);
+    });
+    // a brow, and a chamfer along the jaw
+    head.add(box(T, 0.46, 0.03, 0.02, M.dark, 0, 0.3, 0.19));
+    head.add(box(T, 0.44, 0.02, 0.4, M.dark, 0, 0.355, 0));
     rig.mouth = [];
     for (let i = -2; i <= 2; i++) {
       const b = box(T, 0.026, 0.05, 0.02, M.dark, i * 0.038, 0.075, 0.196);
       head.add(b);
       rig.mouth.push(b);
     }
-    head.add(tube(T, 0.014, 0.16, M.joint, 0, 0.44, 0));
-    head.add(ball(T, 0.035, M.hot, 0, 0.54, 0));
+    const antenna = new T.Group();
+    antenna.position.set(0, 0.36, 0);
+    antenna.add(tube(T, 0.014, 0.16, M.joint, 0, 0.08, 0));
+    antenna.add(ball(T, 0.035, M.hot, 0, 0.18, 0));
+    const tipGlow = glow(T, M.accent, 0.26);
+    tipGlow.position.set(0, 0.18, 0);
+    antenna.add(tipGlow);
+    head.add(antenna);
+    rig.antenna = antenna;
     torso.add(head);
     rig.head = head;
 
@@ -575,9 +718,17 @@
     document.body.classList.add('neuro-intro');
 
     const renderer = new T.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(1.5, devicePixelRatio || 1));
+    renderer.setPixelRatio(Math.min(1.75, devicePixelRatio || 1));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = T.PCFSoftShadowMap;
+    // The three lines that do more for how this looks than any amount
+    // of extra geometry. Without sRGB output every colour is written
+    // to the screen in the wrong space and the whole image reads flat
+    // and muddy; without a filmic curve the bright parts clip to a
+    // flat patch instead of rolling off.
+    renderer.outputEncoding = T.sRGBEncoding;
+    renderer.toneMapping = T.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
     renderer.domElement.className = 'neuro-canvas';
     stage.insertBefore(renderer.domElement, stage.firstChild);
 
@@ -592,45 +743,56 @@
        scene shrinks rather than climbing over the writing. */
     let sideX = 3.2;
     let sideScale = 1;
-    const layout = () => {
-      const halfH = Math.tan((camera.fov * Math.PI / 180) / 2) * 6.2;
-      const halfW = halfH * camera.aspect;
+    let contentFrac = 0.62;                    // section width / window width
+    const measureContent = () => {
       const sec = document.querySelector('main .section');
-      const contentPx = sec ? sec.getBoundingClientRect().width : innerWidth * 0.82;
-      const contentHalf = (contentPx / innerWidth) * halfW;
+      contentFrac = sec ? sec.getBoundingClientRect().width / innerWidth : 0.82;
+    };
 
-      // The free strip beside the text, in world units. Everything is
-      // sized to fit that strip and then pushed hard against the outer
-      // edge — trying to place it at a fixed distance from the middle
-      // was what put it on top of the writing on narrower windows.
-      const margin = Math.max(0.35, halfW - contentHalf);
+    /* Where the edge of the picture actually is.
+
+       This has to be recomputed every frame, not once on resize. Each
+       station pulls the camera to its own distance — 5.2 for one, 6.4
+       for another — and how much world fits across the screen depends
+       entirely on that distance. Measuring it once at a nominal 6.2 and
+       reusing the answer is why the figure was being cut in half by the
+       right edge whenever a station brought the camera closer in. */
+    const layout = () => {
+      const halfW = Math.tan((camera.fov * Math.PI / 180) / 2) * camera.position.z * camera.aspect;
+      const contentHalf = contentFrac * halfW;
+      const margin = Math.max(0.3, halfW - contentHalf);
       const WIDEST = 0.95;                     // half-width of the widest built scene
       sideScale = Math.max(0.42, Math.min(1, (margin - 0.12) / WIDEST));
-      sideX = halfW - WIDEST * sideScale - 0.1;
+      sideX = halfW - WIDEST * sideScale - 0.18;
     };
 
     const resize = () => {
       renderer.setSize(innerWidth, innerHeight, false);
       camera.aspect = innerWidth / innerHeight;
       camera.updateProjectionMatrix();
+      measureContent();
       layout();
     };
 
-    scene.add(new T.HemisphereLight(0xF1EEE7, 0x100E0C, 0.95));
-    const key = new T.DirectionalLight(0xFFF2E4, 2.1);
+    scene.environment = buildEnvironment(T, renderer, M.accent);
+    scene.fog = new T.Fog(0x0E0D0C, 9, 26);
+
+    scene.add(new T.HemisphereLight(0xF1EEE7, 0x100E0C, 0.55));
+    const key = new T.DirectionalLight(0xFFF2E4, 1.5);
     key.position.set(3.4, 6.2, 4.2);
     key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.mapSize.set(2048, 2048);
     key.shadow.camera.near = 1;
     key.shadow.camera.far = 20;
     key.shadow.camera.left = -5;
     key.shadow.camera.right = 5;
     key.shadow.camera.top = 5;
     key.shadow.camera.bottom = -1;
-    key.shadow.bias = -0.0016;
+    key.shadow.bias = -0.0009;
+    key.shadow.normalBias = 0.02;
     scene.add(key);
 
-    const rim = new T.DirectionalLight(M.accent, 1.1);
+    const rim = new T.DirectionalLight(M.accent, 0.8);
     rim.position.set(-4, 2.4, -3);
     scene.add(rim);
 
@@ -638,10 +800,25 @@
     glow.position.set(0, 1.43, 0.4);
     scene.add(glow);
 
-    const floor = new T.Mesh(new T.PlaneGeometry(50, 50), new T.ShadowMaterial({ opacity: 0.28 }));
+    const floor = new T.Mesh(new T.PlaneGeometry(50, 50), new T.ShadowMaterial({ opacity: 0.3 }));
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
+
+    /* A shadow map alone leaves the feet looking like they hover: the
+       darkest part of a real contact shadow is right where the object
+       meets the ground, and no 2048px map is that sharp. This blob is
+       painted under the feet to close that gap. */
+    const contact = new T.Mesh(
+      new T.PlaneGeometry(2.6, 2.6),
+      new T.MeshBasicMaterial({
+        map: blobTexture(T, 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.22)'),
+        transparent: true, depthWrite: false, color: 0x000000
+      })
+    );
+    contact.rotation.x = -Math.PI / 2;
+    contact.position.y = 0.012;
+    scene.add(contact);
 
     PARTS.length = 0;
     const { root, rig } = buildRobot(T);
@@ -717,13 +894,16 @@
     /* --------------------------------------------- reading the page */
     const SECTIONS = ['#about', '#skills', '#experience', '#projects', '#education', '#contact'];
     // how the camera feels about each station, in order
+    // The camera's opinion of each station. Kept modest on the x axis:
+    // swinging sideways moves everything across the frame, and the two
+    // things that must stay in the margins are the first to fall out.
     const SHOTS = [
-      { x: 0.1, y: 1.75, z: 6.2, lx: 0.4, ly: 1.4 },
-      { x: -0.7, y: 2.1, z: 5.8, lx: 0.2, ly: 1.5 },
-      { x: 0.9, y: 1.5, z: 5.4, lx: 0.0, ly: 1.25 },
-      { x: -0.4, y: 2.4, z: 5.6, lx: 0.1, ly: 1.5 },
-      { x: 0.6, y: 1.9, z: 5.2, lx: -0.1, ly: 1.4 },
-      { x: 0.0, y: 1.7, z: 6.0, lx: 0.3, ly: 1.35 }
+      { x: 0.05, y: 1.75, z: 6.4, lx: 0.15, ly: 1.4 },
+      { x: -0.25, y: 2.05, z: 6.2, lx: 0.1, ly: 1.5 },
+      { x: 0.3, y: 1.5, z: 6.0, lx: 0.0, ly: 1.25 },
+      { x: -0.15, y: 2.3, z: 6.2, lx: 0.05, ly: 1.5 },
+      { x: 0.25, y: 1.9, z: 5.9, lx: -0.05, ly: 1.4 },
+      { x: 0.0, y: 1.7, z: 6.3, lx: 0.15, ly: 1.35 }
     ];
 
     let lastY = scrollY;
@@ -915,7 +1095,23 @@
       rig.mouth.forEach((b, i) => {
         b.scale.y = 0.25 + (speaking ? Math.abs(Math.sin(now / 90 + i)) * lit : 0.05);
       });
-      M.hot.emissiveIntensity = 1.2 + Math.sin(t * 2) * 0.3 + (speaking ? 0.5 : 0);
+      // the antenna lags behind the head, then springs back
+      if (rig.antenna) {
+        rig.antenna.rotation.z = lerp(rig.antenna.rotation.z, -rig.head.rotation.y * 0.55 - swing * 0.25, 0.08);
+        rig.antenna.rotation.x = lerp(rig.antenna.rotation.x, Math.sin(t * 1.7) * 0.05 - speed * 0.2, 0.08);
+      }
+
+      // the haloes breathe with the emitters they sit on
+      const hotPulse = 1 + Math.sin(t * 2) * 0.22 + (speaking ? 0.35 : 0);
+      if (rig.coreGlow) rig.coreGlow.scale.setScalar(0.62 * hotPulse);
+      if (rig.eyeGlow) rig.eyeGlow.forEach((gl) => gl.scale.setScalar(0.3 * (0.9 + hotPulse * 0.15)));
+
+      // the contact shadow tracks the feet and tightens when they land
+      contact.position.x = root.position.x;
+      contact.scale.setScalar(root.scale.x * (1 - Math.abs(Math.sin(gait)) * 0.06 * speed));
+      contact.material.opacity = 0.85 - Math.abs(Math.sin(gait)) * 0.18 * speed;
+
+      M.hot.emissiveIntensity = 2.0 + Math.sin(t * 2) * 0.5 + (speaking ? 0.9 : 0);
       glow.intensity = 1.2 + Math.sin(t * 2) * 0.4;
       glow.position.set(root.position.x, 1.43, 0.4);
 
@@ -935,6 +1131,7 @@
       cam.ly = lerp(cam.ly, shot.ly, k2);
       camera.position.set(cam.x + mouse.x * 0.3, cam.y - mouse.y * 0.16, cam.z);
       camera.lookAt(cam.lx, cam.ly, 0);
+      layout();                 // the frame is only known once the camera is placed
 
       /* ---- the blocks, and the cursor shoving them ---- */
       mouseWorld.set(mouse.x, -mouse.y, 0.5).unproject(camera);
@@ -971,10 +1168,13 @@
 
     new MutationObserver(() => {
       const dark = document.documentElement.dataset.theme !== 'light';
-      M.shell.color.setHex(dark ? 0x4E463C : 0x8F8A81);
-      M.dark.color.setHex(dark ? 0x1A1815 : 0x2C2823);
-      M.joint.color.setHex(dark ? 0x59524A : 0x6E675E);
-      floor.material.opacity = dark ? 0.34 : 0.22;
+      M.shell.color.setHex(dark ? 0x6A6156 : 0xA9A296);
+      M.dark.color.setHex(dark ? 0x211E1A : 0x322D27);
+      M.joint.color.setHex(dark ? 0x8C8378 : 0x7A7268);
+      floor.material.opacity = dark ? 0.34 : 0.2;
+      contact.material.color.setHex(dark ? 0x000000 : 0x2A2620);
+      scene.fog.color.setHex(dark ? 0x0E0D0C : 0xF1EEE7);
+      renderer.toneMappingExposure = dark ? 1.15 : 1.0;
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   }
 

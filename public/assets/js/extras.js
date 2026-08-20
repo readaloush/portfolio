@@ -368,12 +368,29 @@
     window.NEURO.start();
   }
 
+  /** Can this machine carry a lit, shadowed, jointed 3D figure? */
+  function heavyEnough() {
+    if (reduced) return false;
+    if (matchMedia('(max-width: 900px)').matches) return false;
+    if (matchMedia('(pointer: coarse)').matches) return false;
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) return false;
+    if (navigator.deviceMemory && navigator.deviceMemory < 4) return false;
+    try {
+      const c = document.createElement('canvas');
+      return !!(c.getContext('webgl2') || c.getContext('webgl'));
+    } catch { return false; }
+  }
+
   function loadNeural() {
     if (window.NEURO) { startNeuro(); return; }
     if (document.getElementById('neuroScript')) return;
     const sc = document.createElement('script');
     sc.id = 'neuroScript';
-    sc.src = '/assets/js/neural.js';
+    // The 3D figure is worth it on a desktop with a real GPU and
+    // actively harmful on a phone, where it would cost seconds of
+    // load and a visible bite out of the battery. Both files expose
+    // the same window.NEURO, so nothing below here knows which ran.
+    sc.src = heavyEnough() ? '/assets/js/robot3d.js' : '/assets/js/neural.js';
     sc.defer = true;
     sc.addEventListener('load', startNeuro);
     document.head.appendChild(sc);

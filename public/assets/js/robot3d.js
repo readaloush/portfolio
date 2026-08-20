@@ -136,10 +136,10 @@
       room.add(m);
     };
 
-    panel(12, 8, 0xFFF3E4, 3.4, [5, 7, 5], [-Math.PI / 3, 0.6, 0]);      // key
+    panel(14, 9, 0xFFFFFF, 3.0, [5, 7, 5], [-Math.PI / 3, 0.6, 0]);      // key
     panel(10, 10, 0x9FB6D8, 1.1, [-9, 3, -2], [0, Math.PI / 2, 0]);      // cool fill
     panel(9, 5, accent, 1.6, [-4, 2, -8], [0, 0, 0]);                    // accent kick
-    panel(20, 20, 0x1A1A1E, 1, [0, -3, 0], [-Math.PI / 2, 0, 0]);        // floor bounce
+    panel(20, 20, 0x2A2C34, 1, [0, -3, 0], [-Math.PI / 2, 0, 0]);        // floor bounce
 
     const tex = pmrem.fromScene(room, 0.06).texture;
     pmrem.dispose();
@@ -155,17 +155,29 @@
     const brushed = brushedTexture(T);
 
     M = {
+      // Painted composite, not bare metal: low metalness with a tight
+      // roughness is what makes a moulded white panel read as moulded
+      // white panel instead of as aluminium.
+      white: new T.MeshStandardMaterial({
+        color: 0xF0F1F4, metalness: 0.12, roughness: 0.24,
+        roughnessMap: brushed, bumpMap: brushed, bumpScale: 0.0025, envMapIntensity: 0.85
+      }),
+      navy: new T.MeshStandardMaterial({
+        color: 0x2E4270, metalness: 0.25, roughness: 0.3, envMapIntensity: 1
+      }),
+      visor: new T.MeshStandardMaterial({
+        color: 0x0B0D12, metalness: 0.6, roughness: 0.06, envMapIntensity: 2.2
+      }),
       shell: new T.MeshStandardMaterial({
         color: dark ? 0x6A6156 : 0xA9A296, metalness: 0.92, roughness: 0.34,
         roughnessMap: brushed, bumpMap: brushed, bumpScale: 0.006, envMapIntensity: 1.25
       }),
       dark: new T.MeshStandardMaterial({
-        color: dark ? 0x211E1A : 0x322D27, metalness: 0.7, roughness: 0.52,
+        color: dark ? 0x1B1D22 : 0x24262C, metalness: 0.5, roughness: 0.42,
         roughnessMap: brushed, envMapIntensity: 0.8
       }),
       joint: new T.MeshStandardMaterial({
-        color: dark ? 0x8C8378 : 0x7A7268, metalness: 1, roughness: 0.18,
-        envMapIntensity: 1.5
+        color: 0x8E949E, metalness: 0.95, roughness: 0.22, envMapIntensity: 1.5
       }),
       hot: new T.MeshStandardMaterial({
         color: accent, emissive: accent, emissiveIntensity: 2.4,
@@ -186,47 +198,100 @@
      cycle four lines of maths instead of forty. */
 
   const PARTS = [];
+  let COLLECT = true;      // is the body being built the one that assembles?
 
   function box(T, w, h, d, mat, x, y, z, keep) {
     const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat);
     m.position.set(x, y, z);
     m.castShadow = true;
-    if (keep !== false) PARTS.push(m);
+    if (keep !== false && COLLECT) PARTS.push(m);
     return m;
   }
   function tube(T, r, h, mat, x, y, z, keep) {
     const m = new T.Mesh(new T.CylinderGeometry(r, r * 0.92, h, 16), mat);
     m.position.set(x, y, z);
     m.castShadow = true;
-    if (keep !== false) PARTS.push(m);
+    if (keep !== false && COLLECT) PARTS.push(m);
     return m;
   }
   function ball(T, r, mat, x, y, z, keep) {
     const m = new T.Mesh(new T.SphereGeometry(r, 20, 14), mat);
     m.position.set(x, y, z);
     m.castShadow = true;
-    if (keep !== false) PARTS.push(m);
+    if (keep !== false && COLLECT) PARTS.push(m);
     return m;
   }
 
+  /** Cylinder with a dome on each end: a limb segment, not a stick. */
+  function capsule(T, r, len, mat, x, y, z) {
+    const g = new T.Group();
+    const cyl = new T.Mesh(new T.CylinderGeometry(r, r, len, 20), mat);
+    cyl.castShadow = true;
+    g.add(cyl);
+    [len / 2, -len / 2].forEach((yy) => {
+      const cap = new T.Mesh(new T.SphereGeometry(r, 20, 12), mat);
+      cap.position.y = yy;
+      cap.castShadow = true;
+      g.add(cap);
+    });
+    g.position.set(x, y, z);
+    if (COLLECT) PARTS.push(g);
+    return g;
+  }
+
+  /** A squashed sphere — the shape most of this body is actually made of. */
+  function shellForm(T, r, mat, sx, sy, sz, x, y, z) {
+    const m = new T.Mesh(new T.SphereGeometry(r, 26, 18), mat);
+    m.scale.set(sx, sy, sz);
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    if (COLLECT) PARTS.push(m);
+    return m;
+  }
+
+  /** A band wrapped round a form: visors, collars, crests. */
+  function band(T, radius, thick, mat, arc, x, y, z) {
+    const m = new T.Mesh(new T.TorusGeometry(radius, thick, 14, 28, arc), mat);
+    m.castShadow = true;
+    m.position.set(x, y, z);
+    if (COLLECT) PARTS.push(m);
+    return m;
+  }
+
+  /* ------------------------------------------------------------------
+     The figure.
+
+     Everything hangs off groups placed AT the joints, so a rotation
+     carries the rest of the limb with it. Proportions are human — head
+     about a seventh of the height, elbow at the waist — because that is
+     what makes a machine read as a person rather than as furniture.
+     ------------------------------------------------------------------ */
   function buildRobot(T) {
     const root = new T.Group();
     const rig = {};
 
+    /* ---------------------------------------------------------- legs */
     const leg = (side) => {
       const hip = new T.Group();
-      hip.position.set(0.17 * side, 1.0, 0);
-      hip.add(ball(T, 0.11, M.joint, 0, 0, 0));
-      hip.add(tube(T, 0.105, 0.42, M.shell, 0, -0.23, 0));
+      hip.position.set(0.135 * side, 0.95, 0);
+      hip.add(shellForm(T, 0.088, M.navy, 1, 1, 1, 0, 0, 0));
+      hip.add(capsule(T, 0.082, 0.3, M.white, 0, -0.24, 0));
+      hip.add(shellForm(T, 0.085, M.navy, 1.05, 0.6, 1.05, 0, -0.09, 0));   // thigh cap
 
       const knee = new T.Group();
-      knee.position.set(0, -0.46, 0);
-      knee.add(ball(T, 0.095, M.joint, 0, 0, 0));
-      knee.add(tube(T, 0.09, 0.4, M.shell, 0, -0.22, 0));
+      knee.position.set(0, -0.45, 0);
+      knee.add(shellForm(T, 0.072, M.joint, 1, 1, 1, 0, 0, 0));
+      knee.add(shellForm(T, 0.08, M.navy, 1, 0.9, 0.55, 0, 0.01, 0.03));    // knee pad
+      knee.add(capsule(T, 0.06, 0.28, M.white, 0, -0.22, 0));
+      // the hazard flashes from the reference, in the site's red
+      knee.add(shellForm(T, 0.02, M.hot, 0.6, 2.4, 0.5, 0.045 * side, -0.16, 0.052));
 
       const ankle = new T.Group();
-      ankle.position.set(0, -0.44, 0);
-      ankle.add(box(T, 0.19, 0.1, 0.34, M.dark, 0, -0.05, 0.06));
+      ankle.position.set(0, -0.4, 0);
+      ankle.add(shellForm(T, 0.05, M.joint, 1, 1, 1, 0, 0, 0));
+      // the shoe: a wedge with a rounded toe
+      ankle.add(shellForm(T, 0.09, M.navy, 0.85, 0.42, 1.7, 0, -0.045, 0.05));
+      ankle.add(shellForm(T, 0.07, M.navy, 0.85, 0.5, 0.9, 0, -0.04, 0.16));
       knee.add(ankle);
       hip.add(knee);
       root.add(hip);
@@ -235,85 +300,125 @@
     rig.legL = leg(1);
     rig.legR = leg(-1);
 
-    root.add(box(T, 0.46, 0.18, 0.3, M.dark, 0, 1.06, 0));
+    /* ------------------------------------------------- pelvis, torso */
+    root.add(shellForm(T, 0.17, M.white, 1.15, 0.62, 0.86, 0, 1.0, 0));
+    root.add(band(T, 0.15, 0.022, M.navy, Math.PI * 2, 0, 1.02, 0));
+    root.add(capsule(T, 0.075, 0.06, M.joint, 0, 1.12, 0));
 
     const torso = new T.Group();
     torso.position.set(0, 1.16, 0);
-    torso.add(box(T, 0.62, 0.5, 0.34, M.shell, 0, 0.25, 0));
-    torso.add(box(T, 0.5, 0.1, 0.36, M.dark, 0, 0.03, 0));
-    // Panel lines. A slab of metal reads as a slab; the same slab with
-    // seams and a chamfer reads as a part someone machined.
-    torso.add(box(T, 0.64, 0.012, 0.35, M.dark, 0, 0.44, 0));
-    torso.add(box(T, 0.012, 0.5, 0.35, M.dark, -0.2, 0.25, 0));
-    torso.add(box(T, 0.012, 0.5, 0.35, M.dark, 0.2, 0.25, 0));
-    torso.add(box(T, 0.26, 0.09, 0.02, M.dark, 0, 0.46, 0.175));
-    // shoulder caps, so the arms look socketed rather than stuck on
-    torso.add(box(T, 0.16, 0.13, 0.3, M.dark, -0.34, 0.46, 0));
-    torso.add(box(T, 0.16, 0.13, 0.3, M.dark, 0.34, 0.46, 0));
-    const ring = new T.Mesh(new T.TorusGeometry(0.1, 0.026, 12, 26), M.joint);
-    ring.position.set(0, 0.27, 0.18);
-    ring.castShadow = true;
-    PARTS.push(ring);
-    torso.add(ring);
-    const coreBall = ball(T, 0.06, M.hot, 0, 0.27, 0.185);
-    torso.add(coreBall);
-    const coreGlow = glow(T, M.accent, 0.62);
-    coreGlow.position.set(0, 0.27, 0.24);
+    // chest: wide at the shoulders, narrow at the waist
+    torso.add(shellForm(T, 0.235, M.white, 1.12, 1.22, 0.8, 0, 0.28, 0));
+    torso.add(shellForm(T, 0.17, M.white, 1, 0.7, 0.8, 0, 0.06, 0));
+    // the navy yoke over the shoulders
+    torso.add(shellForm(T, 0.2, M.navy, 1.3, 0.42, 0.85, 0, 0.44, -0.02));
+    // side vents
+    [-1, 1].forEach((sx) => {
+      for (let i = 0; i < 3; i++) {
+        torso.add(shellForm(T, 0.02, M.dark, 0.35, 0.9, 2.2, 0.2 * sx, 0.24 - i * 0.05, 0.06));
+      }
+    });
+    // the emblem: a rounded triangle in red, like the reference
+    const emblem = band(T, 0.055, 0.011, M.hot, Math.PI * 2, 0, 0.34, 0.185);
+    emblem.scale.set(1, 0.85, 1);
+    torso.add(emblem);
+    rig.emblem = emblem;
+    const coreGlow = glow(T, M.accent, 0.4);
+    coreGlow.position.set(0, 0.34, 0.24);
     torso.add(coreGlow);
     rig.coreGlow = coreGlow;
+
     root.add(torso);
     rig.torso = torso;
 
+    /* ------------------------------------------------------ the arms */
     const arm = (side) => {
       const shoulder = new T.Group();
-      shoulder.position.set(0.38 * side, 0.46, 0);
-      shoulder.add(ball(T, 0.115, M.joint, 0, 0, 0));
-      shoulder.add(tube(T, 0.085, 0.34, M.shell, 0, -0.2, 0));
+      shoulder.position.set(0.245 * side, 0.44, 0);
+      // pauldron
+      shoulder.add(shellForm(T, 0.105, M.navy, 1, 1, 1, 0, 0, 0));
+      shoulder.add(shellForm(T, 0.075, M.white, 1, 1.1, 1, 0, -0.02, 0));
+      shoulder.add(capsule(T, 0.055, 0.2, M.white, 0, -0.17, 0));
+
       const elbow = new T.Group();
-      elbow.position.set(0, -0.38, 0);
-      elbow.add(ball(T, 0.08, M.joint, 0, 0, 0));
-      elbow.add(tube(T, 0.072, 0.3, M.shell, 0, -0.18, 0));
-      elbow.add(box(T, 0.13, 0.15, 0.1, M.dark, 0, -0.38, 0));
+      elbow.position.set(0, -0.3, 0);
+      elbow.add(shellForm(T, 0.058, M.joint, 1, 1, 1, 0, 0, 0));
+      elbow.add(shellForm(T, 0.062, M.dark, 0.55, 1, 1, 0.045 * side, 0, 0));
+      elbow.add(capsule(T, 0.048, 0.18, M.white, 0, -0.15, 0));
+
+      const wrist = new T.Group();
+      wrist.position.set(0, -0.27, 0);
+      wrist.add(shellForm(T, 0.04, M.joint, 1, 1, 1, 0, 0, 0));
+      // palm and fingers, so a point actually looks like a point
+      wrist.add(shellForm(T, 0.045, M.dark, 0.85, 1.05, 0.55, 0, -0.05, 0));
+      const fingers = new T.Group();
+      fingers.position.set(0, -0.095, 0);
+      for (let i = -1; i <= 1; i++) {
+        fingers.add(capsule(T, 0.013, 0.045, M.dark, i * 0.025, -0.025, 0.008));
+      }
+      wrist.add(fingers);
+      wrist.add(capsule(T, 0.014, 0.04, M.dark, 0.042 * side, -0.055, 0.02));  // thumb
+      elbow.add(wrist);
       shoulder.add(elbow);
       torso.add(shoulder);
-      return { shoulder, elbow };
+      return { shoulder, elbow, wrist, fingers };
     };
     rig.armL = arm(1);
     rig.armR = arm(-1);
 
-    torso.add(tube(T, 0.07, 0.12, M.joint, 0, 0.56, 0));
+    /* ------------------------------------------------ neck and head */
+    torso.add(capsule(T, 0.045, 0.06, M.joint, 0, 0.55, 0));
 
     const head = new T.Group();
-    head.position.set(0, 0.66, 0);
-    head.add(box(T, 0.44, 0.36, 0.38, M.shell, 0, 0.18, 0));
-    head.add(box(T, 0.34, 0.14, 0.02, M.dark, 0, 0.2, 0.195));
-    head.add(ball(T, 0.042, M.hot, -0.085, 0.2, 0.205));
-    head.add(ball(T, 0.042, M.hot, 0.085, 0.2, 0.205));
+    head.position.set(0, 0.6, 0);
+    // skull
+    head.add(shellForm(T, 0.125, M.white, 1, 1.14, 1.08, 0, 0.1, 0));
+    // jaw, tapered forward
+    head.add(shellForm(T, 0.088, M.white, 1, 0.8, 1.15, 0, 0.045, 0.012));
+    // navy crest over the crown
+    const crest = band(T, 0.108, 0.026, M.navy, Math.PI * 1.15, 0, 0.135, 0);
+    crest.rotation.set(0, Math.PI / 2, Math.PI * 0.42);
+    head.add(crest);
+    // the visor: one dark wraparound band, the single strongest cue
+    // that this thing has a face
+    const visor = band(T, 0.104, 0.032, M.visor, Math.PI * 1.05, 0, 0.115, 0.012);
+    visor.rotation.set(0.06, 0, Math.PI * 0.98);
+    visor.scale.set(1, 1, 0.72);
+    head.add(visor);
+    rig.visor = visor;
+    // the eyes live inside the visor and shine through it
     rig.eyeGlow = [];
-    [-0.085, 0.085].forEach((x) => {
-      const gl = glow(T, M.accent, 0.3);
-      gl.position.set(x, 0.2, 0.24);
+    [-0.052, 0.052].forEach((x) => {
+      head.add(shellForm(T, 0.02, M.hot, 1, 0.7, 0.6, x, 0.115, 0.096));
+      const gl = glow(T, M.accent, 0.17);
+      gl.position.set(x, 0.115, 0.115);
       head.add(gl);
       rig.eyeGlow.push(gl);
     });
-    // a brow, and a chamfer along the jaw
-    head.add(box(T, 0.46, 0.03, 0.02, M.dark, 0, 0.3, 0.19));
-    head.add(box(T, 0.44, 0.02, 0.4, M.dark, 0, 0.355, 0));
-    rig.mouth = [];
-    for (let i = -2; i <= 2; i++) {
-      const b = box(T, 0.026, 0.05, 0.02, M.dark, i * 0.038, 0.075, 0.196);
-      head.add(b);
-      rig.mouth.push(b);
-    }
+    // ear discs
+    [-1, 1].forEach((sx) => {
+      head.add(shellForm(T, 0.042, M.navy, 0.45, 1, 1, 0.115 * sx, 0.1, -0.005));
+      head.add(shellForm(T, 0.022, M.joint, 0.6, 1, 1, 0.126 * sx, 0.1, -0.005));
+    });
+    // a small comm fin instead of a wire antenna — closer to the
+    // reference, and it reads at small sizes
     const antenna = new T.Group();
-    antenna.position.set(0, 0.36, 0);
-    antenna.add(tube(T, 0.014, 0.16, M.joint, 0, 0.08, 0));
-    antenna.add(ball(T, 0.035, M.hot, 0, 0.18, 0));
-    const tipGlow = glow(T, M.accent, 0.26);
-    tipGlow.position.set(0, 0.18, 0);
+    antenna.position.set(0, 0.19, -0.03);
+    antenna.add(shellForm(T, 0.03, M.navy, 0.35, 1.1, 1.6, 0, 0.03, 0));
+    const tipGlow = glow(T, M.accent, 0.14);
+    tipGlow.position.set(0, 0.07, 0);
     antenna.add(tipGlow);
     head.add(antenna);
     rig.antenna = antenna;
+
+    // the mouth vent, which lights up while it talks
+    rig.mouth = [];
+    for (let i = -2; i <= 2; i++) {
+      const b = shellForm(T, 0.012, M.dark, 0.75, 1, 0.5, i * 0.022, 0.042, 0.088);
+      head.add(b);
+      rig.mouth.push(b);
+    }
+
     torso.add(head);
     rig.head = head;
 
@@ -696,6 +801,7 @@
       wanted = false;
       cancelAnimationFrame(this.raf);
       document.getElementById('neuroStage')?.remove();
+      document.querySelectorAll('.neuro-flashsheet').forEach((n) => n.remove());
       document.body.classList.remove('neuro-intro', 'neuro-bg');
       this.started = false;
     }
@@ -891,6 +997,71 @@
       if (['Escape', 'Enter', ' ', 'ArrowDown', 'PageDown'].includes(e.key)) finish();
     });
 
+    /* ================================================== THE DIVE
+
+       Clicking a section in the menu does not jump the page. The camera
+       flies into the part of the robot that section is about — the hand
+       for what he can do, the shoulder for where he has worked, the
+       visor for what he has built — the screen blows out at the moment
+       of contact, and the page is already at the new section when it
+       comes back. Every section enters through a different part of the
+       body, so the move never feels like the same trick twice.
+
+       Styles are set here rather than in the stylesheet: this sheet is
+       the one piece that must exist the instant the effect fires, and
+       inlining it means the effect can never arrive before its CSS. */
+    const flash = document.createElement('div');
+    Object.assign(flash.style, {
+      position: 'fixed', inset: '0', zIndex: '9600', opacity: '0',
+      pointerEvents: 'none', transition: 'none',
+      background: 'radial-gradient(circle at 50% 45%, ' +
+        `#${M.accent.getHexString()} 0%, ` +
+        `#${M.accent.clone().multiplyScalar(0.35).getHexString()} 45%, ` +
+        'rgba(0,0,0,0) 100%)'
+    });
+    flash.className = 'neuro-flashsheet';
+    document.body.appendChild(flash);
+
+    let DIVE = {};
+    const setDiveTargets = () => {
+      DIVE = {
+        '#about': rig.emblem,          // the badge on its chest: who it is
+        '#skills': rig.armL.wrist,     // the hand: what it can do
+        '#experience': rig.armR.shoulder, // the joint that has done the work
+        '#projects': rig.visor,        // the eyes: what it has seen and built
+        '#education': rig.antenna,     // the comm fin: what it has taken in
+        '#contact': rig.armR.wrist     // the other hand, offered
+      };
+    };
+
+    setDiveTargets();          // defined just above; the rig already exists
+
+    let dive = null;
+    const DIVE_MS = 1850;
+    const diveFrom = new T.Vector3();
+    const diveTo = new T.Vector3();
+
+    function startDive(sel) {
+      const obj = DIVE[sel];
+      if (!obj || dive) return;
+      dive = { t0: performance.now(), obj, sel, jumped: false, fov: camera.fov };
+      diveFrom.copy(camera.position);
+      blip(220, 0.5, 0.05, 'sine');
+      blip(880, 0.18, 0.03, 'triangle');
+    }
+
+    // capture phase: beat the page's own smooth-scroll handler to it
+    document.addEventListener('click', (e) => {
+      if (phase !== 'bg' || dive) return;
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const sel = a.getAttribute('href');
+      if (!DIVE[sel]) return;
+      e.preventDefault();
+      e.stopPropagation();
+      startDive(sel);
+    }, true);
+
     /* --------------------------------------------- reading the page */
     const SECTIONS = ['#about', '#skills', '#experience', '#projects', '#education', '#contact'];
     // how the camera feels about each station, in order
@@ -912,6 +1083,30 @@
     let point = 0;
     let section = -1;
     let pointUntil = 0;
+
+    /* The presenter. Arriving at a section it points at what it built,
+       then turns a palm towards the writing, then nods — the three
+       things a person does when showing you something. Weights rather
+       than poses, so one can start before the last has finished. */
+    const G = { point: 0, present: 0, nod: 0 };
+    let script = [];
+    const runScript = (now) => {
+      const want = { point: 0, present: 0, nod: 0 };
+      script = script.filter((step) => now < step.end);
+      script.forEach((step) => {
+        const p = clamp01((now - step.start) / (step.end - step.start));
+        // ease in and back out again within the step
+        want[step.name] = Math.sin(p * Math.PI);
+      });
+      Object.keys(G).forEach((k) => { G[k] = lerp(G[k], want[k], 0.09); });
+    };
+    const cueSection = (now) => {
+      script = [
+        { name: 'point', start: now + 150, end: now + 2100 },
+        { name: 'present', start: now + 2000, end: now + 4200 },
+        { name: 'nod', start: now + 4100, end: now + 5200 }
+      ];
+    };
     const cam = { x: 0, y: 1.45, z: 4.9, lx: 0, ly: 1.15 };
 
     const activeSection = () => {
@@ -1030,7 +1225,7 @@
         const s = activeSection();
         if (s !== section) {
           section = s;
-          if (s !== -1) { pointUntil = now + 2100; blip(660, 0.09, 0.03, 'sine'); }
+          if (s !== -1) { pointUntil = now + 2100; cueSection(now); blip(660, 0.09, 0.03, 'sine'); }
         }
         point = lerp(point, now < pointUntil ? 1 : 0, 0.06);
       }
@@ -1073,23 +1268,47 @@
       rig.legL.ankle.rotation.x = -rig.legL.knee.rotation.x * 0.4;
       rig.legR.ankle.rotation.x = -rig.legR.knee.rotation.x * 0.4;
 
+      runScript(now);
+
       const wave = speaking && phase !== 'bg' ? Math.sin(now / 220) * 0.5 : 0;
       const greetRaise = phase === 'greet' || phase === 'build' ? 0.9 : 0;
-      rig.armR.shoulder.rotation.x = -swing * 0.7;
-      rig.armR.elbow.rotation.x = -0.25 - Math.abs(swing) * 0.3;
       const rest = swing * 0.7;
-      rig.armL.shoulder.rotation.x = lerp(rest, -2.1, Math.max(point, greetRaise));
-      rig.armL.shoulder.rotation.z = lerp(0, -0.5, Math.max(point, greetRaise * 0.6)) + wave;
-      rig.armL.elbow.rotation.x = lerp(-0.25 - Math.abs(swing) * 0.3, -0.35, point);
+
+      // right arm just swings, unless it is offering a handshake
+      rig.armR.shoulder.rotation.x = -swing * 0.7;
+      rig.armR.elbow.rotation.x = -0.3 - Math.abs(swing) * 0.3;
+
+      /* Left arm: three gestures added on top of the walk, each with
+         its own weight, so pointing can begin while presenting is
+         still fading out. */
+      const pointW = Math.max(G.point, greetRaise);
+      let sx = lerp(rest, -1.95, pointW);          // shoulder pitch
+      let sz = lerp(0, -0.42, pointW) + wave;      // shoulder roll
+      let ex = lerp(-0.3 - Math.abs(swing) * 0.3, -0.18, pointW);
+
+      // palm turned towards the writing: arm out sideways, elbow bent
+      sx = lerp(sx, -0.5, G.present);
+      sz = lerp(sz, -1.15, G.present);
+      ex = lerp(ex, -0.85, G.present);
+
+      rig.armL.shoulder.rotation.x = sx;
+      rig.armL.shoulder.rotation.z = sz;
+      rig.armL.elbow.rotation.x = ex;
+      rig.armL.wrist.rotation.z = lerp(0, 1.15, G.present);
+      rig.armL.wrist.rotation.x = lerp(0, -0.35, G.point);
+      // fingers straighten to point, curl to present
+      rig.armL.fingers.rotation.x = lerp(-0.25, 0.05, G.point) + G.present * 0.4;
 
       root.position.y = Math.abs(Math.sin(gait)) * 0.045 * speed;
       rig.torso.rotation.y = Math.sin(gait) * 0.09 * speed;
       rig.torso.scale.y = 1 + Math.sin(t * 0.7) * 0.006 * idle;
 
-      const wantHeadY = lerp(mouse.x * 0.5, -0.85, point);
-      const wantHeadX = lerp(mouse.y * 0.28, 0.06, point);
+      const look = Math.max(G.point, G.present);
+      const wantHeadY = lerp(mouse.x * 0.5, -0.9, look);
+      const wantHeadX = lerp(mouse.y * 0.28, 0.08, look) + Math.sin(now / 150) * 0.16 * G.nod;
       rig.head.rotation.y = lerp(rig.head.rotation.y, wantHeadY, 0.07);
-      rig.head.rotation.x = lerp(rig.head.rotation.x, wantHeadX, 0.07);
+      rig.head.rotation.x = lerp(rig.head.rotation.x, wantHeadX, 0.12);
+      rig.head.rotation.z = lerp(rig.head.rotation.z, G.present * 0.12, 0.06);
 
       const lit = speaking ? 0.5 + Math.random() * 0.5 : 0;
       rig.mouth.forEach((b, i) => {
@@ -1116,7 +1335,9 @@
       glow.position.set(root.position.x, 1.43, 0.4);
 
       root.position.x = lerp(root.position.x, lerp(0, sideX, bgP), 0.05);
-      root.scale.setScalar(lerp(root.scale.x, lerp(1, sideScale * 0.92, bgP), 0.05));
+      // the guide is deliberately smaller than the figure that
+      // introduced itself: a presenter beside the work, not a statue
+      root.scale.setScalar(lerp(root.scale.x, lerp(1, sideScale * 0.66, bgP), 0.05));
       bench.position.x = lerp(bench.position.x, -sideX, 0.05);
       bench.scale.setScalar(lerp(bench.scale.x, sideScale * 0.9, 0.05));
       root.rotation.y = lerp(root.rotation.y, lerp(0, -0.45, bgP) + point * -0.55 + mouse.x * 0.12 * (1 - bgP), 0.06);
@@ -1129,8 +1350,46 @@
       cam.z = lerp(cam.z, shot.z, k2);
       cam.lx = lerp(cam.lx, shot.lx, k2);
       cam.ly = lerp(cam.ly, shot.ly, k2);
-      camera.position.set(cam.x + mouse.x * 0.3, cam.y - mouse.y * 0.16, cam.z);
-      camera.lookAt(cam.lx, cam.ly, 0);
+
+      if (dive) {
+        const p = clamp01((now - dive.t0) / DIVE_MS);
+        dive.obj.getWorldPosition(diveTo);
+        if (p < 0.5) {
+          // in: towards the part, narrowing, blowing out
+          const k = easeInOut(p / 0.5);
+          camera.position.lerpVectors(diveFrom, diveTo, k * 0.98);
+          camera.fov = lerp(dive.fov, 14, k);
+          camera.updateProjectionMatrix();
+          camera.lookAt(diveTo);
+          flash.style.opacity = String(Math.pow(k, 2.2));
+        } else {
+          // the page changes underneath, hidden by the blow-out
+          if (!dive.jumped) {
+            dive.jumped = true;
+            const el = document.querySelector(dive.sel);
+            if (el) el.scrollIntoView({ block: 'start' });
+            lastY = scrollY;
+          }
+          const k = easeOut((p - 0.5) / 0.5);
+          camera.fov = lerp(14, 38, k);
+          camera.updateProjectionMatrix();
+          const px = lerp(diveTo.x, cam.x + mouse.x * 0.3, k);
+          const py = lerp(diveTo.y, cam.y - mouse.y * 0.16, k);
+          const pz = lerp(diveTo.z, cam.z, k);
+          camera.position.set(px, py, pz);
+          camera.lookAt(lerp(diveTo.x, cam.lx, k), lerp(diveTo.y, cam.ly, k), 0);
+          flash.style.opacity = String(1 - k);
+        }
+        if (p >= 1) {
+          dive = null;
+          flash.style.opacity = '0';
+          camera.fov = 38;
+          camera.updateProjectionMatrix();
+        }
+      } else {
+        camera.position.set(cam.x + mouse.x * 0.3, cam.y - mouse.y * 0.16, cam.z);
+        camera.lookAt(cam.lx, cam.ly, 0);
+      }
       layout();                 // the frame is only known once the camera is placed
 
       /* ---- the blocks, and the cursor shoving them ---- */
@@ -1168,10 +1427,9 @@
 
     new MutationObserver(() => {
       const dark = document.documentElement.dataset.theme !== 'light';
-      M.shell.color.setHex(dark ? 0x6A6156 : 0xA9A296);
-      M.dark.color.setHex(dark ? 0x211E1A : 0x322D27);
-      M.joint.color.setHex(dark ? 0x8C8378 : 0x7A7268);
-      floor.material.opacity = dark ? 0.34 : 0.2;
+      // the figure keeps its own livery in both themes; only the room
+      // around it changes
+      floor.material.opacity = dark ? 0.34 : 0.22;
       contact.material.color.setHex(dark ? 0x000000 : 0x2A2620);
       scene.fog.color.setHex(dark ? 0x0E0D0C : 0xF1EEE7);
       renderer.toneMappingExposure = dark ? 1.15 : 1.0;

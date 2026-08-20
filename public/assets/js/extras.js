@@ -205,7 +205,8 @@
    ================================================================== */
 (() => {
   const KEY = 'rp_mode';
-  const MODES = ['modern', 'paper'];
+  const MODES = ['modern', 'paper', 'neural'];
+  const LABEL = { modern: 'Modern', paper: 'Notebook', neural: 'Neural' };
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const read = () => {
@@ -236,7 +237,7 @@
   tabs.setAttribute('aria-label', 'Site mode');
   tabs.innerHTML =
     '<span class="mode-thumb" aria-hidden="true"></span>' +
-    MODES.map((m) => `<button type="button" class="mode-tab" role="tab" data-mode="${m}" data-cursor="mode">${m === 'modern' ? 'Modern' : 'Notebook'}</button>`).join('');
+    MODES.map((m) => `<button type="button" class="mode-tab" role="tab" data-mode="${m}" data-cursor="mode">${LABEL[m]}</button>`).join('');
 
   const thumb = tabs.querySelector('.mode-thumb');
   const buttons = Array.from(tabs.querySelectorAll('.mode-tab'));
@@ -351,6 +352,37 @@
     } catch { /* sound is decoration; never let it break the page */ }
   }
 
+  /* --------------------------------------------------- neural mode
+     The intro is a whole scene of its own, so it lives in its own
+     file and is fetched only when someone actually asks for it. It
+     goes in the same folder as this one, which is also why it is a
+     separate file: uploading it costs no extra step.
+
+     It cannot begin until the signature has finished, or the two
+     would be on screen at once. */
+  let loaderDone = false;
+  let neuroWanted = false;
+
+  function startNeuro() {
+    if (!loaderDone || !neuroWanted || !window.NEURO) return;
+    window.NEURO.start();
+  }
+
+  function loadNeural() {
+    if (window.NEURO) { startNeuro(); return; }
+    if (document.getElementById('neuroScript')) return;
+    const sc = document.createElement('script');
+    sc.id = 'neuroScript';
+    sc.src = '/assets/js/neural.js';
+    sc.defer = true;
+    sc.addEventListener('load', startNeuro);
+    document.head.appendChild(sc);
+  }
+
+  document.addEventListener('loader:done', () => { loaderDone = true; startNeuro(); });
+  // if the signature never announces itself, do not hold the scene hostage
+  setTimeout(() => { loaderDone = true; startNeuro(); }, 9000);
+
   /* ------------------------------------------------------- applying */
   const TILT_PAPER = { '.project': '1.2', '.tl-item': '1.6', '.card': '2' };
 
@@ -382,6 +414,9 @@
     placeThumb();
     calmTilt(mode === 'paper');
     try { localStorage.setItem(KEY, mode); } catch { /* ignore */ }
+    neuroWanted = mode === 'neural';
+    if (neuroWanted) loadNeural();
+    else if (window.NEURO) window.NEURO.stop();
     if (announce && mode === 'paper') flip(false);
     document.dispatchEvent(new CustomEvent('mode:changed', { detail: { mode } }));
   }

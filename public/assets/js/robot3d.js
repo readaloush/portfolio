@@ -159,7 +159,7 @@
       // roughness is what makes a moulded white panel read as moulded
       // white panel instead of as aluminium.
       white: new T.MeshStandardMaterial({
-        color: 0xF0F1F4, metalness: 0.12, roughness: 0.24,
+        color: 0xDFE2E8, metalness: 0.14, roughness: 0.26,
         roughnessMap: brushed, bumpMap: brushed, bumpScale: 0.0025, envMapIntensity: 0.85
       }),
       navy: new T.MeshStandardMaterial({
@@ -275,14 +275,14 @@
       const hip = new T.Group();
       hip.position.set(0.135 * side, 0.95, 0);
       hip.add(shellForm(T, 0.088, M.navy, 1, 1, 1, 0, 0, 0));
-      hip.add(capsule(T, 0.082, 0.3, M.white, 0, -0.24, 0));
+      hip.add(capsule(T, 0.072, 0.3, M.white, 0, -0.24, 0));
       hip.add(shellForm(T, 0.085, M.navy, 1.05, 0.6, 1.05, 0, -0.09, 0));   // thigh cap
 
       const knee = new T.Group();
       knee.position.set(0, -0.45, 0);
       knee.add(shellForm(T, 0.072, M.joint, 1, 1, 1, 0, 0, 0));
       knee.add(shellForm(T, 0.08, M.navy, 1, 0.9, 0.55, 0, 0.01, 0.03));    // knee pad
-      knee.add(capsule(T, 0.06, 0.28, M.white, 0, -0.22, 0));
+      knee.add(capsule(T, 0.054, 0.28, M.white, 0, -0.22, 0));
       // the hazard flashes from the reference, in the site's red
       knee.add(shellForm(T, 0.02, M.hot, 0.6, 2.4, 0.5, 0.045 * side, -0.16, 0.052));
 
@@ -301,17 +301,22 @@
     rig.legR = leg(-1);
 
     /* ------------------------------------------------- pelvis, torso */
-    root.add(shellForm(T, 0.17, M.white, 1.15, 0.62, 0.86, 0, 1.0, 0));
+    root.add(shellForm(T, 0.15, M.white, 1.18, 0.64, 0.84, 0, 1.0, 0));
     root.add(band(T, 0.15, 0.022, M.navy, Math.PI * 2, 0, 1.02, 0));
     root.add(capsule(T, 0.075, 0.06, M.joint, 0, 1.12, 0));
 
     const torso = new T.Group();
     torso.position.set(0, 1.16, 0);
     // chest: wide at the shoulders, narrow at the waist
-    torso.add(shellForm(T, 0.235, M.white, 1.12, 1.22, 0.8, 0, 0.28, 0));
-    torso.add(shellForm(T, 0.17, M.white, 1, 0.7, 0.8, 0, 0.06, 0));
-    // the navy yoke over the shoulders
-    torso.add(shellForm(T, 0.2, M.navy, 1.3, 0.42, 0.85, 0, 0.44, -0.02));
+    torso.add(shellForm(T, 0.195, M.white, 1.06, 1.24, 0.68, 0, 0.29, 0));
+    torso.add(shellForm(T, 0.13, M.white, 1, 0.8, 0.78, 0, 0.08, 0));      // waist, narrow
+    // the navy yoke over the shoulders, flatter and set back
+    torso.add(shellForm(T, 0.175, M.navy, 1.26, 0.34, 0.8, 0, 0.45, -0.03));
+    // the chest seam: two navy blades running down from the collar,
+    // which is what gives the reference its shoulders-to-waist taper
+    [-1, 1].forEach((sx) => {
+      torso.add(shellForm(T, 0.05, M.navy, 0.34, 1.5, 0.5, 0.1 * sx, 0.34, 0.135));
+    });
     // side vents
     [-1, 1].forEach((sx) => {
       for (let i = 0; i < 3; i++) {
@@ -334,17 +339,17 @@
     /* ------------------------------------------------------ the arms */
     const arm = (side) => {
       const shoulder = new T.Group();
-      shoulder.position.set(0.245 * side, 0.44, 0);
+      shoulder.position.set(0.215 * side, 0.44, 0);
       // pauldron
-      shoulder.add(shellForm(T, 0.105, M.navy, 1, 1, 1, 0, 0, 0));
-      shoulder.add(shellForm(T, 0.075, M.white, 1, 1.1, 1, 0, -0.02, 0));
-      shoulder.add(capsule(T, 0.055, 0.2, M.white, 0, -0.17, 0));
+      shoulder.add(shellForm(T, 0.082, M.navy, 1.05, 0.82, 1.05, 0, 0, 0));
+      shoulder.add(shellForm(T, 0.062, M.white, 1, 1.15, 1, 0, -0.03, 0));
+      shoulder.add(capsule(T, 0.048, 0.2, M.white, 0, -0.17, 0));
 
       const elbow = new T.Group();
       elbow.position.set(0, -0.3, 0);
-      elbow.add(shellForm(T, 0.058, M.joint, 1, 1, 1, 0, 0, 0));
+      elbow.add(shellForm(T, 0.05, M.joint, 1, 1, 1, 0, 0, 0));
       elbow.add(shellForm(T, 0.062, M.dark, 0.55, 1, 1, 0.045 * side, 0, 0));
-      elbow.add(capsule(T, 0.048, 0.18, M.white, 0, -0.15, 0));
+      elbow.add(capsule(T, 0.042, 0.18, M.white, 0, -0.15, 0));
 
       const wrist = new T.Group();
       wrist.position.set(0, -0.27, 0);
@@ -372,33 +377,33 @@
     const head = new T.Group();
     head.position.set(0, 0.6, 0);
     // skull
-    head.add(shellForm(T, 0.125, M.white, 1, 1.14, 1.08, 0, 0.1, 0));
+    head.add(shellForm(T, 0.108, M.white, 1, 1.16, 1.06, 0, 0.095, 0));
     // jaw, tapered forward
-    head.add(shellForm(T, 0.088, M.white, 1, 0.8, 1.15, 0, 0.045, 0.012));
+    head.add(shellForm(T, 0.076, M.white, 1, 0.82, 1.18, 0, 0.045, 0.012));
     // navy crest over the crown
-    const crest = band(T, 0.108, 0.026, M.navy, Math.PI * 1.15, 0, 0.135, 0);
+    const crest = band(T, 0.094, 0.024, M.navy, Math.PI * 1.2, 0, 0.135, 0);
     crest.rotation.set(0, Math.PI / 2, Math.PI * 0.42);
     head.add(crest);
     // the visor: one dark wraparound band, the single strongest cue
     // that this thing has a face
-    const visor = band(T, 0.104, 0.032, M.visor, Math.PI * 1.05, 0, 0.115, 0.012);
-    visor.rotation.set(0.06, 0, Math.PI * 0.98);
-    visor.scale.set(1, 1, 0.72);
+    const visor = band(T, 0.092, 0.036, M.visor, Math.PI * 1.15, 0, 0.11, 0.008);
+    visor.rotation.set(0.05, 0, Math.PI * 0.925);
+    visor.scale.set(1.08, 1.08, 0.6);
     head.add(visor);
     rig.visor = visor;
     // the eyes live inside the visor and shine through it
     rig.eyeGlow = [];
-    [-0.052, 0.052].forEach((x) => {
-      head.add(shellForm(T, 0.02, M.hot, 1, 0.7, 0.6, x, 0.115, 0.096));
-      const gl = glow(T, M.accent, 0.17);
-      gl.position.set(x, 0.115, 0.115);
+    [-0.044, 0.044].forEach((x) => {
+      head.add(shellForm(T, 0.017, M.hot, 1, 0.72, 0.6, x, 0.112, 0.086));
+      const gl = glow(T, M.accent, 0.14);
+      gl.position.set(x, 0.112, 0.1);
       head.add(gl);
       rig.eyeGlow.push(gl);
     });
     // ear discs
     [-1, 1].forEach((sx) => {
-      head.add(shellForm(T, 0.042, M.navy, 0.45, 1, 1, 0.115 * sx, 0.1, -0.005));
-      head.add(shellForm(T, 0.022, M.joint, 0.6, 1, 1, 0.126 * sx, 0.1, -0.005));
+      head.add(shellForm(T, 0.036, M.navy, 0.45, 1, 1, 0.1 * sx, 0.1, -0.005));
+      head.add(shellForm(T, 0.019, M.joint, 0.6, 1, 1, 0.109 * sx, 0.1, -0.005));
     });
     // a small comm fin instead of a wire antenna — closer to the
     // reference, and it reads at small sizes
@@ -834,7 +839,7 @@
     // flat patch instead of rolling off.
     renderer.outputEncoding = T.sRGBEncoding;
     renderer.toneMapping = T.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 0.95;
     renderer.domElement.className = 'neuro-canvas';
     stage.insertBefore(renderer.domElement, stage.firstChild);
 
@@ -1337,10 +1342,10 @@
       root.position.x = lerp(root.position.x, lerp(0, sideX, bgP), 0.05);
       // the guide is deliberately smaller than the figure that
       // introduced itself: a presenter beside the work, not a statue
-      root.scale.setScalar(lerp(root.scale.x, lerp(1, sideScale * 0.66, bgP), 0.05));
+      root.scale.setScalar(lerp(root.scale.x, lerp(1, sideScale * 0.78, bgP), 0.05));
       bench.position.x = lerp(bench.position.x, -sideX, 0.05);
       bench.scale.setScalar(lerp(bench.scale.x, sideScale * 0.9, 0.05));
-      root.rotation.y = lerp(root.rotation.y, lerp(0, -0.45, bgP) + point * -0.55 + mouse.x * 0.12 * (1 - bgP), 0.06);
+      root.rotation.y = lerp(root.rotation.y, lerp(0, -0.26, bgP) + point * -0.3 + mouse.x * 0.12 * (1 - bgP), 0.06);
 
       /* ---- the camera has an opinion about each station ---- */
       const shot = section >= 0 && bgP > 0.2 ? SHOTS[section] : { x: 0, y: 1.45, z: 4.9, lx: 0, ly: 1.15 };
@@ -1432,7 +1437,7 @@
       floor.material.opacity = dark ? 0.34 : 0.22;
       contact.material.color.setHex(dark ? 0x000000 : 0x2A2620);
       scene.fog.color.setHex(dark ? 0x0E0D0C : 0xF1EEE7);
-      renderer.toneMappingExposure = dark ? 1.15 : 1.0;
+      renderer.toneMappingExposure = dark ? 0.95 : 0.85;
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   }
 

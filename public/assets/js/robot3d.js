@@ -59,7 +59,7 @@
     const accent = new T.Color(css.getPropertyValue('--accent').trim() || '#E0553B');
 
     M = {
-      shell: new T.MeshStandardMaterial({ color: dark ? 0x36322D : 0x8F8A81, metalness: 0.78, roughness: 0.42 }),
+      shell: new T.MeshStandardMaterial({ color: dark ? 0x4E463C : 0x8F8A81, metalness: 0.78, roughness: 0.42 }),
       dark: new T.MeshStandardMaterial({ color: dark ? 0x1A1815 : 0x2C2823, metalness: 0.6, roughness: 0.55 }),
       joint: new T.MeshStandardMaterial({ color: dark ? 0x59524A : 0x6E675E, metalness: 0.9, roughness: 0.3 }),
       hot: new T.MeshStandardMaterial({ color: accent, emissive: accent, emissiveIntensity: 1.4, metalness: 0.2, roughness: 0.4 }),
@@ -583,13 +583,40 @@
 
     const scene = new T.Scene();
     const camera = new T.PerspectiveCamera(38, 1, 0.1, 60);
+    /* How far out of the way the figure and the built scenes have to
+       stand. Hard-coded numbers put both of them on top of the text on
+       every screen but the one they were guessed on, so the offset is
+       measured: convert the real width of a section, in pixels, into
+       world units at the working distance, and stand just outside it.
+       On a narrow window there is no margin to stand in, so the whole
+       scene shrinks rather than climbing over the writing. */
+    let sideX = 3.2;
+    let sideScale = 1;
+    const layout = () => {
+      const halfH = Math.tan((camera.fov * Math.PI / 180) / 2) * 6.2;
+      const halfW = halfH * camera.aspect;
+      const sec = document.querySelector('main .section');
+      const contentPx = sec ? sec.getBoundingClientRect().width : innerWidth * 0.82;
+      const contentHalf = (contentPx / innerWidth) * halfW;
+
+      // The free strip beside the text, in world units. Everything is
+      // sized to fit that strip and then pushed hard against the outer
+      // edge — trying to place it at a fixed distance from the middle
+      // was what put it on top of the writing on narrower windows.
+      const margin = Math.max(0.35, halfW - contentHalf);
+      const WIDEST = 0.95;                     // half-width of the widest built scene
+      sideScale = Math.max(0.42, Math.min(1, (margin - 0.12) / WIDEST));
+      sideX = halfW - WIDEST * sideScale - 0.1;
+    };
+
     const resize = () => {
       renderer.setSize(innerWidth, innerHeight, false);
       camera.aspect = innerWidth / innerHeight;
       camera.updateProjectionMatrix();
+      layout();
     };
 
-    scene.add(new T.HemisphereLight(0xF1EEE7, 0x100E0C, 0.7));
+    scene.add(new T.HemisphereLight(0xF1EEE7, 0x100E0C, 0.95));
     const key = new T.DirectionalLight(0xFFF2E4, 2.1);
     key.position.set(3.4, 6.2, 4.2);
     key.castShadow = true;
@@ -626,7 +653,7 @@
 
     const stations = buildStations(T);
     const bench = new T.Group();          // where built things stand
-    bench.position.set(-0.9, 1.35, 0);
+    bench.position.set(-3.2, 1.15, 0);
     stations.forEach((s) => bench.add(s.g));
     scene.add(bench);
 
@@ -842,10 +869,14 @@
           const q = easeOut(d);
           m.scale.setScalar(Math.max(0.0001, q));
           const h = m.userData.home;
-          // the chest, expressed in the bench's own coordinates
+          // the chest, expressed in the bench's own coordinates. Both
+          // the figure and the bench move with the window now, so this
+          // cannot be a constant.
+          const cxb = (root.position.x - bench.position.x) / (bench.scale.x || 1);
+          const cyb = (1.43 - bench.position.y) / (bench.scale.x || 1);
           m.position.set(
-            lerp(2.65, h.x, q),
-            lerp(0.06, h.y, q),
+            lerp(cxb, h.x, q),
+            lerp(cyb, h.y, q),
             lerp(0.2, h.z, q)
           );
         });
@@ -888,7 +919,10 @@
       glow.intensity = 1.2 + Math.sin(t * 2) * 0.4;
       glow.position.set(root.position.x, 1.43, 0.4);
 
-      root.position.x = lerp(root.position.x, lerp(0, 1.75, bgP), 0.05);
+      root.position.x = lerp(root.position.x, lerp(0, sideX, bgP), 0.05);
+      root.scale.setScalar(lerp(root.scale.x, lerp(1, sideScale * 0.92, bgP), 0.05));
+      bench.position.x = lerp(bench.position.x, -sideX, 0.05);
+      bench.scale.setScalar(lerp(bench.scale.x, sideScale * 0.9, 0.05));
       root.rotation.y = lerp(root.rotation.y, lerp(0, -0.45, bgP) + point * -0.55 + mouse.x * 0.12 * (1 - bgP), 0.06);
 
       /* ---- the camera has an opinion about each station ---- */
@@ -937,7 +971,7 @@
 
     new MutationObserver(() => {
       const dark = document.documentElement.dataset.theme !== 'light';
-      M.shell.color.setHex(dark ? 0x36322D : 0x8F8A81);
+      M.shell.color.setHex(dark ? 0x4E463C : 0x8F8A81);
       M.dark.color.setHex(dark ? 0x1A1815 : 0x2C2823);
       M.joint.color.setHex(dark ? 0x59524A : 0x6E675E);
       floor.material.opacity = dark ? 0.34 : 0.22;

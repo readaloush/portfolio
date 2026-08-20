@@ -183,3 +183,446 @@ html { overflow-x: clip; }
   .reveal-x { opacity: 1; transform: none; }
   .grain { animation: none; }
 }
+
+
+/* ==================================================================
+   ================  N O T E B O O K   M O D E  =====================
+
+   Two modes, not two colour schemes. "Modern" is the site as it was.
+   "Notebook" turns the whole thing into an engineer's ruled notebook:
+   real rules, a red margin, punched holes, handwriting, cards that sit
+   on the page like taped-in cuttings, and a page that turns as you
+   move between sections.
+
+   The light/dark switch still works inside each mode, so there are
+   four states in total: modern day, modern night, paper day, paper
+   night (a notebook read under a desk lamp).
+
+   Everything below is scoped to html[data-mode="paper"] so the modern
+   mode cannot be touched by accident.
+   ================================================================== */
+
+/* ---- the mode selector, top of the page ------------------------- */
+.mode-tabs {
+  position: relative; display: inline-flex; align-items: center;
+  padding: 3px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface);
+  margin-right: 10px;
+}
+.mode-tab {
+  position: relative; z-index: 2;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; letter-spacing: 1.6px; text-transform: uppercase;
+  padding: 7px 13px; border-radius: 999px; color: var(--muted);
+  transition: color .35s var(--ease);
+  white-space: nowrap;
+}
+.mode-tab.is-on { color: #FBFAF6; }
+.mode-thumb {
+  position: absolute; z-index: 1; top: 3px; bottom: 3px;
+  border-radius: 999px; background: var(--accent);
+  transition: left .45s cubic-bezier(.22,1,.36,1), width .45s cubic-bezier(.22,1,.36,1);
+}
+@media (max-width: 700px) {
+  .mode-tabs { margin-right: 6px; }
+  .mode-tab { padding: 6px 9px; font-size: 9px; letter-spacing: 1px; }
+}
+
+/* ==================================================================
+   PAPER PALETTE
+   Ink on paper by day; the same notebook under a warm lamp by night.
+   ================================================================== */
+html[data-mode="paper"][data-theme="light"] {
+  --bg:        #FBF8EF;   /* the sheet */
+  --bg2:       #FFFDF6;   /* a cutting laid on top of it */
+  --surface:   rgba(26,39,64,.035);
+  --surface-2: rgba(26,39,64,.065);
+  --line:      rgba(26,39,64,.18);
+  --text:      #182338;   /* blue-black ink */
+  --muted:     #5A6A85;   /* pencil */
+  --accent:    #C0392B;   /* the red pen */
+  --accent2:   #96271C;
+  --shadow:    0 10px 26px rgba(26,39,64,.12);
+  --rule:      rgba(60,96,160,.20);      /* the printed lines */
+  --margin-ln: rgba(192,57,43,.42);      /* the red margin */
+  --hole:      rgba(26,39,64,.13);
+}
+html[data-mode="paper"][data-theme="dark"] {
+  --bg:        #1A1815;
+  --bg2:       #232019;
+  --surface:   rgba(240,234,220,.05);
+  --surface-2: rgba(240,234,220,.085);
+  --line:      rgba(240,234,220,.16);
+  --text:      #F0EADC;
+  --muted:     #A79C88;
+  --accent:    #E8674F;
+  --accent2:   #C64832;
+  --shadow:    0 16px 40px rgba(0,0,0,.55);
+  --rule:      rgba(240,234,220,.10);
+  --margin-ln: rgba(232,103,79,.36);
+  --hole:      rgba(0,0,0,.4);
+}
+
+/* ---- the sheet itself -------------------------------------------
+   An absolutely positioned layer inside a relative body is sized to
+   the body box, so it covers the whole document and scrolls with it —
+   which is what a real page does. A fixed layer would slide under the
+   text and give the trick away.                                     */
+html[data-mode="paper"] body { position: relative; }
+html[data-mode="paper"] body::before {
+  content: '';
+  position: absolute; inset: 0; z-index: -3; pointer-events: none;
+  --m: 78px;                                   /* margin position */
+  background-image:
+    /* punched holes down the margin */
+    radial-gradient(circle at 30px 120px, var(--hole) 0 6.5px, transparent 7.5px),
+    /* the red vertical margin */
+    linear-gradient(to right, transparent 0 var(--m),
+                    var(--margin-ln) var(--m) calc(var(--m) + 1.5px),
+                    transparent calc(var(--m) + 1.5px)),
+    /* the ruled lines */
+    repeating-linear-gradient(to bottom,
+                    transparent 0 33px, var(--rule) 33px 34px);
+  background-size: 100% 240px, 100% 100%, 100% 100%;
+  background-repeat: repeat-y, no-repeat, repeat;
+  opacity: .95;
+}
+@media (max-width: 760px) {
+  html[data-mode="paper"] body::before { --m: 34px; background-image:
+    radial-gradient(circle at 14px 120px, var(--hole) 0 5px, transparent 6px),
+    linear-gradient(to right, transparent 0 var(--m), var(--margin-ln) var(--m) calc(var(--m) + 1.2px), transparent calc(var(--m) + 1.2px)),
+    repeating-linear-gradient(to bottom, transparent 0 33px, var(--rule) 33px 34px); }
+}
+
+/* the electronic background has no business on paper */
+html[data-mode="paper"] #netCanvas,
+html[data-mode="paper"] .aurora,
+html[data-mode="paper"] .photo-scan,
+html[data-mode="paper"] .photo-ring,
+html[data-mode="paper"] .photo-glare,
+html[data-mode="paper"] .btn-shine,
+html[data-mode="paper"] .orb-ring { display: none !important; }
+html[data-mode="paper"] .grain { opacity: .13; mix-blend-mode: multiply; }
+html[data-mode="paper"][data-theme="dark"] .grain { mix-blend-mode: overlay; opacity: .09; }
+
+/* ---- handwriting -------------------------------------------------
+   Headings and margin notes are handwritten; body copy stays in the
+   clean face, because a whole CV in script is unreadable and this is
+   still a document someone has to hire you from.                    */
+html[data-mode="paper"] .hero-name,
+html[data-mode="paper"] .section-title,
+html[data-mode="paper"] .stats b,
+html[data-mode="paper"] .modal-card h3 {
+  font-family: 'Caveat', 'Sora', cursive;
+  font-weight: 700; letter-spacing: .5px; text-transform: none;
+  color: var(--text);
+}
+html[data-mode="paper"] .hero-name { font-size: clamp(3rem, 8.5vw, 6.4rem); line-height: .95; }
+html[data-mode="paper"] .section-title { font-size: clamp(2.2rem, 5.5vw, 3.6rem); }
+html[data-mode="paper"] .stats b { font-size: clamp(2rem, 4vw, 3rem); color: var(--accent); }
+
+html[data-mode="paper"] .section-kicker,
+html[data-mode="paper"] .kicker,
+html[data-mode="paper"] .photo-caption,
+html[data-mode="paper"] .tl-period,
+html[data-mode="paper"] .project-num,
+html[data-mode="paper"] .contact-note {
+  font-family: 'Kalam', 'JetBrains Mono', cursive;
+  text-transform: none; letter-spacing: .2px;
+}
+html[data-mode="paper"] .section-kicker,
+html[data-mode="paper"] .project-num { color: var(--accent); font-size: 15px; }
+html[data-mode="paper"] .hero-tagline { font-family: 'Kalam', cursive; text-transform: none; font-size: 15px; letter-spacing: 0; }
+
+/* ---- things stop being glass and start being paper --------------- */
+html[data-mode="paper"] .card,
+html[data-mode="paper"] .project,
+html[data-mode="paper"] .tl-item,
+html[data-mode="paper"] .edu-card,
+html[data-mode="paper"] .skill-card,
+html[data-mode="paper"] .calendar-box {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 3px;                       /* paper is cut, not rounded */
+  backdrop-filter: none;
+  box-shadow: 0 1px 0 var(--line), 0 10px 22px -14px rgba(26,39,64,.5);
+}
+html[data-mode="paper"][data-theme="dark"] .card,
+html[data-mode="paper"][data-theme="dark"] .project,
+html[data-mode="paper"][data-theme="dark"] .tl-item,
+html[data-mode="paper"][data-theme="dark"] .edu-card,
+html[data-mode="paper"][data-theme="dark"] .skill-card {
+  box-shadow: 0 1px 0 rgba(0,0,0,.4), 0 14px 30px -16px #000;
+}
+
+/* Laid on the page by hand, so never perfectly square.
+
+   This uses the standalone `rotate` property rather than a transform.
+   Three other things on this page write to `transform` on these very
+   elements — the mouse tilt (inline), the fly-in reveal, and the
+   parallax — and an inline transform wins outright. `rotate` is its
+   own property, so it composes with all of them instead of fighting
+   them. The crookedness survives a hover; the card still flies in. */
+html[data-mode="paper"] .project:nth-child(odd)     { rotate: -.5deg; }
+html[data-mode="paper"] .project:nth-child(even)    { rotate: .45deg; }
+html[data-mode="paper"] .skill-card:nth-child(odd)  { rotate: .4deg; }
+html[data-mode="paper"] .skill-card:nth-child(even) { rotate: -.35deg; }
+html[data-mode="paper"] .edu-card:nth-child(even)   { rotate: .5deg; }
+html[data-mode="paper"] .tl-item:nth-child(odd)     { rotate: -.3deg; }
+
+/* a strip of tape at the top of every cutting */
+html[data-mode="paper"] .project,
+html[data-mode="paper"] .edu-card { position: relative; }
+html[data-mode="paper"] .project::before,
+html[data-mode="paper"] .edu-card::before {
+  content: ''; position: absolute; z-index: 4;
+  top: -9px; left: 50%; width: 78px; height: 20px;
+  transform: translateX(-50%) rotate(-2.2deg);
+  background: rgba(214,199,142,.42);
+  border-left: 1px dashed rgba(140,125,80,.35);
+  border-right: 1px dashed rgba(140,125,80,.35);
+  box-shadow: 0 1px 3px rgba(26,39,64,.14);
+}
+html[data-mode="paper"] .edu-card::before { width: 56px; height: 16px; transform: translateX(-50%) rotate(2deg); }
+
+/* photographs get the same treatment: printed, slightly faded, taped */
+html[data-mode="paper"] .project-media img {
+  filter: saturate(.72) contrast(1.04) sepia(.12);
+  border-bottom: 1px solid var(--line);
+}
+html[data-mode="paper"] .photo-frame {
+  border-radius: 2px; border: 1px solid var(--line);
+  background: var(--bg2); padding: 10px 10px 42px;   /* a polaroid lip */
+  box-shadow: 0 14px 30px -16px rgba(26,39,64,.6);
+  rotate: -1.4deg;
+}
+html[data-mode="paper"] .photo-frame img { border-radius: 0; }
+
+/* the skill bars become highlighter strokes */
+html[data-mode="paper"] .bar { background: transparent; border-bottom: 1px dotted var(--line); border-radius: 0; }
+html[data-mode="paper"] .bar i {
+  background: var(--accent); opacity: .5; border-radius: 0;
+  mix-blend-mode: multiply;
+}
+html[data-mode="paper"][data-theme="dark"] .bar i { mix-blend-mode: screen; opacity: .6; }
+
+/* tags read as pencil circles */
+html[data-mode="paper"] .tag,
+html[data-mode="paper"] .tl-tools {
+  border: 1px solid var(--muted); border-radius: 14px 13px 15px 12px / 12px 15px 13px 14px;
+  font-family: 'Kalam', cursive; letter-spacing: 0; text-transform: none;
+  background: transparent;
+}
+
+/* buttons look drawn round rather than filled, except the main one */
+html[data-mode="paper"] .btn { border-radius: 22px 20px 24px 19px / 19px 24px 20px 22px; }
+html[data-mode="paper"] .btn-ghost { border: 1.5px solid var(--accent); color: var(--accent); }
+
+/* a handwritten page number in the corner of every page */
+html[data-mode="paper"] main { counter-reset: pg; }
+html[data-mode="paper"] .section { position: relative; counter-increment: pg; }
+html[data-mode="paper"] .section::after {
+  content: '— ' counter(pg) ' —';
+  position: absolute; right: 4px; bottom: 6px;
+  font-family: 'Kalam', cursive; font-size: 14px; color: var(--muted); opacity: .65;
+  pointer-events: none;
+}
+
+/* the header sits on the page, not floating in glass */
+html[data-mode="paper"] #nav { backdrop-filter: blur(2px); }
+html[data-mode="paper"] .socials li a { border-radius: 12px 11px 13px 10px / 10px 13px 11px 12px; }
+
+/* ==================================================================
+   THE PAGE TURN
+   The leaf is a full sheet hinged on the left edge. It starts flat
+   over the viewport and swings away, so what you are looking at is
+   the page you just left going over. Backwards, it swings in.
+   Pointer events stay off throughout: this is scenery, not a gate.
+   ================================================================== */
+.flip-stage {
+  /* 480 puts the turning sheet above the page content (z 2) and the
+     background layers (0 and 1), but below the fixed header (500),
+     the assistant orb (9000) and the cursor. The header is the desk,
+     not the page: it should stay still while the paper moves. */
+  position: fixed; inset: 0; z-index: 480;
+  perspective: 2400px; perspective-origin: 0% 50%;
+  pointer-events: none; display: none;
+}
+.flip-stage.on { display: block; }
+.flip-leaf {
+  position: absolute; inset: 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  background: var(--bg);
+  background-image:
+    linear-gradient(to right, transparent 0 78px, var(--margin-ln) 78px 79.5px, transparent 79.5px),
+    repeating-linear-gradient(to bottom, transparent 0 33px, var(--rule) 33px 34px);
+  box-shadow: 8px 0 40px rgba(0,0,0,.28);
+  backface-visibility: hidden;
+}
+/* the shading that makes it read as a curving sheet rather than a slab */
+.flip-shade {
+  position: absolute; inset: 0;
+  background: linear-gradient(to right, rgba(0,0,0,.30), rgba(0,0,0,0) 34%, rgba(0,0,0,.10));
+  opacity: 0;
+}
+.flip-stage.fwd .flip-leaf { animation: leafFwd .78s cubic-bezier(.55,.06,.32,1) forwards; }
+.flip-stage.bwd .flip-leaf { animation: leafBwd .78s cubic-bezier(.55,.06,.32,1) forwards; }
+.flip-stage.on  .flip-shade { animation: leafShade .78s ease-out forwards; }
+
+@keyframes leafFwd {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(-172deg); }
+}
+@keyframes leafBwd {
+  from { transform: rotateY(-172deg); }
+  to   { transform: rotateY(0deg); }
+}
+@keyframes leafShade {
+  0%   { opacity: 0; }
+  35%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Someone who has asked for less motion gets the mode without the
+   theatre: no turning page, no tilted cuttings. */
+@media (prefers-reduced-motion: reduce) {
+  .flip-stage { display: none !important; }
+  html[data-mode="paper"] .project,
+  html[data-mode="paper"] .skill-card,
+  html[data-mode="paper"] .edu-card,
+  html[data-mode="paper"] .photo-frame { rotate: 0deg !important; }
+}
+
+/* The selector inside the phone menu: full width, bigger targets. */
+.mode-tabs.in-menu {
+  display: flex; width: 100%; margin: 18px 0 0; padding: 4px;
+  background: var(--surface-2);
+}
+.mode-tabs.in-menu .mode-tab { flex: 1; text-align: center; padding: 12px 10px; font-size: 11px; }
+
+
+/* ---- notebook mode: the remaining glass surfaces ------------------
+   The chat panel and the login card were still floating slabs of
+   frosted glass on a sheet of paper, which broke the illusion at the
+   two moments a visitor looks hardest. Both become paper objects. */
+
+/* the assistant is a sticky note pressed onto the corner */
+html[data-mode="paper"] .chat {
+  background: #FFF6C9;
+  border: 1px solid rgba(26,39,64,.16);
+  border-radius: 2px;
+  backdrop-filter: none;
+  rotate: -.8deg;
+  box-shadow: 0 18px 34px -18px rgba(26,39,64,.65);
+}
+html[data-mode="paper"][data-theme="dark"] .chat { background: #3A3320; }
+html[data-mode="paper"] .chat::before {   /* the strip holding it down */
+  content: ''; position: absolute; top: -10px; left: 50%;
+  width: 92px; height: 22px; transform: translateX(-50%) rotate(1.6deg);
+  background: rgba(214,199,142,.5);
+  box-shadow: 0 1px 3px rgba(26,39,64,.16);
+}
+html[data-mode="paper"] .chat-head { border-bottom: 1px dashed rgba(26,39,64,.22); }
+html[data-mode="paper"] .bubble { border-radius: 12px 11px 13px 10px / 10px 13px 11px 12px; }
+html[data-mode="paper"] .chat-log::-webkit-scrollbar-thumb { background: var(--muted); }
+
+/* the login card is an index card */
+html[data-mode="paper"] .modal-card {
+  background: var(--bg2); backdrop-filter: none;
+  border-radius: 3px; border: 1px solid var(--line);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 33px, var(--rule) 33px 34px);
+}
+
+/* a pen stroke under every section title, drawn slightly off-square */
+html[data-mode="paper"] .section-title { position: relative; display: inline-block; }
+html[data-mode="paper"] .section-title::after {
+  content: ''; position: absolute; left: -2px; right: -8px; bottom: -2px;
+  height: 3px; background: var(--accent); opacity: .5;
+  border-radius: 3px 8px 2px 6px / 4px 2px 6px 3px;
+  rotate: -.7deg;
+}
+
+
+/* ==================================================================
+   PRINTING
+   A portfolio that a recruiter tries to print should not come out as
+   a black rectangle. Everything that exists to move is removed, the
+   fly-in cards are forced to their settled state (otherwise they
+   print blank, parked off the page), and links are given their real
+   destination in the margin, because paper cannot be clicked.
+   ================================================================== */
+@media print {
+  #netCanvas, .aurora, .grain, #cursorDot, #cursorRing, #scrollBar,
+  .orb, .chat, .flip-stage, .mode-tabs, .switch, .sound-btn,
+  .nav-burger, .scroll-hint, .kbd-hint, .modal, #site-loader,
+  .photo-ring, .photo-scan, .photo-glare, .btn-shine,
+  .project::before, .edu-card::before { display: none !important; }
+
+  html, body {
+    background: #fff !important; color: #000 !important;
+    overflow: visible !important;
+  }
+  body::before { display: none !important; }
+
+  /* the animation systems all park elements out of frame; unpark them */
+  .reveal, .reveal-x, .reveal-x:not(.in) {
+    opacity: 1 !important;
+    transform: none !important;
+    rotate: 0deg !important;
+    transition: none !important;
+  }
+
+  #nav { position: static !important; border: 0 !important; backdrop-filter: none !important; }
+  .section { padding: 14mm 0 6mm !important; page-break-inside: auto; }
+  .section::after { display: none !important; }
+  .card, .project, .tl-item, .edu-card, .skill-card {
+    background: #fff !important; box-shadow: none !important;
+    border: 1px solid #bbb !important; page-break-inside: avoid;
+  }
+  .hero { min-height: auto !important; padding-top: 6mm !important; }
+  .hero-name { font-size: 26pt !important; color: #000 !important; }
+  .section-title { font-size: 17pt !important; color: #000 !important; page-break-after: avoid; }
+  .section-title::after { display: none !important; }
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 8pt; color: #555; word-break: break-all;
+  }
+  /* icons and buttons carry no readable text, so an appended URL just
+     produces a wall of characters with nothing to attach it to */
+  a[href^="#"]::after, .btn::after,
+  .socials a::after, .nav-logo::after { content: '' !important; }
+  .project-media img { max-height: 55mm; object-fit: cover; }
+
+  @page { margin: 14mm; }
+}
+
+
+/* ---- keyboard focus ----------------------------------------------
+   The custom cursor hides the pointer, and until now nothing showed
+   where the keyboard was either. :focus-visible only fires for
+   keyboard users, so mouse users never see a ring. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.skip-link {
+  position: fixed; top: 10px; left: 50%; transform: translate(-50%, -160%);
+  z-index: 100002; padding: 11px 20px; border-radius: 999px;
+  background: var(--accent); color: #FBFAF6; font-size: 13px;
+  transition: transform .3s var(--ease);
+}
+.skip-link:focus { transform: translate(-50%, 0); }
+
+
+/* Between the burger breakpoint and a comfortable desktop the header
+   carries the logo, six links, the selector, sound, the switch and the
+   CV button at once. Tighten everything rather than let it wrap. */
+@media (min-width: 981px) and (max-width: 1180px) {
+  .nav-actions { gap: 9px; }
+  .mode-tabs { margin-right: 4px; }
+  .mode-tab { padding: 6px 10px; font-size: 9.5px; letter-spacing: 1.1px; }
+  .nav-links { gap: 4px; }
+  .nav-links a { font-size: 13px; }
+}

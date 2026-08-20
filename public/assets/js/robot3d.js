@@ -3,10 +3,10 @@
    ------------------------------------------------------------------
    The heavy half of neural mode.
 
-   Act one: a network trains in 3D space. Its nodes were sampled from
-   the surface of a robot that does not exist yet, so when training
-   ends they fall home and the robot condenses out of the network
-   rather than being switched on beside it.
+   Act one: a network trains in 3D space. Its nodes are sampled from
+   the surface of the model, so when training ends they fall home and
+   the robot condenses out of the network rather than being switched
+   on beside it.
 
    Act two: it greets you, then stands to the right of the page and
    works. As you scroll it builds the scene for whatever you are
@@ -24,8 +24,14 @@
    cost. Both expose the same window.NEURO, so whatever starts the
    scene never learns which one it got.
 
-   Three.js r128 from cdnjs. If that fetch fails the fallback runs, so
-   a blocked CDN costs an effect, never the site.
+   The figure itself is Quaternius's robot, released CC0 and shipped
+   with three.js: a rigged, animated model with fourteen baked clips.
+   It is not built out of primitives here, because primitives have a
+   ceiling and a model that an animator actually animated does not.
+
+   Three.js r128 from cdnjs, the loader and the model from jsDelivr. If
+   any of those fetches fails the two-dimensional fallback runs, so a
+   blocked CDN costs an effect, never the site.
    ================================================================== */
 (() => {
   'use strict';
@@ -222,213 +228,235 @@
     return m;
   }
 
-  /** Cylinder with a dome on each end: a limb segment, not a stick. */
-  function capsule(T, r, len, mat, x, y, z) {
-    const g = new T.Group();
-    const cyl = new T.Mesh(new T.CylinderGeometry(r, r, len, 20), mat);
-    cyl.castShadow = true;
-    g.add(cyl);
-    [len / 2, -len / 2].forEach((yy) => {
-      const cap = new T.Mesh(new T.SphereGeometry(r, 20, 12), mat);
-      cap.position.y = yy;
-      cap.castShadow = true;
-      g.add(cap);
+  /* ==================================================================
+     THE FIGURE — a real model, not something assembled out of spheres
+
+     Everything before this was primitives glued together in code, and
+     that approach has a ceiling: a sculpted, rigged, animated model is
+     simply a different kind of object. This one is Quaternius's robot,
+     released CC0 and shipped with three.js, carrying fourteen baked
+     animations — idle, walking, running, jumping, waving, yes, no,
+     thumbs up. It moves like something that was animated, because it
+     was, by an animator.
+
+     453 KB over the wire, fetched once and cached.
+     ================================================================== */
+
+  const MODEL_URL =
+    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
+  const LOADER_URL =
+    'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+
+  /** Fetch a script and wait for it. */
+  function grab(src) {
+    return new Promise((res, rej) => {
+      const el = document.createElement('script');
+      el.src = src;
+      el.addEventListener('load', res);
+      el.addEventListener('error', rej);
+      document.head.appendChild(el);
     });
-    g.position.set(x, y, z);
-    if (COLLECT) PARTS.push(g);
-    return g;
   }
 
-  /** A squashed sphere — the shape most of this body is actually made of. */
-  function shellForm(T, r, mat, sx, sy, sz, x, y, z) {
-    const m = new T.Mesh(new T.SphereGeometry(r, 26, 18), mat);
-    m.scale.set(sx, sy, sz);
-    m.position.set(x, y, z);
-    m.castShadow = true;
-    if (COLLECT) PARTS.push(m);
-    return m;
+  /**
+   * Stand the model on the floor at a known height, whatever units it
+   * happens to have been authored in. Measuring beats assuming: a model
+   * that arrives at a tenth of the expected scale is invisible, and one
+   * that arrives ten times too big fills the screen with an elbow.
+   */
+  function fitToHeight(T, model, targetHeight) {
+    const box = new T.Box3().setFromObject(model);
+    const size = new T.Vector3();
+    box.getSize(size);
+    const k = targetHeight / (size.y || 1);
+    model.scale.setScalar(k);
+
+    // re-measure after scaling and drop it onto y = 0
+    const box2 = new T.Box3().setFromObject(model);
+    model.position.y -= box2.min.y;
+    return k;
   }
 
-  /** A band wrapped round a form: visors, collars, crests. */
-  function band(T, radius, thick, mat, arc, x, y, z) {
-    const m = new T.Mesh(new T.TorusGeometry(radius, thick, 14, 28, arc), mat);
-    m.castShadow = true;
-    m.position.set(x, y, z);
-    if (COLLECT) PARTS.push(m);
-    return m;
-  }
+  /**
+   * The rig, described by where things are rather than by what the
+   * bones are called. Bone names differ between exports and a typo in
+   * one would be a silent failure; a bounding box is always there.
+   */
+  function readAnatomy(T, model) {
+    const box = new T.Box3().setFromObject(model);
+    const size = new T.Vector3();
+    const mid = new T.Vector3();
+    box.getSize(size);
+    box.getCenter(mid);
 
-  /* ------------------------------------------------------------------
-     The figure.
-
-     Everything hangs off groups placed AT the joints, so a rotation
-     carries the rest of the limb with it. Proportions are human — head
-     about a seventh of the height, elbow at the waist — because that is
-     what makes a machine read as a person rather than as furniture.
-     ------------------------------------------------------------------ */
-  function buildRobot(T) {
-    const root = new T.Group();
-    const rig = {};
-
-    /* ---------------------------------------------------------- legs */
-    const leg = (side) => {
-      const hip = new T.Group();
-      hip.position.set(0.135 * side, 0.95, 0);
-      hip.add(shellForm(T, 0.088, M.navy, 1, 1, 1, 0, 0, 0));
-      hip.add(capsule(T, 0.072, 0.3, M.white, 0, -0.24, 0));
-      hip.add(shellForm(T, 0.085, M.navy, 1.05, 0.6, 1.05, 0, -0.09, 0));   // thigh cap
-
-      const knee = new T.Group();
-      knee.position.set(0, -0.45, 0);
-      knee.add(shellForm(T, 0.072, M.joint, 1, 1, 1, 0, 0, 0));
-      knee.add(shellForm(T, 0.08, M.navy, 1, 0.9, 0.55, 0, 0.01, 0.03));    // knee pad
-      knee.add(capsule(T, 0.054, 0.28, M.white, 0, -0.22, 0));
-      // the hazard flashes from the reference, in the site's red
-      knee.add(shellForm(T, 0.02, M.hot, 0.6, 2.4, 0.5, 0.045 * side, -0.16, 0.052));
-
-      const ankle = new T.Group();
-      ankle.position.set(0, -0.4, 0);
-      ankle.add(shellForm(T, 0.05, M.joint, 1, 1, 1, 0, 0, 0));
-      // the shoe: a wedge with a rounded toe
-      ankle.add(shellForm(T, 0.09, M.navy, 0.85, 0.42, 1.7, 0, -0.045, 0.05));
-      ankle.add(shellForm(T, 0.07, M.navy, 0.85, 0.5, 0.9, 0, -0.04, 0.16));
-      knee.add(ankle);
-      hip.add(knee);
-      root.add(hip);
-      return { hip, knee, ankle };
+    return {
+      head: new T.Vector3(mid.x, box.max.y - size.y * 0.11, mid.z + size.z * 0.22),
+      chest: new T.Vector3(mid.x, box.min.y + size.y * 0.62, mid.z + size.z * 0.3),
+      handL: new T.Vector3(mid.x + size.x * 0.42, box.min.y + size.y * 0.45, mid.z + size.z * 0.1),
+      handR: new T.Vector3(mid.x - size.x * 0.42, box.min.y + size.y * 0.45, mid.z + size.z * 0.1),
+      shoulder: new T.Vector3(mid.x - size.x * 0.3, box.min.y + size.y * 0.75, mid.z),
+      crown: new T.Vector3(mid.x, box.max.y - size.y * 0.02, mid.z),
+      size, box
     };
-    rig.legL = leg(1);
-    rig.legR = leg(-1);
+  }
 
-    /* ------------------------------------------------- pelvis, torso */
-    root.add(shellForm(T, 0.15, M.white, 1.18, 0.64, 0.84, 0, 1.0, 0));
-    root.add(band(T, 0.15, 0.022, M.navy, Math.PI * 2, 0, 1.02, 0));
-    root.add(capsule(T, 0.075, 0.06, M.joint, 0, 1.12, 0));
+  /** Find the animation clip whose name matches, whatever the casing. */
+  function findClip(clips, name) {
+    const want = name.toLowerCase();
+    return clips.find((c) => c.name.toLowerCase() === want)
+        || clips.find((c) => c.name.toLowerCase().includes(want))
+        || null;
+  }
 
-    const torso = new T.Group();
-    torso.position.set(0, 1.16, 0);
-    // chest: wide at the shoulders, narrow at the waist
-    torso.add(shellForm(T, 0.195, M.white, 1.06, 1.24, 0.68, 0, 0.29, 0));
-    torso.add(shellForm(T, 0.13, M.white, 1, 0.8, 0.78, 0, 0.08, 0));      // waist, narrow
-    // the navy yoke over the shoulders, flatter and set back
-    torso.add(shellForm(T, 0.175, M.navy, 1.26, 0.34, 0.8, 0, 0.45, -0.03));
-    // the chest seam: two navy blades running down from the collar,
-    // which is what gives the reference its shoulders-to-waist taper
-    [-1, 1].forEach((sx) => {
-      torso.add(shellForm(T, 0.05, M.navy, 0.34, 1.5, 0.5, 0.1 * sx, 0.34, 0.135));
+  /**
+   * The animation desk. Locomotion clips cross-fade into one another and
+   * loop; reactions play once over the top and hand control back.
+   */
+  function makeAnimator(T, model, clips) {
+    const mixer = new T.AnimationMixer(model);
+    const actions = {};
+    clips.forEach((c) => {
+      const a = mixer.clipAction(c);
+      actions[c.name] = a;
     });
-    // side vents
-    [-1, 1].forEach((sx) => {
-      for (let i = 0; i < 3; i++) {
-        torso.add(shellForm(T, 0.02, M.dark, 0.35, 0.9, 2.2, 0.2 * sx, 0.24 - i * 0.05, 0.06));
+
+    const pick = (...names) => {
+      for (const n of names) {
+        const c = findClip(clips, n);
+        if (c && actions[c.name]) return actions[c.name];
+      }
+      return null;
+    };
+
+    const move = {
+      idle: pick('Idle'),
+      walk: pick('Walking', 'Walk'),
+      run: pick('Running', 'Run'),
+      dance: pick('Dance')
+    };
+    const react = {
+      wave: pick('Wave'),
+      yes: pick('Yes'),
+      no: pick('No'),
+      thumbs: pick('ThumbsUp', 'Thumbs'),
+      jump: pick('Jump'),
+      punch: pick('Punch')
+    };
+
+    Object.values(react).forEach((a) => {
+      if (!a) return;
+      a.setLoop(T.LoopOnce, 1);
+      a.clampWhenFinished = true;
+    });
+
+    let current = move.idle;
+    if (current) current.play();
+
+    let busy = null;
+    mixer.addEventListener('finished', (e) => {
+      if (busy && e.action === busy) {
+        busy.fadeOut(0.28);
+        busy = null;
+        if (current) current.reset().setEffectiveWeight(1).fadeIn(0.28).play();
       }
     });
-    // the emblem: a rounded triangle in red, like the reference
-    const emblem = band(T, 0.055, 0.011, M.hot, Math.PI * 2, 0, 0.34, 0.185);
-    emblem.scale.set(1, 0.85, 1);
-    torso.add(emblem);
-    rig.emblem = emblem;
-    const coreGlow = glow(T, M.accent, 0.4);
-    coreGlow.position.set(0, 0.34, 0.24);
-    torso.add(coreGlow);
-    rig.coreGlow = coreGlow;
 
-    root.add(torso);
-    rig.torso = torso;
-
-    /* ------------------------------------------------------ the arms */
-    const arm = (side) => {
-      const shoulder = new T.Group();
-      shoulder.position.set(0.215 * side, 0.44, 0);
-      // pauldron
-      shoulder.add(shellForm(T, 0.082, M.navy, 1.05, 0.82, 1.05, 0, 0, 0));
-      shoulder.add(shellForm(T, 0.062, M.white, 1, 1.15, 1, 0, -0.03, 0));
-      shoulder.add(capsule(T, 0.048, 0.2, M.white, 0, -0.17, 0));
-
-      const elbow = new T.Group();
-      elbow.position.set(0, -0.3, 0);
-      elbow.add(shellForm(T, 0.05, M.joint, 1, 1, 1, 0, 0, 0));
-      elbow.add(shellForm(T, 0.062, M.dark, 0.55, 1, 1, 0.045 * side, 0, 0));
-      elbow.add(capsule(T, 0.042, 0.18, M.white, 0, -0.15, 0));
-
-      const wrist = new T.Group();
-      wrist.position.set(0, -0.27, 0);
-      wrist.add(shellForm(T, 0.04, M.joint, 1, 1, 1, 0, 0, 0));
-      // palm and fingers, so a point actually looks like a point
-      wrist.add(shellForm(T, 0.045, M.dark, 0.85, 1.05, 0.55, 0, -0.05, 0));
-      const fingers = new T.Group();
-      fingers.position.set(0, -0.095, 0);
-      for (let i = -1; i <= 1; i++) {
-        fingers.add(capsule(T, 0.013, 0.045, M.dark, i * 0.025, -0.025, 0.008));
-      }
-      wrist.add(fingers);
-      wrist.add(capsule(T, 0.014, 0.04, M.dark, 0.042 * side, -0.055, 0.02));  // thumb
-      elbow.add(wrist);
-      shoulder.add(elbow);
-      torso.add(shoulder);
-      return { shoulder, elbow, wrist, fingers };
+    return {
+      mixer,
+      have: (k) => !!react[k],
+      /** Cross-fade the looping clip underneath. */
+      locomote(name, dur = 0.35) {
+        const next = move[name] || move.idle;
+        if (!next || next === current) return;
+        if (current) current.fadeOut(dur);
+        next.reset().setEffectiveWeight(1).fadeIn(dur).play();
+        current = next;
+      },
+      /** Play a one-shot reaction over the top. */
+      react(name) {
+        const a = react[name];
+        if (!a || busy) return false;
+        busy = a;
+        if (current) current.fadeOut(0.2);
+        a.reset().setEffectiveWeight(1).fadeIn(0.2).play();
+        return true;
+      },
+      get reacting() { return !!busy; },
+      update(dt) { mixer.update(dt); }
     };
-    rig.armL = arm(1);
-    rig.armR = arm(-1);
+  }
 
-    /* ------------------------------------------------ neck and head */
-    torso.add(capsule(T, 0.045, 0.06, M.joint, 0, 0.55, 0));
-
-    const head = new T.Group();
-    head.position.set(0, 0.6, 0);
-    // skull
-    head.add(shellForm(T, 0.108, M.white, 1, 1.16, 1.06, 0, 0.095, 0));
-    // jaw, tapered forward
-    head.add(shellForm(T, 0.076, M.white, 1, 0.82, 1.18, 0, 0.045, 0.012));
-    // navy crest over the crown
-    const crest = band(T, 0.094, 0.024, M.navy, Math.PI * 1.2, 0, 0.135, 0);
-    crest.rotation.set(0, Math.PI / 2, Math.PI * 0.42);
-    head.add(crest);
-    // the visor: one dark wraparound band, the single strongest cue
-    // that this thing has a face
-    const visor = band(T, 0.092, 0.036, M.visor, Math.PI * 1.15, 0, 0.11, 0.008);
-    visor.rotation.set(0.05, 0, Math.PI * 0.925);
-    visor.scale.set(1.08, 1.08, 0.6);
-    head.add(visor);
-    rig.visor = visor;
-    // the eyes live inside the visor and shine through it
-    rig.eyeGlow = [];
-    [-0.044, 0.044].forEach((x) => {
-      head.add(shellForm(T, 0.017, M.hot, 1, 0.72, 0.6, x, 0.112, 0.086));
-      const gl = glow(T, M.accent, 0.14);
-      gl.position.set(x, 0.112, 0.1);
-      head.add(gl);
-      rig.eyeGlow.push(gl);
+  /**
+   * The face. The model carries three expression morphs; nudging them is
+   * cheaper and reads better than any amount of head-turning.
+   */
+  function findFace(model) {
+    let face = null;
+    model.traverse((o) => {
+      if (!face && o.morphTargetDictionary && o.morphTargetInfluences) face = o;
     });
-    // ear discs
-    [-1, 1].forEach((sx) => {
-      head.add(shellForm(T, 0.036, M.navy, 0.45, 1, 1, 0.1 * sx, 0.1, -0.005));
-      head.add(shellForm(T, 0.019, M.joint, 0.6, 1, 1, 0.109 * sx, 0.1, -0.005));
-    });
-    // a small comm fin instead of a wire antenna — closer to the
-    // reference, and it reads at small sizes
-    const antenna = new T.Group();
-    antenna.position.set(0, 0.19, -0.03);
-    antenna.add(shellForm(T, 0.03, M.navy, 0.35, 1.1, 1.6, 0, 0.03, 0));
-    const tipGlow = glow(T, M.accent, 0.14);
-    tipGlow.position.set(0, 0.07, 0);
-    antenna.add(tipGlow);
-    head.add(antenna);
-    rig.antenna = antenna;
+    return face;
+  }
 
-    // the mouth vent, which lights up while it talks
-    rig.mouth = [];
-    for (let i = -2; i <= 2; i++) {
-      const b = shellForm(T, 0.012, M.dark, 0.75, 1, 0.5, i * 0.022, 0.042, 0.088);
-      head.add(b);
-      rig.mouth.push(b);
+  /* ==================================================== the voice
+
+     A real voice, from the browser's own speech engine, dropped an
+     octave and slowed a little so it reads as a machine rather than as
+     a narrator. Nothing is downloaded and nothing is recorded; if the
+     visitor has muted the site, or the engine has no voice installed,
+     the line simply is not spoken and the captions carry it alone.
+  */
+  const VOICE = {
+    ready: false,
+    pick: null,
+
+    load() {
+      if (!('speechSynthesis' in window)) return;
+      const choose = () => {
+        const all = speechSynthesis.getVoices();
+        if (!all.length) return;
+        // prefer the flatter, more synthetic voices when they exist
+        const score = (v) => {
+          const n = (v.name + ' ' + v.voiceURI).toLowerCase();
+          let s = 0;
+          if (/en[-_]/i.test(v.lang)) s += 4;
+          if (n.includes('male')) s += 2;
+          if (/zarvox|trinoids|cellos|google uk english male|daniel|alex|fred/.test(n)) s += 5;
+          if (n.includes('natural') || n.includes('neural')) s -= 2;   // too human
+          return s;
+        };
+        this.pick = all.slice().sort((a, b) => score(b) - score(a))[0] || null;
+        this.ready = true;
+      };
+      choose();
+      speechSynthesis.addEventListener('voiceschanged', choose);
+    },
+
+    say(text, onDone) {
+      if (window.SFX && window.SFX.enabled === false) { if (onDone) onDone(); return false; }
+      if (!('speechSynthesis' in window)) { if (onDone) onDone(); return false; }
+      try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        if (this.pick) u.voice = this.pick;
+        u.pitch = 0.35;      // down an octave: the single most robotic knob
+        u.rate = 0.92;
+        u.volume = 0.9;
+        u.addEventListener('end', () => { if (onDone) onDone(); });
+        u.addEventListener('error', () => { if (onDone) onDone(); });
+        speechSynthesis.speak(u);
+        return true;
+      } catch {
+        if (onDone) onDone();
+        return false;
+      }
+    },
+
+    stop() {
+      try { speechSynthesis.cancel(); } catch { /* ignore */ }
     }
-
-    torso.add(head);
-    rig.head = head;
-
-    return { root, rig };
-  }
+  };
+  VOICE.load();
 
   /* ================================================= the training cloud */
   function cloud(T, root, count) {
@@ -791,28 +819,38 @@
   const API = {
     started: false,
     raf: 0,
-    start() {
-      wanted = true;
-      if (this.started) return;
-      this.started = true;
-      if (window.THREE) { boot(); return; }
-      const s = document.createElement('script');
-      s.src = THREE_URL;
-      s.addEventListener('load', () => { if (window.THREE) boot(); else fallback(); });
-      s.addEventListener('error', () => { API.started = false; fallback(); });
-      document.head.appendChild(s);
-    },
     stop() {
       wanted = false;
       cancelAnimationFrame(this.raf);
+      VOICE.stop();
       document.getElementById('neuroStage')?.remove();
       document.querySelectorAll('.neuro-flashsheet').forEach((n) => n.remove());
       document.body.classList.remove('neuro-intro', 'neuro-bg');
       this.started = false;
+    },
+
+    async start() {
+      wanted = true;
+      if (this.started) return;
+      this.started = true;
+      try {
+        if (!window.THREE) await grab(THREE_URL);
+        if (!window.THREE) throw new Error('three missing');
+        if (!window.THREE.GLTFLoader) await grab(LOADER_URL);
+        const gltf = await new Promise((res, rej) => {
+          new window.THREE.GLTFLoader().load(MODEL_URL, res, undefined, rej);
+        });
+        boot(gltf);
+      } catch (err) {
+        // A blocked CDN, a slow network, a browser without WebGL — any
+        // of them costs the visitor an effect, never the site.
+        API.started = false;
+        fallback();
+      }
     }
   };
 
-  function boot() {
+  function boot(gltf) {
     const T = window.THREE;
     materials(T);
 
@@ -820,10 +858,10 @@
       try { return localStorage.getItem(SEEN_KEY) === '1'; } catch { return false; }
     })();
     const D = reduced
-      ? { train: 200, build: 300, greet: 200, hold: 500 }
+      ? { train: 200, build: 300, greet: 400, hold: 300 }
       : short
-        ? { train: 1500, build: 1200, greet: 1600, hold: 2800 }
-        : { train: 5000, build: 2400, greet: 3400, hold: 7000 };
+        ? { train: 1500, build: 1100, greet: 3200, hold: 900 }
+        : { train: 4600, build: 1800, greet: 6200, hold: 1400 };
 
     const stage = buildStage();
     document.body.classList.add('neuro-intro');
@@ -832,64 +870,20 @@
     renderer.setPixelRatio(Math.min(1.75, devicePixelRatio || 1));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = T.PCFSoftShadowMap;
-    // The three lines that do more for how this looks than any amount
-    // of extra geometry. Without sRGB output every colour is written
-    // to the screen in the wrong space and the whole image reads flat
-    // and muddy; without a filmic curve the bright parts clip to a
-    // flat patch instead of rolling off.
     renderer.outputEncoding = T.sRGBEncoding;
     renderer.toneMapping = T.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.95;
+    renderer.toneMappingExposure = 1.0;
     renderer.domElement.className = 'neuro-canvas';
     stage.insertBefore(renderer.domElement, stage.firstChild);
 
     const scene = new T.Scene();
     const camera = new T.PerspectiveCamera(38, 1, 0.1, 60);
-    /* How far out of the way the figure and the built scenes have to
-       stand. Hard-coded numbers put both of them on top of the text on
-       every screen but the one they were guessed on, so the offset is
-       measured: convert the real width of a section, in pixels, into
-       world units at the working distance, and stand just outside it.
-       On a narrow window there is no margin to stand in, so the whole
-       scene shrinks rather than climbing over the writing. */
-    let sideX = 3.2;
-    let sideScale = 1;
-    let contentFrac = 0.62;                    // section width / window width
-    const measureContent = () => {
-      const sec = document.querySelector('main .section');
-      contentFrac = sec ? sec.getBoundingClientRect().width / innerWidth : 0.82;
-    };
-
-    /* Where the edge of the picture actually is.
-
-       This has to be recomputed every frame, not once on resize. Each
-       station pulls the camera to its own distance — 5.2 for one, 6.4
-       for another — and how much world fits across the screen depends
-       entirely on that distance. Measuring it once at a nominal 6.2 and
-       reusing the answer is why the figure was being cut in half by the
-       right edge whenever a station brought the camera closer in. */
-    const layout = () => {
-      const halfW = Math.tan((camera.fov * Math.PI / 180) / 2) * camera.position.z * camera.aspect;
-      const contentHalf = contentFrac * halfW;
-      const margin = Math.max(0.3, halfW - contentHalf);
-      const WIDEST = 0.95;                     // half-width of the widest built scene
-      sideScale = Math.max(0.42, Math.min(1, (margin - 0.12) / WIDEST));
-      sideX = halfW - WIDEST * sideScale - 0.18;
-    };
-
-    const resize = () => {
-      renderer.setSize(innerWidth, innerHeight, false);
-      camera.aspect = innerWidth / innerHeight;
-      camera.updateProjectionMatrix();
-      measureContent();
-      layout();
-    };
 
     scene.environment = buildEnvironment(T, renderer, M.accent);
     scene.fog = new T.Fog(0x0E0D0C, 9, 26);
+    scene.add(new T.HemisphereLight(0xF1EEE7, 0x100E0C, 0.6));
 
-    scene.add(new T.HemisphereLight(0xF1EEE7, 0x100E0C, 0.55));
-    const key = new T.DirectionalLight(0xFFF2E4, 1.5);
+    const key = new T.DirectionalLight(0xFFF2E4, 1.7);
     key.position.set(3.4, 6.2, 4.2);
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
@@ -903,23 +897,18 @@
     key.shadow.normalBias = 0.02;
     scene.add(key);
 
-    const rim = new T.DirectionalLight(M.accent, 0.8);
+    const rim = new T.DirectionalLight(M.accent, 0.9);
     rim.position.set(-4, 2.4, -3);
     scene.add(rim);
 
-    const glow = new T.PointLight(M.accent, 1.4, 3.2);
-    glow.position.set(0, 1.43, 0.4);
-    scene.add(glow);
+    const glow2 = new T.PointLight(M.accent, 1.3, 3.4);
+    scene.add(glow2);
 
     const floor = new T.Mesh(new T.PlaneGeometry(50, 50), new T.ShadowMaterial({ opacity: 0.3 }));
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    /* A shadow map alone leaves the feet looking like they hover: the
-       darkest part of a real contact shadow is right where the object
-       meets the ground, and no 2048px map is that sharp. This blob is
-       painted under the feet to close that gap. */
     const contact = new T.Mesh(
       new T.PlaneGeometry(2.6, 2.6),
       new T.MeshBasicMaterial({
@@ -931,16 +920,29 @@
     contact.position.y = 0.012;
     scene.add(contact);
 
-    PARTS.length = 0;
-    const { root, rig } = buildRobot(T);
-    scene.add(root);
-    PARTS.forEach((m) => { m.userData.s = m.scale.x; m.scale.setScalar(0.001); });
+    /* ------------------------------------------------- the figure */
+    const model = gltf.scene;
+    model.traverse((o) => {
+      if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; }
+    });
+    fitToHeight(T, model, 1.85);
+    const anat = readAnatomy(T, model);
+    const face = findFace(model);
 
-    const net = cloud(T, root, 320);
+    const root = new T.Group();
+    root.add(model);
+    scene.add(root);
+
+    const anim = makeAnimator(T, model, gltf.animations || []);
+
+    // it condenses out of the training cloud, so start it invisible
+    model.visible = false;
+
+    const net = cloud(T, model, 340);
     scene.add(net.points, net.lines);
 
     const stations = buildStations(T);
-    const bench = new T.Group();          // where built things stand
+    const bench = new T.Group();
     bench.position.set(-3.2, 1.15, 0);
     stations.forEach((s) => bench.add(s.g));
     scene.add(bench);
@@ -948,11 +950,33 @@
     const dust = debris(T, 26);
     scene.add(dust.g);
 
+    /* ------------------------------------------------------ sizing */
+    let sideX = 3.2;
+    let sideScale = 1;
+    let contentFrac = 0.62;
+    const measureContent = () => {
+      const sec = document.querySelector('main .section');
+      contentFrac = sec ? sec.getBoundingClientRect().width / innerWidth : 0.82;
+    };
+    const layout = () => {
+      const halfW = Math.tan((camera.fov * Math.PI / 180) / 2) * camera.position.z * camera.aspect;
+      const contentHalf = contentFrac * halfW;
+      const margin = Math.max(0.3, halfW - contentHalf);
+      const WIDEST = 0.95;
+      sideScale = Math.max(0.42, Math.min(1, (margin - 0.12) / WIDEST));
+      sideX = halfW - WIDEST * sideScale - 0.18;
+    };
+    const resize = () => {
+      renderer.setSize(innerWidth, innerHeight, false);
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      measureContent();
+      layout();
+    };
     resize();
     addEventListener('resize', resize);
 
     const mouse = { x: 0, y: 0 };
-    const mouseWorld = new T.Vector3();
     addEventListener('pointermove', (e) => {
       mouse.x = (e.clientX / innerWidth) * 2 - 1;
       mouse.y = (e.clientY / innerHeight) * 2 - 1;
@@ -968,15 +992,18 @@
     const nhBar = stage.querySelector('#nhBar');
 
     const LINE1 = 'HELLO. WELCOME TO MY WORLD.';
-    const LINE2 = 'I am the network Read trained. Scroll, and I will build his work in front of you.';
+    const LINE2 = 'I am the network Read trained. Come down with me and I will show you his work.';
+    const SPOKEN = 'Hello. Welcome to my world. I am the network Read trained. '
+                 + 'Come down with me, and I will show you his work.';
 
     let phase = 'train';
     let typed = 0;
     let lastEpoch = -1;
     let lastTick = 0;
-    let invited = false;
     let built = false;
     let bgAt = 0;
+    let spoke = false;
+    let speechDone = false;
     const t0 = performance.now();
 
     const finish = () => {
@@ -984,6 +1011,7 @@
       phase = 'bg';
       bgAt = performance.now();
       try { localStorage.setItem(SEEN_KEY, '1'); } catch { /* ignore */ }
+      VOICE.stop();
       stage.classList.add('done');
       document.body.classList.remove('neuro-intro');
       document.body.classList.add('neuro-bg');
@@ -996,50 +1024,38 @@
       finish();
       setTimeout(() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' }), 300);
     });
+    // Scrolling is an answer, not an interruption: the moment the
+    // visitor reaches for the wheel, the scene steps aside.
     addEventListener('wheel', finish, { passive: true });
     addEventListener('touchmove', finish, { passive: true });
     addEventListener('keydown', (e) => {
       if (['Escape', 'Enter', ' ', 'ArrowDown', 'PageDown'].includes(e.key)) finish();
     });
 
-    /* ================================================== THE DIVE
-
-       Clicking a section in the menu does not jump the page. The camera
-       flies into the part of the robot that section is about — the hand
-       for what he can do, the shoulder for where he has worked, the
-       visor for what he has built — the screen blows out at the moment
-       of contact, and the page is already at the new section when it
-       comes back. Every section enters through a different part of the
-       body, so the move never feels like the same trick twice.
-
-       Styles are set here rather than in the stylesheet: this sheet is
-       the one piece that must exist the instant the effect fires, and
-       inlining it means the effect can never arrive before its CSS. */
+    /* ================================================== THE DIVE */
     const flash = document.createElement('div');
+    flash.className = 'neuro-flashsheet';
     Object.assign(flash.style, {
       position: 'fixed', inset: '0', zIndex: '9600', opacity: '0',
-      pointerEvents: 'none', transition: 'none',
+      pointerEvents: 'none',
       background: 'radial-gradient(circle at 50% 45%, ' +
         `#${M.accent.getHexString()} 0%, ` +
         `#${M.accent.clone().multiplyScalar(0.35).getHexString()} 45%, ` +
         'rgba(0,0,0,0) 100%)'
     });
-    flash.className = 'neuro-flashsheet';
     document.body.appendChild(flash);
 
-    let DIVE = {};
-    const setDiveTargets = () => {
-      DIVE = {
-        '#about': rig.emblem,          // the badge on its chest: who it is
-        '#skills': rig.armL.wrist,     // the hand: what it can do
-        '#experience': rig.armR.shoulder, // the joint that has done the work
-        '#projects': rig.visor,        // the eyes: what it has seen and built
-        '#education': rig.antenna,     // the comm fin: what it has taken in
-        '#contact': rig.armR.wrist     // the other hand, offered
-      };
+    // Each section enters through a different part of the body, so the
+    // move never feels like the same trick twice. Positions are local to
+    // the model and are lifted into world space at the moment of use.
+    const DIVE_AT = {
+      '#about': anat.chest,
+      '#skills': anat.handL,
+      '#experience': anat.shoulder,
+      '#projects': anat.head,
+      '#education': anat.crown,
+      '#contact': anat.handR
     };
-
-    setDiveTargets();          // defined just above; the rig already exists
 
     let dive = null;
     const DIVE_MS = 1850;
@@ -1047,21 +1063,20 @@
     const diveTo = new T.Vector3();
 
     function startDive(sel) {
-      const obj = DIVE[sel];
-      if (!obj || dive) return;
-      dive = { t0: performance.now(), obj, sel, jumped: false, fov: camera.fov };
+      if (!DIVE_AT[sel] || dive) return;
+      dive = { t0: performance.now(), local: DIVE_AT[sel], sel, jumped: false, fov: camera.fov };
       diveFrom.copy(camera.position);
       blip(220, 0.5, 0.05, 'sine');
       blip(880, 0.18, 0.03, 'triangle');
+      anim.react('jump');
     }
 
-    // capture phase: beat the page's own smooth-scroll handler to it
     document.addEventListener('click', (e) => {
       if (phase !== 'bg' || dive) return;
       const a = e.target.closest('a[href^="#"]');
       if (!a) return;
       const sel = a.getAttribute('href');
-      if (!DIVE[sel]) return;
+      if (!DIVE_AT[sel]) return;
       e.preventDefault();
       e.stopPropagation();
       startDive(sel);
@@ -1069,10 +1084,7 @@
 
     /* --------------------------------------------- reading the page */
     const SECTIONS = ['#about', '#skills', '#experience', '#projects', '#education', '#contact'];
-    // how the camera feels about each station, in order
-    // The camera's opinion of each station. Kept modest on the x axis:
-    // swinging sideways moves everything across the frame, and the two
-    // things that must stay in the margins are the first to fall out.
+    const REACTION = ['wave', 'thumbs', 'punch', 'jump', 'yes', 'wave'];
     const SHOTS = [
       { x: 0.05, y: 1.75, z: 6.4, lx: 0.15, ly: 1.4 },
       { x: -0.25, y: 2.05, z: 6.2, lx: 0.1, ly: 1.5 },
@@ -1084,34 +1096,9 @@
 
     let lastY = scrollY;
     let speed = 0;
-    let gait = 0;
-    let point = 0;
     let section = -1;
-    let pointUntil = 0;
-
-    /* The presenter. Arriving at a section it points at what it built,
-       then turns a palm towards the writing, then nods — the three
-       things a person does when showing you something. Weights rather
-       than poses, so one can start before the last has finished. */
-    const G = { point: 0, present: 0, nod: 0 };
-    let script = [];
-    const runScript = (now) => {
-      const want = { point: 0, present: 0, nod: 0 };
-      script = script.filter((step) => now < step.end);
-      script.forEach((step) => {
-        const p = clamp01((now - step.start) / (step.end - step.start));
-        // ease in and back out again within the step
-        want[step.name] = Math.sin(p * Math.PI);
-      });
-      Object.keys(G).forEach((k) => { G[k] = lerp(G[k], want[k], 0.09); });
-    };
-    const cueSection = (now) => {
-      script = [
-        { name: 'point', start: now + 150, end: now + 2100 },
-        { name: 'present', start: now + 2000, end: now + 4200 },
-        { name: 'nod', start: now + 4100, end: now + 5200 }
-      ];
-    };
+    let hover = 0;                       // how far off the ground it is
+    let hoverUntil = 0;
     const cam = { x: 0, y: 1.45, z: 4.9, lx: 0, ly: 1.15 };
 
     const activeSection = () => {
@@ -1127,6 +1114,7 @@
 
     /* ---------------------------------------------------- the frame */
     let last = 0;
+    const worldTo = new T.Vector3();
     const tick = (now) => {
       API.raf = requestAnimationFrame(tick);
       if (document.hidden) return;
@@ -1157,7 +1145,7 @@
         }
       }
 
-      /* ---- the cloud drifts, then falls onto the body ---- */
+      /* ---- the cloud falls onto the body it was sampled from ---- */
       if (net.points.visible) {
         const pos = net.geo.attributes.position.array;
         const e = easeInOut(buildP);
@@ -1180,22 +1168,27 @@
         if (net.points.material.opacity <= 0.01) { net.points.visible = false; net.lines.visible = false; }
       }
 
-      /* ---- the body scales in, then the pose code takes over ---- */
+      /* ---- the body appears as the cloud gives up its points ---- */
       if (buildP > 0 && !built) {
-        for (let i = 0; i < PARTS.length; i++) {
-          const m = PARTS[i];
-          const d = clamp01((buildP - (i / PARTS.length) * 0.55) / 0.45);
-          m.scale.setScalar(Math.max(0.001, m.userData.s * easeOut(d)));
-        }
+        model.visible = true;
+        const q = easeOut(buildP);
+        root.scale.setScalar(Math.max(0.001, q));
         if (buildP >= 1) {
-          PARTS.forEach((m) => m.scale.setScalar(m.userData.s));
           built = true;
+          root.scale.setScalar(1);
+          anim.react('wave');
         }
       }
       if (phase === 'build' && buildP >= 1) phase = 'greet';
 
-      /* ---- it speaks ---- */
-      if (phase !== 'train' && phase !== 'build') {
+      /* ---- it speaks, out loud, and does not wait to be asked ---- */
+      if (phase === 'greet' || phase === 'invite') {
+        if (!spoke) {
+          spoke = true;
+          VOICE.say(SPOKEN, () => { speechDone = true; });
+          // no engine, no voices installed: fall back to the clock
+          setTimeout(() => { speechDone = true; }, D.greet + 1200);
+        }
         const total = LINE1.length + LINE2.length + 1;
         if (typed < total) {
           const want = Math.floor((el - D.train - D.build) / (D.greet / total));
@@ -1205,149 +1198,96 @@
             const b = typed > LINE1.length ? LINE2.slice(0, typed - LINE1.length - 1) : '';
             say.classList.add('show');
             say.innerHTML = `<b>${a}</b>${b ? '<span>' + b + '</span>' : ''}`;
-            if (now - lastTick > 30) { lastTick = now; blip(1400 + Math.random() * 500, 0.018, 0.016); }
+            if (now - lastTick > 34) { lastTick = now; blip(1500 + Math.random() * 400, 0.014, 0.01); }
           }
         }
-        if (!invited && el > D.train + D.build + D.greet) {
-          invited = true;
+        if (phase === 'greet' && typed >= total) {
+          phase = 'invite';
           go.hidden = false;
           requestAnimationFrame(() => go.classList.add('show'));
         }
-        if (invited && phase !== 'bg' && el > D.train + D.build + D.greet + D.hold) finish();
+        // Waiting for a click was the wrong instinct. When it has
+        // finished its line, it moves aside on its own.
+        if (phase === 'invite' && speechDone && el > D.train + D.build + D.greet + D.hold) finish();
       }
 
-      const speaking = typed > 0 && typed < LINE1.length + LINE2.length;
+      const speaking = phase !== 'bg' && typed > 0 && typed < LINE1.length + LINE2.length;
       const bgP = phase === 'bg' ? easeOut(clamp01((now - bgAt) / 1400)) : 0;
 
-      /* ---- gait comes from how fast the page is really moving ---- */
+      /* ---- what the page is doing drives what the body is doing ---- */
       const dy = scrollY - lastY;
       lastY = scrollY;
       speed = lerp(speed, Math.min(1, Math.abs(dy) / 26), 0.12);
-      gait += speed * dt * 9;
 
-      /* ---- which station is being built ---- */
+      if (built) {
+        if (phase !== 'bg') anim.locomote('idle');
+        else if (speed > 0.55) anim.locomote('run');
+        else if (speed > 0.06) anim.locomote('walk');
+        else anim.locomote('idle');
+        anim.update(dt);
+      }
+
+      /* ---- it reacts when you arrive somewhere new ---- */
       if (phase === 'bg') {
         const s = activeSection();
         if (s !== section) {
           section = s;
-          if (s !== -1) { pointUntil = now + 2100; cueSection(now); blip(660, 0.09, 0.03, 'sine'); }
+          if (s !== -1) {
+            anim.react(REACTION[s] || 'yes');
+            hoverUntil = now + 1500;          // and lifts off the floor
+            blip(660, 0.09, 0.03, 'sine');
+          }
         }
-        point = lerp(point, now < pointUntil ? 1 : 0, 0.06);
+      }
+      hover = lerp(hover, now < hoverUntil ? 1 : 0, 0.06);
+
+      /* ---- the face ---- */
+      if (face && face.morphTargetDictionary) {
+        const dict = face.morphTargetDictionary;
+        const inf = face.morphTargetInfluences;
+        const set = (n, v) => { if (dict[n] !== undefined) inf[dict[n]] = lerp(inf[dict[n]] || 0, v, 0.12); };
+        set('Surprised', speaking ? 0.45 : hover * 0.5);
+        set('Angry', 0);
+        set('Sad', 0);
       }
 
+      /* ---- placing it, and letting it fly ---- */
+      root.position.x = lerp(root.position.x, lerp(0, sideX, bgP), 0.05);
+      root.position.y = lerp(root.position.y, hover * 0.55, 0.07);
+      root.rotation.y = lerp(root.rotation.y, lerp(0, -0.3, bgP) + mouse.x * 0.18 * (1 - bgP), 0.06);
+      root.rotation.z = lerp(root.rotation.z, hover * -0.12, 0.06);
+      root.scale.setScalar(lerp(root.scale.x, built ? lerp(1, sideScale * 0.86, bgP) : root.scale.x, 0.05));
+
+      glow2.position.set(root.position.x, root.position.y + 1.2, 0.4);
+      glow2.intensity = 1.1 + Math.sin(t * 2) * 0.4;
+
+      contact.position.x = root.position.x;
+      contact.scale.setScalar(root.scale.x * (1 + hover * 0.5));
+      contact.material.opacity = 0.85 * (1 - hover * 0.55);
+
+      /* ---- the stations it builds ---- */
       stations.forEach((s, i) => {
-        const want = i === section ? 1 : 0;
+        const want = i === section && phase === 'bg' ? 1 : 0;
         s.a = lerp(s.a, want, want ? 0.045 : 0.09);
         const on = s.a > 0.004;
         if (s.g.visible !== on) s.g.visible = on;
         if (!on) return;
-
         const e = easeOut(clamp01(s.a));
-        // pieces fly out of the chest and settle into place
         s.parts.forEach((m, k) => {
           const d = clamp01((e - (k / s.parts.length) * 0.4) / 0.6);
           const q = easeOut(d);
           m.scale.setScalar(Math.max(0.0001, q));
           const h = m.userData.home;
-          // the chest, expressed in the bench's own coordinates. Both
-          // the figure and the bench move with the window now, so this
-          // cannot be a constant.
           const cxb = (root.position.x - bench.position.x) / (bench.scale.x || 1);
-          const cyb = (1.43 - bench.position.y) / (bench.scale.x || 1);
-          m.position.set(
-            lerp(cxb, h.x, q),
-            lerp(cyb, h.y, q),
-            lerp(0.2, h.z, q)
-          );
+          const cyb = (root.position.y + 1.2 - bench.position.y) / (bench.scale.x || 1);
+          m.position.set(lerp(cxb, h.x, q), lerp(cyb, h.y, q), lerp(0.2, h.z, q));
         });
         if (s.spin) s.spin(t, dt);
       });
-
-      /* ---- the pose ---- */
-      const idle = 1 - speed;
-      const swing = Math.sin(gait) * 0.55 * speed;
-      rig.legL.hip.rotation.x = swing + Math.sin(t) * 0.02 * idle;
-      rig.legR.hip.rotation.x = -swing - Math.sin(t) * 0.02 * idle;
-      rig.legL.knee.rotation.x = -Math.max(0, Math.sin(gait + 0.5)) * 0.85 * speed;
-      rig.legR.knee.rotation.x = -Math.max(0, Math.sin(gait + Math.PI + 0.5)) * 0.85 * speed;
-      rig.legL.ankle.rotation.x = -rig.legL.knee.rotation.x * 0.4;
-      rig.legR.ankle.rotation.x = -rig.legR.knee.rotation.x * 0.4;
-
-      runScript(now);
-
-      const wave = speaking && phase !== 'bg' ? Math.sin(now / 220) * 0.5 : 0;
-      const greetRaise = phase === 'greet' || phase === 'build' ? 0.9 : 0;
-      const rest = swing * 0.7;
-
-      // right arm just swings, unless it is offering a handshake
-      rig.armR.shoulder.rotation.x = -swing * 0.7;
-      rig.armR.elbow.rotation.x = -0.3 - Math.abs(swing) * 0.3;
-
-      /* Left arm: three gestures added on top of the walk, each with
-         its own weight, so pointing can begin while presenting is
-         still fading out. */
-      const pointW = Math.max(G.point, greetRaise);
-      let sx = lerp(rest, -1.95, pointW);          // shoulder pitch
-      let sz = lerp(0, -0.42, pointW) + wave;      // shoulder roll
-      let ex = lerp(-0.3 - Math.abs(swing) * 0.3, -0.18, pointW);
-
-      // palm turned towards the writing: arm out sideways, elbow bent
-      sx = lerp(sx, -0.5, G.present);
-      sz = lerp(sz, -1.15, G.present);
-      ex = lerp(ex, -0.85, G.present);
-
-      rig.armL.shoulder.rotation.x = sx;
-      rig.armL.shoulder.rotation.z = sz;
-      rig.armL.elbow.rotation.x = ex;
-      rig.armL.wrist.rotation.z = lerp(0, 1.15, G.present);
-      rig.armL.wrist.rotation.x = lerp(0, -0.35, G.point);
-      // fingers straighten to point, curl to present
-      rig.armL.fingers.rotation.x = lerp(-0.25, 0.05, G.point) + G.present * 0.4;
-
-      root.position.y = Math.abs(Math.sin(gait)) * 0.045 * speed;
-      rig.torso.rotation.y = Math.sin(gait) * 0.09 * speed;
-      rig.torso.scale.y = 1 + Math.sin(t * 0.7) * 0.006 * idle;
-
-      const look = Math.max(G.point, G.present);
-      const wantHeadY = lerp(mouse.x * 0.5, -0.9, look);
-      const wantHeadX = lerp(mouse.y * 0.28, 0.08, look) + Math.sin(now / 150) * 0.16 * G.nod;
-      rig.head.rotation.y = lerp(rig.head.rotation.y, wantHeadY, 0.07);
-      rig.head.rotation.x = lerp(rig.head.rotation.x, wantHeadX, 0.12);
-      rig.head.rotation.z = lerp(rig.head.rotation.z, G.present * 0.12, 0.06);
-
-      const lit = speaking ? 0.5 + Math.random() * 0.5 : 0;
-      rig.mouth.forEach((b, i) => {
-        b.scale.y = 0.25 + (speaking ? Math.abs(Math.sin(now / 90 + i)) * lit : 0.05);
-      });
-      // the antenna lags behind the head, then springs back
-      if (rig.antenna) {
-        rig.antenna.rotation.z = lerp(rig.antenna.rotation.z, -rig.head.rotation.y * 0.55 - swing * 0.25, 0.08);
-        rig.antenna.rotation.x = lerp(rig.antenna.rotation.x, Math.sin(t * 1.7) * 0.05 - speed * 0.2, 0.08);
-      }
-
-      // the haloes breathe with the emitters they sit on
-      const hotPulse = 1 + Math.sin(t * 2) * 0.22 + (speaking ? 0.35 : 0);
-      if (rig.coreGlow) rig.coreGlow.scale.setScalar(0.62 * hotPulse);
-      if (rig.eyeGlow) rig.eyeGlow.forEach((gl) => gl.scale.setScalar(0.3 * (0.9 + hotPulse * 0.15)));
-
-      // the contact shadow tracks the feet and tightens when they land
-      contact.position.x = root.position.x;
-      contact.scale.setScalar(root.scale.x * (1 - Math.abs(Math.sin(gait)) * 0.06 * speed));
-      contact.material.opacity = 0.85 - Math.abs(Math.sin(gait)) * 0.18 * speed;
-
-      M.hot.emissiveIntensity = 2.0 + Math.sin(t * 2) * 0.5 + (speaking ? 0.9 : 0);
-      glow.intensity = 1.2 + Math.sin(t * 2) * 0.4;
-      glow.position.set(root.position.x, 1.43, 0.4);
-
-      root.position.x = lerp(root.position.x, lerp(0, sideX, bgP), 0.05);
-      // the guide is deliberately smaller than the figure that
-      // introduced itself: a presenter beside the work, not a statue
-      root.scale.setScalar(lerp(root.scale.x, lerp(1, sideScale * 0.78, bgP), 0.05));
       bench.position.x = lerp(bench.position.x, -sideX, 0.05);
       bench.scale.setScalar(lerp(bench.scale.x, sideScale * 0.9, 0.05));
-      root.rotation.y = lerp(root.rotation.y, lerp(0, -0.26, bgP) + point * -0.3 + mouse.x * 0.12 * (1 - bgP), 0.06);
 
-      /* ---- the camera has an opinion about each station ---- */
+      /* ---- the camera ---- */
       const shot = section >= 0 && bgP > 0.2 ? SHOTS[section] : { x: 0, y: 1.45, z: 4.9, lx: 0, ly: 1.15 };
       const k2 = bgP > 0.2 ? 0.022 : 0.06;
       cam.x = lerp(cam.x, shot.x, k2);
@@ -1358,9 +1298,11 @@
 
       if (dive) {
         const p = clamp01((now - dive.t0) / DIVE_MS);
-        dive.obj.getWorldPosition(diveTo);
+        // measured before the model was parented, so these are root-space
+        worldTo.copy(dive.local);
+        root.localToWorld(worldTo);
+        diveTo.copy(worldTo);
         if (p < 0.5) {
-          // in: towards the part, narrowing, blowing out
           const k = easeInOut(p / 0.5);
           camera.position.lerpVectors(diveFrom, diveTo, k * 0.98);
           camera.fov = lerp(dive.fov, 14, k);
@@ -1368,20 +1310,20 @@
           camera.lookAt(diveTo);
           flash.style.opacity = String(Math.pow(k, 2.2));
         } else {
-          // the page changes underneath, hidden by the blow-out
           if (!dive.jumped) {
             dive.jumped = true;
-            const el = document.querySelector(dive.sel);
-            if (el) el.scrollIntoView({ block: 'start' });
+            const el2 = document.querySelector(dive.sel);
+            if (el2) el2.scrollIntoView({ block: 'start' });
             lastY = scrollY;
           }
           const k = easeOut((p - 0.5) / 0.5);
           camera.fov = lerp(14, 38, k);
           camera.updateProjectionMatrix();
-          const px = lerp(diveTo.x, cam.x + mouse.x * 0.3, k);
-          const py = lerp(diveTo.y, cam.y - mouse.y * 0.16, k);
-          const pz = lerp(diveTo.z, cam.z, k);
-          camera.position.set(px, py, pz);
+          camera.position.set(
+            lerp(diveTo.x, cam.x + mouse.x * 0.3, k),
+            lerp(diveTo.y, cam.y - mouse.y * 0.16, k),
+            lerp(diveTo.z, cam.z, k)
+          );
           camera.lookAt(lerp(diveTo.x, cam.lx, k), lerp(diveTo.y, cam.ly, k), 0);
           flash.style.opacity = String(1 - k);
         }
@@ -1395,34 +1337,32 @@
         camera.position.set(cam.x + mouse.x * 0.3, cam.y - mouse.y * 0.16, cam.z);
         camera.lookAt(cam.lx, cam.ly, 0);
       }
-      layout();                 // the frame is only known once the camera is placed
+      layout();
 
-      /* ---- the blocks, and the cursor shoving them ---- */
-      mouseWorld.set(mouse.x, -mouse.y, 0.5).unproject(camera);
-      mouseWorld.sub(camera.position).normalize();
-      const dist = (1.4 - camera.position.z) / mouseWorld.z;
-      mouseWorld.multiplyScalar(dist).add(camera.position);
+      /* ---- the loose blocks, and the cursor shoving them ---- */
+      const mw = new T.Vector3(mouse.x, -mouse.y, 0.5).unproject(camera);
+      mw.sub(camera.position).normalize();
+      const dist = (1.4 - camera.position.z) / mw.z;
+      mw.multiplyScalar(dist).add(camera.position);
 
       dust.items.forEach((d) => {
-        const p = d.m.position;
-        const dx = p.x - mouseWorld.x;
-        const dy2 = p.y - mouseWorld.y;
-        const dz = p.z - mouseWorld.z;
+        const pp = d.m.position;
+        const dx = pp.x - mw.x;
+        const dy2 = pp.y - mw.y;
+        const dz = pp.z - mw.z;
         const r2 = dx * dx + dy2 * dy2 + dz * dz;
         if (r2 < 1.6) {
           const f = (1.6 - r2) * 0.9 * dt / Math.max(0.25, Math.sqrt(r2));
           d.v.x += dx * f; d.v.y += dy2 * f; d.v.z += dz * f;
         }
-        // a soft spring home, so they drift back instead of escaping
-        d.v.x += (d.home.x - p.x) * 0.5 * dt;
-        d.v.y += (d.home.y - p.y) * 0.5 * dt;
-        d.v.z += (d.home.z - p.z) * 0.5 * dt;
+        d.v.x += (d.home.x - pp.x) * 0.5 * dt;
+        d.v.y += (d.home.y - pp.y) * 0.5 * dt;
+        d.v.z += (d.home.z - pp.z) * 0.5 * dt;
         d.v.multiplyScalar(0.965);
-        p.addScaledVector(d.v, dt * 8);
+        pp.addScaledVector(d.v, dt * 8);
         d.m.rotation.x += d.spin.x * dt + d.v.length() * dt;
         d.m.rotation.y += d.spin.y * dt;
       });
-      dust.g.visible = bgP > 0.05 || phase !== 'train';
 
       renderer.render(scene, camera);
     };
@@ -1432,12 +1372,10 @@
 
     new MutationObserver(() => {
       const dark = document.documentElement.dataset.theme !== 'light';
-      // the figure keeps its own livery in both themes; only the room
-      // around it changes
       floor.material.opacity = dark ? 0.34 : 0.22;
       contact.material.color.setHex(dark ? 0x000000 : 0x2A2620);
       scene.fog.color.setHex(dark ? 0x0E0D0C : 0xF1EEE7);
-      renderer.toneMappingExposure = dark ? 0.95 : 0.85;
+      renderer.toneMappingExposure = dark ? 1.0 : 0.9;
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   }
 

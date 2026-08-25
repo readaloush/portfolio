@@ -35,7 +35,14 @@
     .replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c')
     .normalize('NFD').replace(/[̀-ͯ]/g, '');
 
+  /* In press mode the sections are separate views, so "go to projects"
+     means show that view, not scroll to it. Everywhere else the page is
+     one scroll and scrolling is the right answer. */
   const goTo = (sel) => {
+    if (document.documentElement.dataset.mode === 'press' && window.PRESS) {
+      window.PRESS.show(sel === '#top' ? '' : sel);
+      return;
+    }
     const el = $(sel);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };

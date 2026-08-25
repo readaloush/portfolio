@@ -356,6 +356,25 @@
     } catch { /* sound is decoration; never let it break the page */ }
   }
 
+  /* The shortcuts have to be visible to exist. A key nobody is told
+     about is a key nobody presses. */
+  (() => {
+    const cta = document.querySelector('.hero-cta');
+    if (!cta || document.getElementById('keyChips')) return;
+    const wrap = document.createElement('div');
+    wrap.id = 'keyChips';
+    wrap.className = 'key-chips';
+    wrap.innerHTML =
+      '<button type="button" class="key-chip" data-open-cmdk>' +
+        '<kbd>`</kbd><span>or</span><kbd>&#8984;K</kbd><i>command palette</i></button>' +
+      '<span class="key-chip">' +
+        '<kbd>&larr;</kbd><kbd>&rarr;</kbd><i>move between sections</i></span>';
+    cta.parentNode.insertBefore(wrap, cta.nextSibling);
+    wrap.addEventListener('click', (e) => {
+      if (e.target.closest('[data-open-cmdk]')) window.CMDK?.show();
+    });
+  })();
+
   /* ---------------------------------------------------- press mode
      A quarterly, not a website: a masthead across the top and a
      numbered index of what is in this issue. Both are built once and
@@ -371,6 +390,60 @@
     education: 'where the theory came from.',
     contact: 'all the ways you can reach him.'
   };
+
+  /* An issue is read a page at a time.
+
+     The command line only earns its keep if there is somewhere to go.
+     With every section stacked on one scroll there was nowhere: ⌘K
+     could only scroll, which the wheel already does. In press mode the
+     sections become views — one on screen at a time, the index as the
+     cover — and the palette, the menu and the browser's own back button
+     all move between them. The other three modes stay a single scroll,
+     because a notebook and a walking robot both want continuity. */
+  const VIEWS = ['#about', '#skills', '#experience', '#projects', '#education', '#contact'];
+  let pressView = '';
+
+  function pressShow(sel, push) {
+    if (document.documentElement.dataset.mode !== 'press') return;
+    const wanted = VIEWS.includes(sel) ? sel : '';
+    pressView = wanted;
+
+    document.querySelectorAll('main .section').forEach((sec) => {
+      sec.classList.toggle('press-off', !!wanted && ('#' + sec.id) !== wanted);
+    });
+    document.querySelector('#hero')?.classList.toggle('press-off', !!wanted);
+    document.getElementById('pressIndex')?.classList.toggle('press-off', !!wanted);
+    document.getElementById('pressBack')?.classList.toggle('press-off', !wanted);
+
+    document.querySelectorAll('#navLinks a').forEach((a) => {
+      a.classList.toggle('is-here', a.getAttribute('href') === wanted);
+    });
+
+    if (push) {
+      try { history.pushState({ press: wanted }, '', wanted || location.pathname); } catch { /* ignore */ }
+    }
+    scrollTo({ top: 0, behavior: 'instant' in document.documentElement.style ? 'instant' : 'auto' });
+    window.SFX?.hover?.();
+  }
+
+  addEventListener('popstate', () => {
+    if (document.documentElement.dataset.mode === 'press') pressShow(location.hash, false);
+  });
+
+  // capture, so this beats the page's own smooth-scroll handler
+  document.addEventListener('click', (e) => {
+    if (document.documentElement.dataset.mode !== 'press') return;
+    const a = e.target.closest('a[href^="#"]');
+    if (!a) return;
+    const href = a.getAttribute('href');
+    if (href !== '#top' && !VIEWS.includes(href)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    pressShow(href === '#top' ? '' : href, true);
+    document.getElementById('navLinks')?.classList.remove('open');
+  }, true);
+
+  window.PRESS = { show: (sel) => pressShow(sel, true) };
 
   function buildPress() {
     if (document.getElementById('pressHead')) return;
@@ -399,6 +472,16 @@
 
     const hero = document.querySelector('#hero');
     if (hero && hero.parentNode) hero.parentNode.insertBefore(index, hero.nextSibling);
+
+    const back = document.createElement('a');
+    back.id = 'pressBack';
+    back.className = 'press-back press-off';
+    back.href = '#top';
+    back.innerHTML = '<span>&larr;</span> Contents';
+    document.querySelector('main')?.insertBefore(back, document.querySelector('main').firstChild);
+
+    // arriving on a deep link should open that view, not the cover
+    pressShow(location.hash, false);
   }
 
   /* --------------------------------------------------- neural mode
@@ -481,6 +564,11 @@
     calmTilt(mode === 'paper');
     try { localStorage.setItem(KEY, mode); } catch { /* ignore */ }
     if (mode === 'press') buildPress();
+    else {
+      // every other mode is one continuous page again
+      document.querySelectorAll('.press-off').forEach((el) => el.classList.remove('press-off'));
+      document.getElementById('pressBack')?.classList.add('press-off');
+    }
     neuroWanted = mode === 'neural';
     if (neuroWanted) loadNeural();
     else if (window.NEURO) window.NEURO.stop();

@@ -1233,3 +1233,67 @@ html[data-mode="press"] #navLinks a.is-here { color: var(--accent); }
 html[data-mode="press"] .reveal-x { opacity: 1 !important; transform: none !important; }
 html[data-mode="press"] .section { animation: pressIn .5s var(--ease) both; }
 @keyframes pressIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+
+/* ==================================================================
+   ONE SECTION AT A TIME — IN EVERY MODE
+
+   The site opens on its contents: the name, the signature, and a
+   numbered list of what is inside. A section is a page you turn to,
+   not a place you scroll past. This was built for press mode first and
+   then made general, so the class keeps its old name.
+   ================================================================== */
+.press-off { display: none !important; }
+
+.press-back {
+  display: inline-flex; align-items: center; gap: 9px;
+  max-width: 1180px; margin: 26px auto 0; padding: 0 clamp(20px, 5vw, 40px);
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  letter-spacing: 2.4px; text-transform: uppercase; color: var(--muted);
+  transition: color .3s var(--ease);
+}
+.press-back:hover { color: var(--accent); }
+#navLinks a.is-here { color: var(--accent); }
+
+/* the contents page, wherever it is shown */
+.press-index {
+  display: block; max-width: 1180px;
+  margin: 0 auto clamp(40px, 8vw, 90px);
+  padding: 0 clamp(20px, 5vw, 40px);
+}
+.press-index-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--muted);
+  padding-bottom: 10px; border-bottom: 1px solid var(--line);
+}
+.press-index a {
+  display: grid; grid-template-columns: 52px minmax(120px, 220px) 1fr;
+  align-items: baseline; gap: 18px;
+  padding: 16px 4px; border-bottom: 1px solid var(--line);
+  transition: background .25s var(--ease), padding-left .25s var(--ease);
+}
+.press-index a:hover { background: var(--surface); padding-left: 14px; }
+.press-index b {
+  font-family: 'JetBrains Mono', monospace; font-weight: 400;
+  font-size: 12px; color: var(--accent);
+}
+.press-index em { font-style: normal; font-size: clamp(1.1rem, 2vw, 1.5rem); font-weight: 600; }
+.press-index i { font-size: 14px; color: var(--muted); }
+@media (max-width: 700px) {
+  .press-index a { grid-template-columns: 38px 1fr; gap: 10px; }
+  .press-index i { grid-column: 2; }
+}
+/* each mode keeps its own voice for the contents */
+html[data-mode="paper"] .press-index em { font-family: 'Caveat', cursive; font-size: clamp(1.5rem, 2.6vw, 2rem); }
+html[data-mode="paper"] .press-index i { font-family: 'Kalam', cursive; }
+html[data-mode="press"] .press-index em,
+html[data-mode="press"] .press-index i { font-family: 'Bodoni Moda', serif; }
+html[data-mode="press"] .press-index i { font-style: italic; }
+
+/* a single view opens; it does not fly in from the side */
+.reveal-x { opacity: 1; transform: none; }
+main .section { animation: viewIn .45s var(--ease) both; }
+@keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* the scroll hint was advice for a page that no longer scrolls */
+.scroll-hint { display: none !important; }

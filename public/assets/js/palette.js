@@ -39,10 +39,7 @@
      means show that view, not scroll to it. Everywhere else the page is
      one scroll and scrolling is the right answer. */
   const goTo = (sel) => {
-    if (document.documentElement.dataset.mode === 'press' && window.PRESS) {
-      window.PRESS.show(sel === '#top' ? '' : sel);
-      return;
-    }
+    if (window.PRESS) { window.PRESS.show(sel === '#top' ? '' : sel); return; }
     const el = $(sel);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -62,7 +59,7 @@
       { g: 'go', label: ':projects', hint: 'what he has built', keys: 'projeler proje work', run: () => goTo('#projects') },
       { g: 'go', label: ':education', hint: 'degrees and coursework', keys: 'egitim okul universite school', run: () => goTo('#education') },
       { g: 'go', label: ':contact', hint: 'book a slot, or just write', keys: 'iletisim contact mail', run: () => goTo('#contact') },
-      { g: 'go', label: ':end', hint: 'jump to the bottom', keys: 'son alt bottom', run: () => scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }) },
+      { g: 'go', label: ':contents', hint: 'back to the contents page', keys: 'icindekiler kapak index son', run: () => goTo('#top') },
 
       { g: 'mode', label: ':modern', hint: 'the site as built', keys: 'modern normal varsayilan', run: () => mode('modern') },
       { g: 'mode', label: ':notebook', hint: 'ruled paper, turning pages', keys: 'defter kagit notebook paper', run: () => mode('paper') },

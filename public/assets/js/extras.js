@@ -120,6 +120,10 @@
   const SECTIONS = ['#top', '#about', '#skills', '#experience', '#projects', '#education', '#contact'];
 
   const currentIndex = () => {
+    if (window.PRESS) {
+      const v = window.PRESS.current();
+      return v ? Math.max(0, SECTIONS.indexOf(v)) : 0;
+    }
     let best = 0;
     let bestDist = Infinity;
     SECTIONS.forEach((sel, i) => {
@@ -133,7 +137,11 @@
 
   function goTo(i) {
     const clamped = Math.max(0, Math.min(SECTIONS.length - 1, i));
-    const el = document.querySelector(SECTIONS[clamped]);
+    const sel = SECTIONS[clamped];
+    // one section is on screen at a time, so an arrow key turns to the
+    // next one rather than scrolling towards it
+    if (window.PRESS) { window.PRESS.show(sel === '#top' ? '' : sel); return; }
+    const el = document.querySelector(sel);
     if (!el) return;
     el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
     window.SFX?.hover();
@@ -404,7 +412,6 @@
   let pressView = '';
 
   function pressShow(sel, push) {
-    if (document.documentElement.dataset.mode !== 'press') return;
     const wanted = VIEWS.includes(sel) ? sel : '';
     pressView = wanted;
 
@@ -426,19 +433,23 @@
     });
 
     if (push) {
-      try { history.pushState({ press: wanted }, '', wanted || location.pathname); } catch { /* ignore */ }
+      try { history.pushState({ view: wanted }, '', wanted || location.pathname); } catch { /* ignore */ }
     }
-    scrollTo({ top: 0, behavior: 'instant' in document.documentElement.style ? 'instant' : 'auto' });
-    window.SFX?.hover?.();
+    scrollTo(0, 0);
+
+    // A notebook turns a page when you turn to a page. The flip used to
+    // fire on crossing a scroll boundary, which no longer happens now
+    // that a view is the whole page.
+    if (document.documentElement.dataset.mode === 'paper') flip(false);
+    else window.SFX?.hover?.();
+
+    document.dispatchEvent(new CustomEvent('view:changed', { detail: { view: wanted } }));
   }
 
-  addEventListener('popstate', () => {
-    if (document.documentElement.dataset.mode === 'press') pressShow(location.hash, false);
-  });
+  addEventListener('popstate', () => pressShow(location.hash, false));
 
   // capture, so this beats the page's own smooth-scroll handler
   document.addEventListener('click', (e) => {
-    if (document.documentElement.dataset.mode !== 'press') return;
     const a = e.target.closest('a[href^="#"]');
     if (!a) return;
     const href = a.getAttribute('href');
@@ -449,7 +460,8 @@
     document.getElementById('navLinks')?.classList.remove('open');
   }, true);
 
-  window.PRESS = { show: (sel) => pressShow(sel, true) };
+  window.PRESS = { show: (sel) => pressShow(sel, true), current: () => pressView };
+  window.VIEWS = VIEWS;
 
   function buildPress() {
     if (document.getElementById('pressHead')) return;
@@ -569,12 +581,7 @@
     placeThumb();
     calmTilt(mode === 'paper');
     try { localStorage.setItem(KEY, mode); } catch { /* ignore */ }
-    if (mode === 'press') buildPress();
-    else {
-      // every other mode is one continuous page again
-      document.querySelectorAll('.press-off').forEach((el) => el.classList.remove('press-off'));
-      document.getElementById('pressBack')?.classList.add('press-off');
-    }
+    buildPress();     // the contents page belongs to every mode now
     neuroWanted = mode === 'neural';
     if (neuroWanted) loadNeural();
     else if (window.NEURO) window.NEURO.stop();

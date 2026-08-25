@@ -930,6 +930,29 @@
     model.traverse((o) => {
       if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; }
     });
+
+    /* The model ships in its own yellow livery. Repaint it into the
+       site's colours — white shell, ink-navy panels, the same burnt red
+       the rest of the page uses — by classifying each material rather
+       than by guessing at names, which differ between exports. Hue and
+       lightness are reliable; "Material.001" is not. */
+    const seen = new Set();
+    model.traverse((o) => {
+      if (!o.isMesh || !o.material) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach((m) => {
+        if (!m || !m.color || seen.has(m.uuid)) return;
+        seen.add(m.uuid);
+        const hsl = { h: 0, s: 0, l: 0 };
+        m.color.getHSL(hsl);
+        if (hsl.s > 0.3 && hsl.l > 0.34) m.color.setHex(0xEDEFF3);        // shell
+        else if (hsl.s > 0.3) m.color.copy(M.accent);                     // lit details
+        else if (hsl.l > 0.45) m.color.setHex(0xC9CDD6);                  // bright trim
+        else if (hsl.l > 0.12) m.color.setHex(0x2E4270);                  // panels
+        m.envMapIntensity = 0.9;
+        m.needsUpdate = true;
+      });
+    });
     fitToHeight(T, model, 1.85);
     const anat = readAnatomy(T, model);
     const face = findFace(model);

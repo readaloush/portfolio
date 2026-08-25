@@ -82,7 +82,7 @@
       const slug = fold(name).replace(/[^a-z0-9]/g, '');
       if (!slug || list.some((c) => c.label === ':' + slug)) return;
       list.push({
-        g: 'open', label: ':' + slug, hint: 'open ' + name, keys: name + ' link profil',
+        g: 'open', label: ':' + slug, hint: 'open ' + name, keys: name + ' link ac',
         run: () => window.open(a.href, a.target || '_blank', 'noopener')
       });
     });
@@ -134,11 +134,30 @@
   let cursor = 0;
   let open = false;
 
-  /** Loose match: every letter of the query, in order, somewhere. */
-  function score(cmd, q) {
-    if (!q) return 1;
+  /**
+   * Matching, in two passes.
+   *
+   * The first pass is plain substring, which is what people expect:
+   * "pro" finds ":projects". The second is a scattered-letter match,
+   * which catches typos and abbreviations — but it is far too generous
+   * to run alongside the first. Measured on the live site, "pro" under
+   * a scattered match alone returned sixteen of twenty-eight commands,
+   * including TikTok and YouTube, because p, r and o appear in that
+   * order somewhere in almost any sentence. So the scattered pass only
+   * runs when the strict one found nothing at all.
+   */
+  function strictScore(cmd, q) {
     const hay = fold(cmd.label + ' ' + cmd.hint + ' ' + (cmd.keys || ''));
-    if (hay.includes(q)) return 100 - hay.indexOf(q);
+    const at = hay.indexOf(q);
+    if (at === -1) return 0;
+    // earlier in the text, and in the label rather than the hint, wins
+    const inLabel = fold(cmd.label).includes(q) ? 60 : 0;
+    return 100 - Math.min(40, at) + inLabel;
+  }
+
+  function looseScore(cmd, q) {
+    if (q.length < 3) return 0;
+    const hay = fold(cmd.label + ' ' + (cmd.keys || ''));
     let i = 0;
     for (const ch of q) {
       i = hay.indexOf(ch, i);
@@ -150,11 +169,17 @@
 
   function render() {
     const q = fold(input.value.replace(/^:+/, '').trim());
-    shown = all
-      .map((c) => ({ c, s: score(c, q) }))
-      .filter((x) => x.s > 0)
-      .sort((a, b) => b.s - a.s)
-      .map((x) => x.c);
+    if (!q) {
+      shown = all.slice();
+    } else {
+      const rank = (fn) => all
+        .map((c) => ({ c, s: fn(c, q) }))
+        .filter((x) => x.s > 0)
+        .sort((a, b) => b.s - a.s)
+        .map((x) => x.c);
+      shown = rank(strictScore);
+      if (!shown.length) shown = rank(looseScore);
+    }
 
     if (cursor >= shown.length) cursor = Math.max(0, shown.length - 1);
 

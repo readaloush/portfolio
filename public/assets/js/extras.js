@@ -504,3 +504,17 @@
   });
   document.body.insertBefore(a, document.body.firstChild);
 })();
+
+
+/* ==================================================================
+   The command line loads on every visit, in every mode: it is a way
+   around the site, not a decoration on one presentation of it.
+   ================================================================== */
+(() => {
+  if (document.getElementById('cmdkScript')) return;
+  const s = document.createElement('script');
+  s.id = 'cmdkScript';
+  s.src = '/assets/js/palette.js';
+  s.defer = true;
+  document.head.appendChild(s);
+})();

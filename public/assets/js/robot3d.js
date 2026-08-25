@@ -837,9 +837,14 @@
         if (!window.THREE) await grab(THREE_URL);
         if (!window.THREE) throw new Error('three missing');
         if (!window.THREE.GLTFLoader) await grab(LOADER_URL);
-        const gltf = await new Promise((res, rej) => {
-          new window.THREE.GLTFLoader().load(MODEL_URL, res, undefined, rej);
-        });
+        // A fetch that neither resolves nor rejects is the worst case:
+        // no error to catch, no scene, and a visitor staring at nothing.
+        const gltf = await Promise.race([
+          new Promise((res, rej) => {
+            new window.THREE.GLTFLoader().load(MODEL_URL, res, undefined, rej);
+          }),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('model timeout')), 12000))
+        ]);
         boot(gltf);
       } catch (err) {
         // A blocked CDN, a slow network, a browser without WebGL — any
@@ -1117,7 +1122,14 @@
     const worldTo = new T.Vector3();
     const tick = (now) => {
       API.raf = requestAnimationFrame(tick);
-      if (document.hidden) return;
+      /* There used to be an `if (document.hidden) return` here, to save
+         power in a background tab. It had to go. Browsers already stop
+         calling requestAnimationFrame in a genuinely hidden tab, so the
+         check bought nothing — but in any context where the frame clock
+         keeps running while document.hidden reports true (embedded
+         views, some automation, some window managers) it froze the
+         whole scene: black canvas, read-out stuck on epoch 000, no
+         error anywhere to explain it. Exactly what was reported. */
       const dt = Math.min(0.05, (now - last) / 1000 || 0.016);
       last = now;
       const el = now - t0;
@@ -1369,6 +1381,17 @@
 
     API.raf = requestAnimationFrame(tick);
     if (reduced) setTimeout(finish, 600);
+
+    /* Last line of defence. If the scene has not advanced past training
+       within twenty seconds — for any reason at all, including ones not
+       thought of here — step aside and give the visitor the site. An
+       effect that fails should cost an effect, never the page. */
+    setTimeout(() => {
+      if (phase === 'train' || phase === 'build') {
+        stage.querySelector('.neuro-ui')?.remove();
+        finish();
+      }
+    }, 20000);
 
     new MutationObserver(() => {
       const dark = document.documentElement.dataset.theme !== 'light';

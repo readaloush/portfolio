@@ -408,8 +408,14 @@
     const wanted = VIEWS.includes(sel) ? sel : '';
     pressView = wanted;
 
+    /* On the cover, every section is put away — the cover is the
+       masthead and the index, nothing else. The first version only
+       hid the *other* sections, which meant that with no view chosen
+       nothing was hidden at all and the whole magazine sat stacked
+       under its own table of contents. Measured on the live page: six
+       of six sections visible on the cover. */
     document.querySelectorAll('main .section').forEach((sec) => {
-      sec.classList.toggle('press-off', !!wanted && ('#' + sec.id) !== wanted);
+      sec.classList.toggle('press-off', wanted ? ('#' + sec.id) !== wanted : true);
     });
     document.querySelector('#hero')?.classList.toggle('press-off', !!wanted);
     document.getElementById('pressIndex')?.classList.toggle('press-off', !!wanted);

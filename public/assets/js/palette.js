@@ -72,6 +72,10 @@
       { g: 'do', label: ':cv', hint: 'open the CV in a new tab', keys: 'ozgecmis resume pdf', run: () => press('#cvButton') },
       { g: 'do', label: ':book', hint: 'pick a slot in the calendar', keys: 'randevu takvim meeting calendar', run: () => { const a = $('#calendarBox a'); if (a) a.click(); else goTo('#contact'); } },
       { g: 'do', label: ':ask', hint: 'ask the assistant a question', keys: 'sor sohbet chat bot', run: () => press('#chatOrb') },
+      { g: 'play', label: ':snake', hint: 'eat, grow, do not turn into yourself', keys: 'yilan oyun game', run: () => window.openArcade('snake') },
+      { g: 'play', label: ':tetris', hint: 'stack them, clear the lines', keys: 'tetris oyun game blok', run: () => window.openArcade('tetris') },
+      { g: 'play', label: ':breakout', hint: 'bat, ball, bricks', keys: 'breakout arkanoid oyun game tugla', run: () => window.openArcade('breakout') },
+
       { g: 'do', label: ':random', hint: 'open a project at random', keys: 'rastgele surprise', run: () => {
         const all = $$('.project');
         if (!all.length) return goTo('#projects');
@@ -132,7 +136,7 @@
   const listEl = $('#cmdkList', root);
   const countEl = $('#cmdkCount', root);
 
-  const GROUPS = { go: 'GO', mode: 'MODE', set: 'SETTINGS', do: 'DO', open: 'OPEN', project: 'PROJECTS' };
+  const GROUPS = { go: 'GO', mode: 'MODE', set: 'SETTINGS', do: 'DO', play: 'PLAY', open: 'OPEN', project: 'PROJECTS' };
 
   let all = [];
   let shown = [];

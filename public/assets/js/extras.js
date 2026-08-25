@@ -486,7 +486,16 @@
       return `<a href="#${k}"><b>${String(i + 1).padStart(2, '0')}</b>` +
              `<em>${title}</em><i>${SECTION_NOTES[k]}</i></a>`;
     }).join('');
-    index.innerHTML = '<p class="press-index-label">In this issue</p>' + rows;
+    index.innerHTML = '<p class="press-index-label">In this issue</p>' + rows +
+      '<a href="#arcade" data-arcade><b>07</b><em>Arcade</em>' +
+      '<i>snake, tetris, breakout \u2014 while you decide.</i></a>';
+    index.addEventListener('click', (e) => {
+      const a = e.target.closest('[data-arcade]');
+      if (!a) return;
+      e.preventDefault();
+      e.stopPropagation();
+      window.openArcade('snake');
+    }, true);
 
     const hero = document.querySelector('#hero');
     if (hero && hero.parentNode) hero.parentNode.insertBefore(index, hero.nextSibling);
@@ -668,4 +677,22 @@
   s.src = '/assets/js/palette.js';
   s.defer = true;
   document.head.appendChild(s);
+})();
+
+/* ==================================================================
+   The arcade is fetched the first time somebody asks for it, and not
+   before: three games are no reason to slow down a CV.
+   ================================================================== */
+(() => {
+  let asked = false;
+  window.openArcade = (name) => {
+    if (window.ARCADE) { window.ARCADE.show(name); return; }
+    if (asked) return;
+    asked = true;
+    const s = document.createElement('script');
+    s.id = 'arcadeScript';
+    s.src = '/assets/js/arcade.js';
+    s.addEventListener('load', () => window.ARCADE?.show(name));
+    document.head.appendChild(s);
+  };
 })();

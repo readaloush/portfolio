@@ -60,6 +60,7 @@
       { g: 'mode', label: ':modern', hint: 'the site as built', keys: 'modern normal varsayilan', run: () => mode('modern') },
       { g: 'mode', label: ':notebook', hint: 'ruled paper, turning pages', keys: 'defter kagit notebook paper', run: () => mode('paper') },
       { g: 'mode', label: ':neural', hint: 'the robot, in three dimensions', keys: 'neural robot 3d sinir', run: () => mode('neural') },
+      { g: 'mode', label: ':press', hint: 'the site as a printed quarterly', keys: 'dergi gazete press editorial matbaa', run: () => mode('press') },
 
       { g: 'set', label: ':theme', hint: 'flip the light switch', keys: 'tema isik dark light koyu acik', run: () => press('#themeSwitch') },
       { g: 'set', label: ':sound', hint: 'sound on or off', keys: 'ses sessiz mute audio', run: () => press('#soundBtn') },

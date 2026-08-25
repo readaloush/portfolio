@@ -205,8 +205,8 @@
    ================================================================== */
 (() => {
   const KEY = 'rp_mode';
-  const MODES = ['modern', 'paper', 'neural'];
-  const LABEL = { modern: 'Modern', paper: 'Notebook', neural: 'Neural' };
+  const MODES = ['modern', 'paper', 'neural', 'press'];
+  const LABEL = { modern: 'Modern', paper: 'Notebook', neural: 'Neural', press: 'Press' };
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const read = () => {
@@ -219,13 +219,17 @@
   /* ---------------------------------------------- the handwriting
      Two script faces, fetched only when paper is actually asked for,
      so a visitor who never leaves modern mode never pays for them. */
-  let fontsAsked = false;
-  function loadFonts() {
-    if (fontsAsked) return;
-    fontsAsked = true;
+  const FONTS = {
+    paper: 'https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Kalam:wght@300;400;700&display=swap',
+    press: 'https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,700;1,6..96,400&display=swap'
+  };
+  const fontsAsked = {};
+  function loadFonts(which) {
+    if (!FONTS[which] || fontsAsked[which]) return;
+    fontsAsked[which] = true;
     const l = document.createElement('link');
     l.rel = 'stylesheet';
-    l.href = 'https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Kalam:wght@300;400;700&display=swap';
+    l.href = FONTS[which];
     document.head.appendChild(l);
   }
 
@@ -352,6 +356,51 @@
     } catch { /* sound is decoration; never let it break the page */ }
   }
 
+  /* ---------------------------------------------------- press mode
+     A quarterly, not a website: a masthead across the top and a
+     numbered index of what is in this issue. Both are built once and
+     left in the document — CSS decides whether they are visible — so
+     switching modes never has to rebuild anything, and the index can
+     be kept in step with the page by one observer rather than by a
+     rebuild on every switch. */
+  const SECTION_NOTES = {
+    about: 'who is behind the signature.',
+    skills: 'what he reaches for, and how far.',
+    experience: 'everything shipped, in order.',
+    projects: 'the work itself.',
+    education: 'where the theory came from.',
+    contact: 'all the ways you can reach him.'
+  };
+
+  function buildPress() {
+    if (document.getElementById('pressHead')) return;
+
+    const now = new Date();
+    const month = now.toLocaleString('en', { month: 'short' }).toUpperCase();
+    const head = document.createElement('div');
+    head.id = 'pressHead';
+    head.className = 'press-head';
+    head.innerHTML =
+      `<span>VOL. I</span><span>NO. 1</span><span>${month} ${now.getFullYear()}</span>` +
+      '<span class="press-title">READ LEVA ALALLOŞ — AN ENGINEERING QUARTERLY</span>';
+    document.body.insertBefore(head, document.body.firstChild);
+
+    const index = document.createElement('nav');
+    index.id = 'pressIndex';
+    index.className = 'press-index';
+    index.setAttribute('aria-label', 'In this issue');
+    const rows = Object.keys(SECTION_NOTES).map((k, i) => {
+      const el = document.querySelector('#' + k);
+      const title = el?.querySelector('.section-title')?.textContent?.trim() || k;
+      return `<a href="#${k}"><b>${String(i + 1).padStart(2, '0')}</b>` +
+             `<em>${title}</em><i>${SECTION_NOTES[k]}</i></a>`;
+    }).join('');
+    index.innerHTML = '<p class="press-index-label">In this issue</p>' + rows;
+
+    const hero = document.querySelector('#hero');
+    if (hero && hero.parentNode) hero.parentNode.insertBefore(index, hero.nextSibling);
+  }
+
   /* --------------------------------------------------- neural mode
      The intro is a whole scene of its own, so it lives in its own
      file and is fetched only when someone actually asks for it. It
@@ -421,7 +470,7 @@
 
   function apply(next, announce = false) {
     mode = next;
-    if (mode === 'paper') loadFonts();
+    loadFonts(mode);
     document.documentElement.dataset.mode = mode;
     buttons.forEach((b) => {
       const on = b.dataset.mode === mode;
@@ -431,6 +480,7 @@
     placeThumb();
     calmTilt(mode === 'paper');
     try { localStorage.setItem(KEY, mode); } catch { /* ignore */ }
+    if (mode === 'press') buildPress();
     neuroWanted = mode === 'neural';
     if (neuroWanted) loadNeural();
     else if (window.NEURO) window.NEURO.stop();

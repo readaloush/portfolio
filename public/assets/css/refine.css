@@ -1146,3 +1146,90 @@ html[data-mode="press"] .stats li::after { display: none !important; }
 @media (max-width: 980px) {
   html[data-mode="press"] .stats li { border-right: 0; border-bottom: 1px solid var(--line); }
 }
+
+
+/* ==================================================================
+   THE PHOTOGRAPH BELONGS TO ONE MODE
+
+   A portrait is a portrait; a notebook, a robot's stage and a printed
+   quarterly each have their own idea of what stands in that corner,
+   and in all three it is the signature. Making it big is the point —
+   it is the mark he signs his work with.
+
+   This also settles where the admin panel can be opened from. The five
+   clicks are bound to the photo frame, and an element that is not
+   displayed cannot be clicked, so hiding the portrait shuts that door
+   in every mode but the main one — without a second rule to keep in
+   step, and without the door existing anywhere it should not.
+   ================================================================== */
+html[data-mode="paper"] .photo-frame,
+html[data-mode="neural"] .photo-frame,
+html[data-mode="press"] .photo-frame,
+html[data-mode="paper"] .photo-caption,
+html[data-mode="neural"] .photo-caption,
+html[data-mode="press"] .photo-caption { display: none !important; }
+
+html[data-mode="paper"] .photo-signature,
+html[data-mode="neural"] .photo-signature,
+html[data-mode="press"] .photo-signature {
+  margin: 0 auto;
+  width: min(100%, 620px);
+  transform: scale(1.9);
+  transform-origin: center;
+  filter: none;
+}
+html[data-mode="paper"] .hero-visual,
+html[data-mode="neural"] .hero-visual,
+html[data-mode="press"] .hero-visual {
+  display: grid; place-items: center; min-height: clamp(220px, 34vh, 420px);
+}
+@media (max-width: 980px) {
+  html[data-mode="paper"] .photo-signature,
+  html[data-mode="neural"] .photo-signature,
+  html[data-mode="press"] .photo-signature { transform: scale(1.35); }
+}
+
+/* ==================================================================
+   THE SHORTCUT CHIPS
+   ================================================================== */
+.key-chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 6px; }
+.key-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 13px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface);
+  font-size: 11px; color: var(--muted);
+  transition: border-color .3s var(--ease), color .3s var(--ease);
+}
+button.key-chip:hover { border-color: var(--accent); color: var(--text); }
+.key-chip kbd {
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text);
+  border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px;
+  padding: 2px 6px; background: var(--bg2);
+}
+.key-chip i { font-style: normal; letter-spacing: .3px; }
+.key-chip span { opacity: .7; }
+@media (max-width: 620px) { .key-chip i { display: none; } }
+html[data-mode="press"] .key-chip { border-radius: 0; }
+@media print { .key-chips { display: none !important; } }
+
+/* ==================================================================
+   PRESS: ONE VIEW AT A TIME
+   ================================================================== */
+html[data-mode="press"] .press-off { display: none !important; }
+.press-back { display: none; }
+html[data-mode="press"] .press-back {
+  display: inline-flex; align-items: center; gap: 9px;
+  max-width: 1180px; margin: 26px auto 0; padding: 0 clamp(20px, 5vw, 40px);
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  letter-spacing: 2.4px; text-transform: uppercase; color: var(--muted);
+  transition: color .3s var(--ease);
+}
+html[data-mode="press"] .press-back:hover { color: var(--accent); }
+html[data-mode="press"] .press-back.press-off { display: none !important; }
+html[data-mode="press"] #navLinks a.is-here { color: var(--accent); }
+
+/* a single view opens rather than arrives from the side: the fly-in
+   belongs to a page you scroll, not to a page you turn to */
+html[data-mode="press"] .reveal-x { opacity: 1 !important; transform: none !important; }
+html[data-mode="press"] .section { animation: pressIn .5s var(--ease) both; }
+@keyframes pressIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }

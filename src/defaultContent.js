@@ -69,27 +69,27 @@ module.exports = {
     {
       "label": "Instagram",
       "icon": "instagram",
-      "url": "https://instagram.com/"
+      "url": "https://instagram.com/readaloush"
     },
     {
       "label": "Facebook",
       "icon": "facebook",
-      "url": "https://facebook.com/"
+      "url": "https://facebook.com/readaloush"
     },
     {
       "label": "TikTok",
       "icon": "tiktok",
-      "url": "https://tiktok.com/"
+      "url": "https://tiktok.com/@_.pm"
     },
     {
       "label": "X",
       "icon": "x",
-      "url": "https://x.com/"
+      "url": "https://x.com/readaloush"
     },
     {
       "label": "YouTube",
       "icon": "youtube",
-      "url": "https://youtube.com/"
+      "url": "https://youtube.com/@readaloush"
     },
     {
       "label": "Email",

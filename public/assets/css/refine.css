@@ -903,3 +903,202 @@ body.neuro-bg .orb { animation: neuroIn 1s var(--ease) both; }
 }
 @media (max-width: 720px) { .cmdk-tip { display: none; } .cmdk-row b { min-width: 130px; } }
 @media print { .cmdk, .cmdk-tip { display: none !important; } }
+
+
+/* ==================================================================
+   ====================  P R E S S   M O D E  =======================
+
+   The fourth presentation: the same content set as a printed
+   quarterly. High-contrast serif for anything that would be typeset,
+   monospace for anything that would be a printer's mark, hairline
+   rules doing the work that boxes and shadows do elsewhere.
+
+   The rule of this mode is that nothing floats. No cards, no glass,
+   no drop shadows — an editorial page is flat, and its structure comes
+   from rules, numbers and space.
+   ================================================================== */
+
+html[data-mode="press"][data-theme="dark"] {
+  --bg:        #12100E;
+  --bg2:       #12100E;
+  --surface:   rgba(242,237,227,.045);
+  --surface-2: rgba(242,237,227,.075);
+  --line:      rgba(242,237,227,.18);
+  --text:      #F2EDE3;
+  --muted:     #97907F;
+  --accent:    #D8503A;
+  --accent2:   #B23A24;
+  --shadow:    none;
+}
+html[data-mode="press"][data-theme="light"] {
+  --bg:        #F7F3EA;
+  --bg2:       #F7F3EA;
+  --surface:   rgba(20,18,16,.04);
+  --surface-2: rgba(20,18,16,.07);
+  --line:      rgba(20,18,16,.2);
+  --text:      #141210;
+  --muted:     #6B6357;
+  --accent:    #B23A24;
+  --accent2:   #8A2716;
+  --shadow:    none;
+}
+
+/* nothing that glows belongs in print */
+html[data-mode="press"] #netCanvas,
+html[data-mode="press"] .aurora,
+html[data-mode="press"] .photo-scan,
+html[data-mode="press"] .photo-ring,
+html[data-mode="press"] .photo-glare,
+html[data-mode="press"] .btn-shine,
+html[data-mode="press"] .orb-ring,
+html[data-mode="press"] .grain { display: none !important; }
+
+/* ---- the masthead ------------------------------------------------ */
+.press-head { display: none; }
+html[data-mode="press"] .press-head {
+  display: flex; align-items: center; gap: 22px;
+  position: relative; z-index: 3;
+  padding: 16px clamp(20px, 5vw, 60px) 12px;
+  border-bottom: 1px solid var(--line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; letter-spacing: 2.4px; text-transform: uppercase;
+  color: var(--muted);
+}
+html[data-mode="press"] .press-head .press-title { margin-left: auto; color: var(--text); }
+@media (max-width: 760px) {
+  html[data-mode="press"] .press-head { gap: 12px; font-size: 9px; letter-spacing: 1.4px; }
+  html[data-mode="press"] .press-head .press-title { display: none; }
+}
+
+/* ---- the type ----------------------------------------------------
+   One high-contrast serif carries every heading. Body copy stays in
+   the sans it was set in: a whole CV in a display face is a poster,
+   not a document, and someone has to read this to hire him. */
+html[data-mode="press"] .hero-name,
+html[data-mode="press"] .section-title,
+html[data-mode="press"] .press-index em,
+html[data-mode="press"] .project h3,
+html[data-mode="press"] .edu-card h3,
+html[data-mode="press"] .tl-role,
+html[data-mode="press"] .stats b {
+  font-family: 'Bodoni Moda', 'Sora', serif;
+  font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text); background: none; -webkit-text-fill-color: currentColor;
+}
+html[data-mode="press"] .hero-name {
+  font-size: clamp(3rem, 9vw, 7rem); line-height: .92; text-transform: none;
+}
+html[data-mode="press"] .section-title { font-size: clamp(2rem, 5vw, 3.4rem); }
+html[data-mode="press"] .hero-role { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; }
+
+/* the summary becomes a pull quote, which is what a magazine does
+   with the one sentence it wants you to keep */
+html[data-mode="press"] .hero-tagline {
+  font-family: 'Bodoni Moda', serif; font-style: italic; font-weight: 400;
+  font-size: clamp(1.15rem, 2.6vw, 1.8rem); line-height: 1.35;
+  text-transform: none; letter-spacing: 0; color: var(--text);
+  border-left: 3px solid var(--accent); padding-left: 18px; margin: 26px 0 20px;
+}
+
+/* ---- the index --------------------------------------------------- */
+.press-index { display: none; }
+html[data-mode="press"] .press-index {
+  display: block; max-width: 1180px;
+  margin: 0 auto clamp(40px, 8vw, 90px);
+  padding: 0 clamp(20px, 5vw, 40px);
+}
+html[data-mode="press"] .press-index-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--muted);
+  padding-bottom: 10px; border-bottom: 1px solid var(--line);
+}
+html[data-mode="press"] .press-index a {
+  display: grid; grid-template-columns: 52px minmax(120px, 220px) 1fr;
+  align-items: baseline; gap: 18px;
+  padding: 16px 4px; border-bottom: 1px solid var(--line);
+  transition: background .25s var(--ease), padding-left .25s var(--ease);
+}
+html[data-mode="press"] .press-index a:hover { background: var(--surface); padding-left: 14px; }
+html[data-mode="press"] .press-index b {
+  font-family: 'JetBrains Mono', monospace; font-weight: 400;
+  font-size: 12px; color: var(--accent);
+}
+html[data-mode="press"] .press-index em { font-style: normal; font-size: clamp(1.1rem, 2vw, 1.5rem); }
+html[data-mode="press"] .press-index i {
+  font-family: 'Bodoni Moda', serif; font-style: italic;
+  font-size: 14px; color: var(--muted);
+}
+@media (max-width: 700px) {
+  html[data-mode="press"] .press-index a { grid-template-columns: 38px 1fr; gap: 10px; }
+  html[data-mode="press"] .press-index i { grid-column: 2; }
+}
+
+/* ---- rules instead of boxes -------------------------------------- */
+html[data-mode="press"] .card,
+html[data-mode="press"] .project,
+html[data-mode="press"] .tl-item,
+html[data-mode="press"] .edu-card,
+html[data-mode="press"] .skill-card,
+html[data-mode="press"] .calendar-box,
+html[data-mode="press"] .chat,
+html[data-mode="press"] .modal-card {
+  background: none !important;
+  border: 0; border-top: 1px solid var(--line);
+  border-radius: 0; box-shadow: none !important; backdrop-filter: none;
+  padding: 26px 0;
+}
+html[data-mode="press"] .card::before,
+html[data-mode="press"] .glow::after { display: none !important; }
+html[data-mode="press"] .chat,
+html[data-mode="press"] .modal-card {
+  background: var(--bg) !important; border: 1px solid var(--line); padding: 0;
+}
+html[data-mode="press"] .modal-card { padding: 30px; }
+
+/* a project reads as an index entry with a plate, not as a card */
+html[data-mode="press"] .project { grid-template-columns: 1fr 220px; gap: clamp(20px, 4vw, 48px); align-items: start; }
+html[data-mode="press"] .project .project-media { order: 2; border-radius: 0; }
+html[data-mode="press"] .project .project-media img { border-radius: 0; filter: grayscale(1) contrast(1.08); transition: filter .5s var(--ease); }
+html[data-mode="press"] .project:hover .project-media img { filter: grayscale(0) contrast(1); }
+html[data-mode="press"] .project .project-body { order: 1; padding: 0; }
+html[data-mode="press"] .project h3 { font-size: clamp(1.4rem, 3vw, 2.1rem); }
+@media (max-width: 860px) {
+  html[data-mode="press"] .project { grid-template-columns: 1fr; }
+  html[data-mode="press"] .project .project-media { order: 1; }
+  html[data-mode="press"] .project .project-body { order: 2; }
+}
+
+/* section heads carry their number, the way a chapter does */
+html[data-mode="press"] main { counter-reset: chapter; }
+html[data-mode="press"] .section { counter-increment: chapter; }
+html[data-mode="press"] .section-head {
+  border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 34px;
+}
+html[data-mode="press"] .section-kicker::before {
+  content: counter(chapter, decimal-leading-zero) ' · ';
+  color: var(--accent);
+}
+
+/* photograph: printed, not lit */
+html[data-mode="press"] .photo-frame { border-radius: 0; border: 1px solid var(--line); box-shadow: none; }
+html[data-mode="press"] .photo-frame img { border-radius: 0; filter: grayscale(1) contrast(1.05); }
+
+/* buttons are rules and small caps, not pills */
+html[data-mode="press"] .btn {
+  border-radius: 0; border: 1px solid var(--line);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2.4px;
+  text-transform: uppercase; background: none;
+}
+html[data-mode="press"] .btn-primary { background: var(--accent) !important; border-color: var(--accent); }
+html[data-mode="press"] .btn:hover { border-color: var(--accent); }
+html[data-mode="press"] .tag, html[data-mode="press"] .tl-tools {
+  border-radius: 0; border: 1px solid var(--line); background: none;
+}
+html[data-mode="press"] .socials li a { border-radius: 0; border: 1px solid var(--line); }
+html[data-mode="press"] .bar { background: var(--surface-2); border-radius: 0; }
+html[data-mode="press"] .bar i { border-radius: 0; }
+
+/* four tabs need the tightest setting of all */
+@media (min-width: 981px) and (max-width: 1440px) {
+  .mode-tab { padding: 6px 8px; font-size: 8.5px; letter-spacing: .8px; }
+}

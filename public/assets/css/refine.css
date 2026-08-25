@@ -1297,3 +1297,82 @@ main .section { animation: viewIn .45s var(--ease) both; }
 
 /* the scroll hint was advice for a page that no longer scrolls */
 .scroll-hint { display: none !important; }
+
+
+/* ==================================================================
+   THE ARCADE
+   A sheet like the command line, so the two feel like parts of the
+   same machine. The canvas keeps its own aspect ratio and scales to
+   whatever room is left, which is what makes it work on a phone.
+   ================================================================== */
+.arc {
+  position: fixed; inset: 0; z-index: 100004;
+  display: grid; place-items: center; padding: 20px;
+  opacity: 0; transition: opacity .2s var(--ease);
+}
+.arc.on { opacity: 1; }
+.arc[hidden] { display: none; }
+.arc-veil {
+  position: absolute; inset: 0;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(10px);
+}
+.arc-box {
+  position: relative; display: flex; flex-direction: column;
+  max-width: min(94vw, 720px); max-height: 92vh;
+  background: var(--bg2); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 40px 90px -30px rgba(0,0,0,.75); overflow: hidden;
+  transform: scale(.985); transition: transform .22s cubic-bezier(.22,1,.36,1);
+}
+.arc.on .arc-box { transform: none; }
+
+.arc-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px; border-bottom: 1px solid var(--line);
+}
+.arc-head b {
+  font-family: 'JetBrains Mono', monospace; font-weight: 400;
+  font-size: 12px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--text);
+}
+.arc-tabs { display: flex; gap: 4px; margin-left: auto; }
+.arc-tab {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1.4px;
+  text-transform: uppercase; color: var(--muted);
+  padding: 6px 10px; border-radius: 999px; border: 1px solid transparent;
+  transition: color .25s, border-color .25s;
+}
+.arc-tab:hover { color: var(--text); }
+.arc-tab.on { color: var(--accent); border-color: var(--accent); }
+.arc-x { font-size: 22px; line-height: 1; color: var(--muted); padding: 0 6px; }
+.arc-x:hover { color: var(--accent); }
+
+.arc-stage { position: relative; display: grid; place-items: center; padding: 14px; min-height: 0; }
+.arc-stage canvas {
+  display: block; max-width: 100%; max-height: min(66vh, 560px);
+  border-radius: 6px; touch-action: none;
+}
+.arc-over {
+  position: absolute; inset: 14px; display: grid; place-content: center; gap: 14px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(3px); border-radius: 6px; text-align: center;
+}
+.arc-over[hidden] { display: none; }
+.arc-over p { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text); }
+.arc-btn {
+  justify-self: center; padding: 10px 20px; border-radius: 999px;
+  background: var(--accent); color: #FBFAF6;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  letter-spacing: 2px; text-transform: uppercase;
+}
+.arc-btn:hover { filter: brightness(1.08); }
+
+.arc-foot {
+  display: flex; align-items: center; gap: 18px;
+  padding: 10px 16px; border-top: 1px solid var(--line);
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted);
+}
+.arc-foot i { font-style: normal; color: var(--text); margin-left: 6px; }
+.arc-keys { margin-left: auto; text-transform: none; letter-spacing: .4px; }
+@media (max-width: 620px) { .arc-keys { display: none; } .arc-head b { font-size: 10px; } }
+@media print { .arc { display: none !important; } }

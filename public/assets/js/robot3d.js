@@ -931,28 +931,50 @@
       if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; }
     });
 
-    /* The model ships in its own yellow livery. Repaint it into the
-       site's colours — white shell, ink-navy panels, the same burnt red
-       the rest of the page uses — by classifying each material rather
-       than by guessing at names, which differ between exports. Hue and
-       lightness are reliable; "Material.001" is not. */
-    const seen = new Set();
+    /* Repaint the model into the site's colours.
+
+       The first attempt classified materials by hue and lightness,
+       on the theory that names differ between exports. That was a
+       guess, and it was wrong: reading the file showed exactly three
+       named materials and no textures at all —
+
+           Main   #964a09   saturation 0.88   lightness 0.31
+           Grey   #5f5e55   saturation 0.05   lightness 0.35
+           Black  #0b0b0b
+
+       — and "Main", the body, sits at lightness 0.31, just under the
+       0.34 threshold that was meant to catch it. So the whole body
+       fell through to the branch for small lit details and was painted
+       in the site's red. That is why it came out salmon.
+
+       Names it is, with the hue test kept only for anything unnamed. */
+    const LIVERY = {
+      main: 0xEDEFF3,     // body: white composite, as in the reference
+      grey: 0x394C74,     // joints and trim: ink navy
+      black: 0x0B0D12     // visor and seals: stay dark
+    };
+    const painted = new Set();
     model.traverse((o) => {
       if (!o.isMesh || !o.material) return;
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       mats.forEach((m) => {
-        if (!m || !m.color || seen.has(m.uuid)) return;
-        seen.add(m.uuid);
-        const hsl = { h: 0, s: 0, l: 0 };
-        m.color.getHSL(hsl);
-        if (hsl.s > 0.3 && hsl.l > 0.34) m.color.setHex(0xEDEFF3);        // shell
-        else if (hsl.s > 0.3) m.color.copy(M.accent);                     // lit details
-        else if (hsl.l > 0.45) m.color.setHex(0xC9CDD6);                  // bright trim
-        else if (hsl.l > 0.12) m.color.setHex(0x2E4270);                  // panels
-        m.envMapIntensity = 0.9;
+        if (!m || !m.color || painted.has(m.uuid)) return;
+        painted.add(m.uuid);
+        const name = (m.name || '').toLowerCase();
+        if (LIVERY[name] !== undefined) {
+          m.color.setHex(LIVERY[name]);
+        } else {
+          const hsl = { h: 0, s: 0, l: 0 };
+          m.color.getHSL(hsl);
+          m.color.setHex(hsl.l < 0.15 ? LIVERY.black : hsl.s > 0.3 ? LIVERY.main : LIVERY.grey);
+        }
+        m.metalness = name === 'black' ? 0.55 : 0.18;
+        m.roughness = name === 'black' ? 0.12 : 0.34;
+        m.envMapIntensity = 0.95;
         m.needsUpdate = true;
       });
     });
+
     fitToHeight(T, model, 1.85);
     const anat = readAnatomy(T, model);
     const face = findFace(model);

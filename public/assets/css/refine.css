@@ -1102,3 +1102,47 @@ html[data-mode="press"] .bar i { border-radius: 0; }
 @media (min-width: 981px) and (max-width: 1440px) {
   .mode-tab { padding: 6px 8px; font-size: 8.5px; letter-spacing: .8px; }
 }
+
+
+/* ---- two things the live page showed -----------------------------
+
+   1. The masthead was inserted as the first thing in the document, but
+      the header is position:fixed at the very top — so both claimed the
+      same strip and the volume line ran straight through the logo and
+      the mode tabs. The masthead has to join the fixed stack rather
+      than sit under it, and the header has to start below it.
+
+   2. The statistics were still four rounded cards. Everything else in
+      this mode had been flattened to rules; they were simply missed.
+   ------------------------------------------------------------------ */
+html[data-mode="press"] { --press-head-h: 44px; }
+@media (max-width: 760px) { html[data-mode="press"] { --press-head-h: 36px; } }
+
+html[data-mode="press"] .press-head {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 600;
+  height: var(--press-head-h);
+  background: var(--bg);
+  padding-top: 0; padding-bottom: 0;
+}
+html[data-mode="press"] #nav { top: var(--press-head-h); }
+html[data-mode="press"] body { padding-top: var(--press-head-h); }
+/* the phone menu drops from under the header, so it moves too */
+@media (max-width: 980px) {
+  html[data-mode="press"] .nav-links { top: var(--press-head-h); }
+}
+
+html[data-mode="press"] .stats {
+  border-top: 1px solid var(--line);
+}
+html[data-mode="press"] .stats li {
+  background: none !important; border: 0; border-radius: 0;
+  border-right: 1px solid var(--line);
+  box-shadow: none !important; backdrop-filter: none;
+  padding: 24px 22px 24px 0;
+}
+html[data-mode="press"] .stats li:last-child { border-right: 0; }
+html[data-mode="press"] .stats li::before,
+html[data-mode="press"] .stats li::after { display: none !important; }
+@media (max-width: 980px) {
+  html[data-mode="press"] .stats li { border-right: 0; border-bottom: 1px solid var(--line); }
+}

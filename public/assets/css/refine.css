@@ -1376,3 +1376,77 @@ main .section { animation: viewIn .45s var(--ease) both; }
 .arc-keys { margin-left: auto; text-transform: none; letter-spacing: .4px; }
 @media (max-width: 620px) { .arc-keys { display: none; } .arc-head b { font-size: 10px; } }
 @media print { .arc { display: none !important; } }
+
+
+/* ==================================================================
+   TERMINAL MODE
+   The shell replaces the page. The header stays, because it is how
+   you get back out — and `exit` and `mode modern` do the same thing
+   from inside.
+   ================================================================== */
+html[data-mode="shell"] { --bg: #0B0D0C; --bg2: #101312; --text: #C8D6CC; --muted: #6E7F74; --accent: #6EE7A0; --line: rgba(110,231,160,.16); }
+html[data-mode="shell"][data-theme="light"] { --bg: #F4F3EE; --bg2: #FFFFFF; --text: #14180F; --muted: #5C6357; --accent: #1F7A4C; --line: rgba(20,24,15,.16); }
+
+/* everything the shell is not */
+body.sh-on main,
+body.sh-on #footer,
+body.sh-on .orb,
+body.sh-on #netCanvas,
+body.sh-on .aurora,
+body.sh-on .grain,
+body.sh-on .cmdk-tip,
+body.sh-on .press-back { display: none !important; }
+
+.sh { display: none; }
+body.sh-on .sh {
+  display: block; position: relative; z-index: 3;
+  max-width: 1100px; margin: 96px auto 40px; padding: 0 clamp(14px, 4vw, 28px);
+}
+.sh[hidden] { display: none !important; }
+
+.sh-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border: 1px solid var(--line); border-bottom: 0;
+  border-radius: 10px 10px 0 0; background: var(--bg2);
+}
+.sh-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--muted); opacity: .6; }
+.sh-dot.r { background: #E0553B; } .sh-dot.y { background: #D8A13A; } .sh-dot.g { background: #4CAF7D; }
+.sh-bar b {
+  margin-left: 10px; font-family: 'JetBrains Mono', monospace;
+  font-weight: 400; font-size: 11.5px; letter-spacing: 1px; color: var(--muted);
+}
+
+.sh-screen {
+  height: min(70vh, 640px); overflow-y: auto;
+  padding: 16px clamp(14px, 3vw, 22px) 20px;
+  border: 1px solid var(--line); border-radius: 0 0 10px 10px;
+  background: var(--bg2);
+  font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.55;
+  color: var(--text);
+  cursor: text;
+}
+.sh-screen::-webkit-scrollbar { width: 8px; }
+.sh-screen::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+
+.sh-row { white-space: pre-wrap; word-break: break-word; }
+.sh-echo { color: var(--muted); margin-top: 6px; }
+.sh-err { color: #E0553B; }
+.sh-dim { color: var(--muted); }
+.sh-f { color: var(--accent); }
+.sh-sha { color: #D8A13A; }
+.sh-art { color: var(--accent); }
+.sh-row a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+.sh-line { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.sh-ps1 { color: var(--accent); white-space: nowrap; }
+.sh-in {
+  flex: 1; background: none; border: 0; outline: 0;
+  font: inherit; color: var(--text); caret-color: var(--accent);
+}
+@media (max-width: 620px) { .sh-screen { font-size: 12px; height: 66vh; } }
+@media print { .sh { display: none !important; } }
+
+/* five tabs is the most this row will take */
+@media (min-width: 981px) and (max-width: 1500px) {
+  .mode-tab { padding: 6px 7px; font-size: 8px; letter-spacing: .6px; }
+}

@@ -255,6 +255,8 @@ module.exports = {
         "ROS2",
         "OpenCV"
       ],
+      "repo": "",
+      "report": "",
       "link": "",
       "bullets": [
         "Engineered an automated recycling system by training custom CNN models on a dataset of 12,000+ images.",
@@ -272,6 +274,8 @@ module.exports = {
         "Segmentation",
         "Attention"
       ],
+      "repo": "",
+      "report": "",
       "link": "",
       "bullets": [
         "Developed an end-to-end deep learning platform for automated tumor classification and lesion segmentation.",
@@ -289,6 +293,8 @@ module.exports = {
         "Telemetry ML",
         "TÜBİTAK 2209-A"
       ],
+      "repo": "",
+      "report": "",
       "link": "",
       "bullets": [
         "Designed a foldable-wing autonomous UAV with a multi-sensor payload for real-time air quality tracking.",

@@ -591,6 +591,25 @@
     calmTilt(mode === 'paper');
     try { localStorage.setItem(KEY, mode); } catch { /* ignore */ }
     buildPress();     // the contents page belongs to every mode now
+
+    /* The shell replaces the page rather than restyling it, so it is
+       fetched on demand and mounted, then taken down on the way out.
+       Everything it prints comes from the same database as the rest. */
+    if (mode === 'shell') {
+      if (window.TERMINAL) window.TERMINAL.mount();
+      else if (!document.getElementById('shellScript')) {
+        const sc = document.createElement('script');
+        sc.id = 'shellScript';
+        sc.src = '/assets/js/terminal.js';
+        sc.addEventListener('load', () => {
+          if (document.documentElement.dataset.mode === 'shell') window.TERMINAL?.mount();
+        });
+        document.head.appendChild(sc);
+      }
+    } else {
+      window.TERMINAL?.unmount();
+    }
+
     neuroWanted = mode === 'neural';
     if (neuroWanted) loadNeural();
     else if (window.NEURO) window.NEURO.stop();

@@ -122,6 +122,21 @@
     </div>`;
   };
 
+  /** Like the image row, but for a document: no thumbnail, a link instead. */
+  const file = (label, path) => {
+    const v = get(path) || '';
+    return `<div class="thumb-row">
+      <div class="thumb doc">${v ? '<span>PDF</span>' : ''}</div>
+      <div class="grid">
+        ${text(label, path, '/assets/uploads/report.pdf')}
+        <div class="row-actions">
+          <button class="btn ghost tiny" data-upload="${path}">Upload PDF…</button>
+          ${v ? `<a class="btn ghost tiny" href="${esc(v)}" target="_blank" rel="noopener">Open</a>` : ''}
+        </div>
+      </div>
+    </div>`;
+  };
+
   /* --------------------------------------------------------- tabs */
   const TABS = {
     profile: () => `
@@ -286,7 +301,7 @@
     projects: () => `
       <section class="panel">
         <h2>Projects</h2>
-        <p class="desc">Each project gets a photo, tags and a 3D card that tilts with the mouse.</p>
+        <p class="desc">A photo, the code, and the report. The repository is the one a recruiter actually clicks \u2014 fill it in.</p>
         ${(state.projects || [])
           .map(
             (p, i) => `<div class="item">
@@ -297,7 +312,11 @@
               </div>
               ${image('Project image', `projects.${i}.image`)}
               ${csv('Tags (comma separated)', `projects.${i}.tags`)}
-              ${text('Link (optional)', `projects.${i}.link`, 'https://github.com/...')}
+              <div class="grid two">
+                ${text('Code — GitHub repository', `projects.${i}.repo`, 'https://github.com/readaloush/...')}
+                ${text('Demo or write-up (optional)', `projects.${i}.link`, 'https://...')}
+              </div>
+              ${file('Report — PDF', `projects.${i}.report`)}
               ${lines('Bullet points', `projects.${i}.bullets`)}
             </div>`
           )
@@ -394,7 +413,7 @@
     skillgroup: () => ({ category: 'New group', items: [{ name: 'New skill', level: 70 }] }),
     language: () => ({ name: 'Language', level: 'Level' }),
     experience: () => ({ role: 'New role', company: '', period: '', tools: '', bullets: [''] }),
-    project: () => ({ title: 'New project', period: '', image: '/assets/img/project-waste.svg', tags: [], link: '', bullets: [''] }),
+    project: () => ({ title: 'New project', period: '', image: '/assets/img/project-waste.svg', tags: [], repo: '', link: '', report: '', bullets: [''] }),
     education: () => ({ degree: 'New degree', school: '', period: '', note: '' })
   };
 

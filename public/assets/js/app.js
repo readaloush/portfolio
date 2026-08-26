@@ -282,8 +282,13 @@
 
   /* ================================================ TEXT SCRAMBLE */
   function scramble(el, finalText, duration = 1400) {
+    // Browsers suspend requestAnimationFrame in background tabs, which would
+    // leave the name frozen mid-scramble. This timer runs regardless, so the
+    // real text always lands.
+    setTimeout(() => { el.textContent = finalText; }, duration + 400);
+
     const chars = '!<>-_\\/[]{}—=+*^?#01';
-    setTimeout(() => { el.textContent = finalText; }, duration + 400); const len = finalText.length;
+    const len = finalText.length;
     const t0 = performance.now();
     (function step(now) {
       const p = Math.min((now - t0) / duration, 1);
@@ -515,7 +520,7 @@
     /* hero */
     $('#heroAvailability').textContent = p.availability || 'Available';
     $('#heroName').textContent = p.name || '';
-     $('#heroName').dataset.realName = p.name || '';
+    $('#heroName').dataset.realName = p.name || '';   // the animation's source of truth
     $('#heroTagline').textContent = p.tagline || '';
     $('#heroSummary').textContent = p.summary || '';
     $('#photoCaption').textContent = p.location || '';
@@ -626,7 +631,11 @@
             <p class="period">${esc(pr.period)}</p>
             <ul class="bullets">${(pr.bullets || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>
             <ul class="tags">${(pr.tags || []).map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
-            ${pr.link ? `<a class="btn btn-ghost project-link magnetic" href="${esc(pr.link)}" target="_blank" rel="noopener" data-cursor="open"><span>View project</span></a>` : ''}
+            <div class="project-links">
+              ${pr.repo ? `<a class="btn btn-ghost project-link magnetic" href="${esc(pr.repo)}" target="_blank" rel="noopener" data-cursor="code"><span>Code</span></a>` : ''}
+              ${pr.report ? `<a class="btn btn-ghost project-link magnetic" href="${esc(pr.report)}" target="_blank" rel="noopener" data-cursor="read"><span>Report (PDF)</span></a>` : ''}
+              ${pr.link ? `<a class="btn btn-ghost project-link magnetic" href="${esc(pr.link)}" target="_blank" rel="noopener" data-cursor="open"><span>View project</span></a>` : ''}
+            </div>
           </div>
         </article>`
       )
@@ -732,9 +741,18 @@
       toast('Could not reach the database. Is the server running?', 6000);
     }
 
+    // The name animation must never take its target from the screen: if it
+    // ran twice, the second run would treat the first run's scrambled
+    // characters as the real name and freeze them there. Keep the true
+    // name aside and only ever animate once.
+    let nameSettled = false;
     document.addEventListener('loader:done', () => {
       const name = $('#heroName');
-      if (name && !reduced && !name.dataset.settled) { name.dataset.settled = '1'; scramble(name, name.dataset.realName || name.textContent, 1500); }
+      if (name && !reduced && !nameSettled) {
+        nameSettled = true;
+        const realName = name.dataset.realName || name.textContent;
+        scramble(name, realName, 1500);
+      }
       window.SFX?.chime();   // the system comes online
       observe();
     });

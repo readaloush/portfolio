@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Read Leva Alalloş">
+  <title>Read Leva Alalloş</title>
+  <!-- The same mark with no tile, inheriting the colour around it. -->
+  <g fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M34 26 V76"/>
+    <path d="M34 26 H55 a14.5 14.5 0 0 1 0 29 H34"/>
+    <path d="M50 55 L69 76"/>
+  </g>
+  <circle cx="69" cy="76" r="7.5" fill="currentColor"/>
+</svg>

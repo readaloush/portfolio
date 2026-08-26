@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Read Leva Alalloş">
+  <title>Read Leva Alalloş</title>
+  <!-- The mark: a monogram cut from a solid tile.
+
+       Built from three strokes rather than an outlined glyph, because a
+       stroke keeps its weight when the whole thing is scaled down to a
+       16-pixel browser tab, while a filled letterform loses its counter
+       and turns into a blob. The dot on the leg is the one nod to what
+       he does: a node, terminating a path. -->
+  <rect width="100" height="100" rx="23" fill="#B4361F"/>
+  <g fill="none" stroke="#F4F1E8" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M34 26 V76"/>
+    <path d="M34 26 H55 a14.5 14.5 0 0 1 0 29 H34"/>
+    <path d="M50 55 L69 76"/>
+  </g>
+  <circle cx="69" cy="76" r="7.5" fill="#F4F1E8"/>
+</svg>

@@ -92,7 +92,13 @@
     if (content) return content;
     try {
       const r = await fetch('/api/content', { cache: 'no-store' });
-      content = await r.json();
+      const payload = await r.json();
+      /* The endpoint wraps the content and adds metadata alongside it:
+         { content: {...}, updatedAt, revision }. app.js has always
+         unwrapped it — `render(data.content)` — and this file did not,
+         so every command that touched the database printed undefined
+         while `ls`, which reads a fixed list, looked fine. */
+      content = payload.content || payload;
     } catch {
       content = { profile: {}, projects: [], skills: [], experience: [], education: [] };
     }

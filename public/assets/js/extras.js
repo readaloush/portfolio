@@ -213,8 +213,8 @@
    ================================================================== */
 (() => {
   const KEY = 'rp_mode';
-  const MODES = ['modern', 'paper', 'neural', 'press'];
-  const LABEL = { modern: 'Modern', paper: 'Notebook', neural: 'Neural', press: 'Press' };
+  const MODES = ['modern', 'paper', 'neural', 'press', 'shell'];
+  const LABEL = { modern: 'Modern', paper: 'Notebook', neural: 'Neural', press: 'Press', shell: 'Terminal' };
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const read = () => {

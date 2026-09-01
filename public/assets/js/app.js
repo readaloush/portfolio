@@ -33,23 +33,99 @@
     return 'web';
   };
 
+  /* ================================================== THE TICKER
+     One requestAnimationFrame loop for the whole page.
+
+     There used to be three: the network canvas, the cursor and the
+     parallax each ran their own. Three loops is not three times the
+     work of one — each callback reads and writes layout separately, so
+     the browser is forced to recalculate style three times per frame
+     instead of once. Now everything that wants a frame subscribes here
+     and gets called in a fixed order.
+
+     The loop also stops. If nobody is subscribed, or the tab is in the
+     background, there is no rAF pending at all — not a rAF that runs
+     and does nothing.
+  ================================================================ */
+  const Ticker = (() => {
+    const jobs = new Set();
+    let running = false;
+
+    function frame(now) {
+      running = false;
+      if (jobs.size && !document.hidden) {
+        for (const job of jobs) job(now);
+        start();
+      }
+    }
+    function start() {
+      if (running || !jobs.size || document.hidden) return;
+      running = true;
+      requestAnimationFrame(frame);
+    }
+
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) start(); });
+
+    return {
+      add(job) { jobs.add(job); start(); return () => jobs.delete(job); },
+      remove(job) { jobs.delete(job); }
+    };
+  })();
+
+  /* The tier this machine was put in. perf.js decides; if it somehow
+     failed to load, assume the best and behave exactly as before. */
+  const perf = () => (window.PERF ? window.PERF.tier : 'high');
+  const atLeast = (t) => (window.PERF ? window.PERF.allows(t) : true);
+
   /* ================================================ NETWORK CANVAS
-     Nodes connected by lines. The mouse pushes them around and
-     draws extra links to whatever is nearby.
+     Nodes connected by lines. The mouse pushes them around and draws
+     extra links to whatever is nearby.
+
+     Three things here were expensive enough to matter.
+
+     getComputedStyle was called twice per frame, once for the line
+     colour and once for the accent. Reading a computed style forces the
+     browser to resolve style for the whole document; doing it 120 times
+     a second is a bill for information that only changes when the theme
+     changes. It is now read on a timer and on theme changes.
+
+     The link pass compared every node with every other node — 130 nodes
+     is 8,385 pairs, every frame. Links only exist under 128px, so all
+     but a handful of those comparisons were guaranteed to fail. The
+     nodes now go into a grid of 128px cells and each one only looks at
+     its own cell and four neighbours.
+
+     And every link was its own beginPath/stroke, which is a separate
+     draw call because the alpha differed. They now go into five paths
+     bucketed by opacity: five stroke calls a frame instead of hundreds.
   ================================================================ */
   function initNetwork() {
     const canvas = $('#netCanvas');
     if (!canvas || reduced) return;
     const ctx = canvas.getContext('2d');
-    let w, h, nodes = [], dpr = Math.min(devicePixelRatio || 1, 2);
-    const mouse = { x: -9999, y: -9999, px: -9999, py: -9999, active: false, speed: 0 };
+
+    let w, h, dpr, nodes = [], cell, cols, rows, grid = [], cursorLinks = true;
+    const mouse = { x: -9999, y: -9999, active: false };
+
+    // How much of this the machine can afford. Read on resize and on a
+    // tier change, not per frame — the answer cannot change in between,
+    // and building this object sixty times a second is pure garbage.
+    const BUDGET = {
+      high: { dpr: 2,   div: 13000, cap: 130, cursorLinks: true },
+      mid:  { dpr: 1.5, div: 26000, cap: 74,  cursorLinks: true },
+      low:  { dpr: 1,   div: 52000, cap: 34,  cursorLinks: false }
+    };
 
     function resize() {
-      w = canvas.width = innerWidth * dpr;
-      h = canvas.height = innerHeight * dpr;
+      const b = BUDGET[perf()] || BUDGET.high;
+      cursorLinks = b.cursorLinks;
+      dpr = Math.min(devicePixelRatio || 1, b.dpr);
+      w = canvas.width = Math.round(innerWidth * dpr);
+      h = canvas.height = Math.round(innerHeight * dpr);
       canvas.style.width = innerWidth + 'px';
       canvas.style.height = innerHeight + 'px';
-      const target = Math.round(Math.min(130, (innerWidth * innerHeight) / 13000));
+
+      const target = Math.round(Math.min(b.cap, (innerWidth * innerHeight) / b.div));
       nodes = Array.from({ length: target }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
@@ -57,111 +133,197 @@
         vy: (Math.random() - 0.5) * 0.32 * dpr,
         r: (Math.random() * 1.5 + 0.9) * dpr
       }));
+
+      // The grid is allocated once here and emptied in place each frame,
+      // so the link pass never allocates and never triggers collection.
+      cell = 128 * dpr;
+      cols = Math.max(1, Math.ceil(w / cell));
+      rows = Math.max(1, Math.ceil(h / cell));
+      grid = Array.from({ length: cols * rows }, () => []);
     }
 
-    addEventListener('resize', resize);
+    let resizeTimer;
+    addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 180); });
+    document.addEventListener('perf:changed', resize);
+
     addEventListener('pointermove', (e) => {
-      mouse.px = mouse.x; mouse.py = mouse.y;
       mouse.x = e.clientX * dpr; mouse.y = e.clientY * dpr;
-      mouse.speed = Math.hypot(mouse.x - mouse.px, mouse.y - mouse.py);
       mouse.active = true;
-    });
+    }, { passive: true });
     addEventListener('pointerleave', () => { mouse.active = false; mouse.x = mouse.y = -9999; });
     addEventListener('click', (e) => {
       // click = shockwave through the network
       const cx = e.clientX * dpr, cy = e.clientY * dpr;
-      nodes.forEach((n) => {
+      const R = 320 * dpr;
+      for (const n of nodes) {
         const dx = n.x - cx, dy = n.y - cy, d = Math.hypot(dx, dy) || 1;
-        if (d < 320 * dpr) { n.vx += (dx / d) * 5; n.vy += (dy / d) * 5; }
-      });
+        if (d < R) { n.vx += (dx / d) * 5; n.vy += (dy / d) * 5; }
+      }
     });
 
-    const rgb = () => getComputedStyle(document.documentElement).getPropertyValue('--net-line').trim();
-    const accent = () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    /* ---- colours, read rarely instead of twice a frame ---- */
+    let LINE = '255,255,255', AC = '#00e5ff';
+    function readColours() {
+      const cs = getComputedStyle(document.documentElement);
+      LINE = cs.getPropertyValue('--net-line').trim() || LINE;
+      AC = cs.getPropertyValue('--accent').trim() || AC;
+    }
+    readColours();
+    // The palette only changes when the theme or the mode changes, and
+    // both of those are attributes on <html>.
+    new MutationObserver(readColours).observe(document.documentElement, {
+      attributes: true, attributeFilter: ['data-theme', 'data-mode']
+    });
+
+    /* Five opacity buckets. A link's alpha runs 0 → 0.34; rounding it to
+       one of five values is invisible and turns hundreds of draw calls
+       into five. */
+    const BUCKETS = 5;
+    const paths = Array.from({ length: BUCKETS }, () => new Path2D());
 
     function frame() {
       ctx.clearRect(0, 0, w, h);
-      const LINE = rgb();
-      const AC = accent();
-      const LINK = 128 * dpr;
+      const LINK = cell;
+      const LINK2 = LINK * LINK;
       const MOUSE_R = 190 * dpr;
 
-      for (const n of nodes) {
-        // mouse repulsion + a little swirl
+      /* ---- move, and file each node into its grid cell ---- */
+      for (const g of grid) g.length = 0;
+
+      for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
         if (mouse.active) {
           const dx = n.x - mouse.x, dy = n.y - mouse.y, d = Math.hypot(dx, dy);
           if (d < MOUSE_R && d > 0.001) {
             const f = (1 - d / MOUSE_R) * 0.55;
-            n.vx += (dx / d) * f;
-            n.vy += (dy / d) * f;
-            n.vx += (-dy / d) * f * 0.25;
-            n.vy += (dx / d) * f * 0.25;
+            n.vx += (dx / d) * f - (dy / d) * f * 0.25;
+            n.vy += (dy / d) * f + (dx / d) * f * 0.25;
           }
         }
         n.x += n.vx; n.y += n.vy;
         n.vx *= 0.985; n.vy *= 0.985;
-        // gentle constant drift so it never freezes
-        const sp = Math.hypot(n.vx, n.vy);
-        if (sp < 0.12 * dpr) { n.vx += (Math.random() - 0.5) * 0.09 * dpr; n.vy += (Math.random() - 0.5) * 0.09 * dpr; }
-        if (n.x < 0) { n.x = 0; n.vx *= -1; } if (n.x > w) { n.x = w; n.vx *= -1; }
-        if (n.y < 0) { n.y = 0; n.vy *= -1; } if (n.y > h) { n.y = h; n.vy *= -1; }
+        // a gentle nudge so the field never settles into stillness
+        if (n.vx * n.vx + n.vy * n.vy < 0.0144 * dpr * dpr) {
+          n.vx += (Math.random() - 0.5) * 0.09 * dpr;
+          n.vy += (Math.random() - 0.5) * 0.09 * dpr;
+        }
+        if (n.x < 0) { n.x = 0; n.vx *= -1; } else if (n.x > w) { n.x = w; n.vx *= -1; }
+        if (n.y < 0) { n.y = 0; n.vy *= -1; } else if (n.y > h) { n.y = h; n.vy *= -1; }
+
+        const ci = Math.min(cols - 1, (n.x / cell) | 0);
+        const cj = Math.min(rows - 1, (n.y / cell) | 0);
+        grid[cj * cols + ci].push(i);
       }
 
-      // links
-      ctx.lineWidth = 1 * dpr;
-      for (let i = 0; i < nodes.length; i++) {
-        const a = nodes[i];
-        for (let j = i + 1; j < nodes.length; j++) {
-          const b = nodes[j];
-          const dx = a.x - b.x, dy = a.y - b.y;
-          const d2 = dx * dx + dy * dy;
-          if (d2 < LINK * LINK) {
-            const alpha = (1 - Math.sqrt(d2) / LINK) * 0.34;
-            ctx.strokeStyle = `rgba(${LINE},${alpha})`;
-            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      /* ---- links, via the grid ----
+         Each cell is checked against itself and four neighbours. Those
+         five cover every pair exactly once: going right, down, and both
+         diagonals downward means the cell above-left already handled
+         the pair from its side. */
+      // Path2D has no clear(), so each frame gets fresh ones. Five small
+      // allocations a frame is nothing next to the hundreds of separate
+      // stroke calls this replaced.
+      for (let k = 0; k < BUCKETS; k++) paths[k] = new Path2D();
+
+      const NEIGHBOURS = [[0, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+      for (let cj = 0; cj < rows; cj++) {
+        for (let ci = 0; ci < cols; ci++) {
+          const here = grid[cj * cols + ci];
+          if (!here.length) continue;
+          for (const [ox, oy] of NEIGHBOURS) {
+            const nx = ci + ox, ny = cj + oy;
+            if (nx < 0 || nx >= cols || ny >= rows) continue;
+            const there = grid[ny * cols + nx];
+            if (!there.length) continue;
+            const same = ox === 0 && oy === 0;
+            for (let ii = 0; ii < here.length; ii++) {
+              const a = nodes[here[ii]];
+              for (let jj = same ? ii + 1 : 0; jj < there.length; jj++) {
+                const b = nodes[there[jj]];
+                const dx = a.x - b.x, dy = a.y - b.y;
+                const d2 = dx * dx + dy * dy;
+                if (d2 >= LINK2) continue;
+                const t = 1 - Math.sqrt(d2) / LINK;          // 0 → 1
+                const bucket = Math.min(BUCKETS - 1, (t * BUCKETS) | 0);
+                const p = paths[bucket];
+                p.moveTo(a.x, a.y); p.lineTo(b.x, b.y);
+              }
+            }
           }
         }
-        // link to cursor
-        if (mouse.active) {
-          const dx = a.x - mouse.x, dy = a.y - mouse.y, d = Math.hypot(dx, dy);
-          if (d < MOUSE_R) {
-            ctx.strokeStyle = AC;
-            ctx.globalAlpha = (1 - d / MOUSE_R) * 0.5;
-            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
-            ctx.globalAlpha = 1;
-          }
-        }
-        ctx.fillStyle = `rgba(${LINE},.55)`;
-        ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2); ctx.fill();
       }
-      requestAnimationFrame(frame);
+
+      ctx.lineWidth = dpr;
+      for (let k = 0; k < BUCKETS; k++) {
+        const alpha = ((k + 0.5) / BUCKETS) * 0.34;
+        ctx.strokeStyle = `rgba(${LINE},${alpha.toFixed(3)})`;
+        ctx.stroke(paths[k]);
+      }
+
+      /* ---- links to the cursor, one path, one stroke ---- */
+      if (mouse.active && cursorLinks) {
+        const reach = new Path2D();
+        let any = false;
+        for (const n of nodes) {
+          const dx = n.x - mouse.x, dy = n.y - mouse.y;
+          if (dx * dx + dy * dy < MOUSE_R * MOUSE_R) {
+            reach.moveTo(n.x, n.y); reach.lineTo(mouse.x, mouse.y);
+            any = true;
+          }
+        }
+        if (any) {
+          ctx.strokeStyle = AC;
+          ctx.globalAlpha = 0.28;
+          ctx.stroke(reach);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      /* ---- the nodes themselves, also one path ---- */
+      const dots = new Path2D();
+      for (const n of nodes) {
+        dots.moveTo(n.x + n.r, n.y);
+        dots.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      }
+      ctx.fillStyle = `rgba(${LINE},.55)`;
+      ctx.fill(dots);
     }
 
     resize();
-    requestAnimationFrame(frame);
+    Ticker.add(frame);
   }
 
   /* ==================================================== CURSOR */
   function initCursor() {
     const dot = $('#cursorDot'), ring = $('#cursorRing'), label = $('#cursorLabel');
     if (!dot || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    // On a slow machine a lagging custom cursor is worse than none: it is
+    // the one element the eye tracks continuously, so every dropped frame
+    // is visible in it. The stylesheet gives the real pointer back at that
+    // tier; this makes sure we are not still computing one nobody sees.
+    if (!atLeast('mid')) return;
+
     let mx = innerWidth / 2, my = innerHeight / 2, rx = mx, ry = my;
 
     addEventListener('pointermove', (e) => {
       mx = e.clientX; my = e.clientY;
       dot.style.opacity = ring.style.opacity = '1';
       dot.style.transform = `translate(${mx}px, ${my}px)`;
-    });
+    }, { passive: true });
     addEventListener('pointerdown', () => ring.classList.add('hot'));
     addEventListener('pointerup', () => {
       if (!document.querySelector(':hover[data-cursor]')) ring.classList.remove('hot');
     });
 
-    (function loop() {
-      rx += (mx - rx) * 0.16; ry += (my - ry) * 0.16;
+    // The ring eases toward the pointer. Once it has arrived there is
+    // nothing to interpolate, so it stops writing style entirely rather
+    // than assigning the same transform sixty times a second.
+    Ticker.add(() => {
+      const dx = mx - rx, dy = my - ry;
+      if (dx * dx + dy * dy < 0.01) return;
+      rx += dx * 0.16; ry += dy * 0.16;
       ring.style.transform = `translate(${rx}px, ${ry}px)`;
-      requestAnimationFrame(loop);
-    })();
+    });
 
     let lastHover = null;
     document.addEventListener('pointerover', (e) => {
@@ -204,47 +366,72 @@
 
   /* ============================== 3D TILT + GLARE (mouse reactive) */
   function bindTilt(root = document) {
-    if (reduced) return;
+    if (reduced || !atLeast('mid')) return;
     $$('.tilt', root).forEach((el) => {
       if (el.__tilt) return;
       el.__tilt = true;
-      let raf;
+      let raf, r = null;
+
+      // getBoundingClientRect used to run on every pointermove. That is a
+      // forced synchronous layout — the browser has to stop and reflow the
+      // page to answer it — several hundred times while the cursor crosses
+      // one card. The card is not moving or resizing while you hover it,
+      // so measure once on the way in.
+      el.addEventListener('pointerenter', () => { r = el.getBoundingClientRect(); });
+
       el.addEventListener('pointermove', (e) => {
-        const r = el.getBoundingClientRect();
+        if (!r) r = el.getBoundingClientRect();
         const px = (e.clientX - r.left) / r.width;
         const py = (e.clientY - r.top) / r.height;
-        el.style.setProperty('--gx', px * 100 + '%');
-        el.style.setProperty('--gy', py * 100 + '%');
         cancelAnimationFrame(raf);
         raf = requestAnimationFrame(() => {
           const strength = Number(el.dataset.tilt || 9);
+          el.style.setProperty('--gx', px * 100 + '%');
+          el.style.setProperty('--gy', py * 100 + '%');
           el.style.transform =
             `perspective(1000px) rotateX(${(0.5 - py) * strength * 2}deg) rotateY(${(px - 0.5) * strength * 2}deg) translateZ(6px)`;
         });
-      });
+      }, { passive: true });
+
       el.addEventListener('pointerleave', () => {
         cancelAnimationFrame(raf);
+        r = null;
         el.style.transform = '';
       });
     });
   }
 
   /* ================================= PARALLAX ON MOUSE (whole page) */
+  let refreshParallax = () => {};
   function initParallax() {
-    if (reduced) return;
+    if (reduced || !atLeast('mid')) return;
+
+    // The old loop ran querySelectorAll('.parallax') on every frame,
+    // forever — a fresh DOM query sixty times a second for a list of two
+    // elements that only changes when the page is re-rendered. Cache it,
+    // and re-read it when render() replaces the markup.
+    let items = [];
+    refreshParallax = () => {
+      items = $$('.parallax').map((el) => ({ el, d: Number(el.dataset.depth || 10) }));
+    };
+    refreshParallax();
+
     let tx = 0, ty = 0, cx = 0, cy = 0;
     addEventListener('pointermove', (e) => {
       tx = (e.clientX / innerWidth - 0.5) * 2;
       ty = (e.clientY / innerHeight - 0.5) * 2;
+    }, { passive: true });
+
+    Ticker.add(() => {
+      const dx = tx - cx, dy = ty - cy;
+      // Settled. Writing the same transform again would still cost a
+      // style recalculation, so do nothing at all.
+      if (dx * dx + dy * dy < 1e-6) return;
+      cx += dx * 0.06; cy += dy * 0.06;
+      for (const it of items) {
+        it.el.style.transform = `translate3d(${(cx * it.d).toFixed(2)}px, ${(cy * it.d).toFixed(2)}px, 0)`;
+      }
     });
-    (function loop() {
-      cx += (tx - cx) * 0.06; cy += (ty - cy) * 0.06;
-      $$('.parallax').forEach((el) => {
-        const d = Number(el.dataset.depth || 10);
-        el.style.transform = `translate3d(${cx * d}px, ${cy * d}px, 0)`;
-      });
-      requestAnimationFrame(loop);
-    })();
   }
 
   /* ==================================================== REVEALS */
@@ -446,7 +633,14 @@
         if (!res.ok) throw new Error(data.error || 'Login failed.');
         // hand the session to the admin page in case cookies are blocked
         try { if (data.token) sessionStorage.setItem('rp_token', data.token); } catch { /* ignore */ }
-        location.href = '/admin';
+
+        // Signing in no longer means "take me to the editor". You come
+        // back to your own site, look at it, and open the panel from the
+        // bar at the top when there is actually something to change.
+        closeModal();
+        window.SFX?.chime();
+        showAdminBar(data.username);
+        toast('Signed in. Use “Edit the site” when you want the panel.', 5000);
       } catch (err) {
         window.SFX?.error();
         errorEl.textContent = err.message;
@@ -459,10 +653,20 @@
   /* ========================================================= NAV */
   function initNav() {
     const nav = $('#nav'), links = $('#navLinks'), burger = $('#navBurger');
-    addEventListener('scroll', () => {
+    const progressBar = $('#scrollBar');
+
+    // Scroll fires far more often than the screen refreshes — on a
+    // trackpad, dozens of times between two frames. This handler read
+    // layout (getBoundingClientRect) and then wrote style, which forces
+    // a reflow *per event*. Collapsing it to one run per frame is the
+    // single cheapest scroll fix there is.
+    let queued = false;
+    const onScroll = () => {
+      queued = false;
       nav.classList.toggle('stuck', scrollY > 30);
       const d = document.documentElement;
-      $('#scrollBar').style.width = (scrollY / (d.scrollHeight - innerHeight)) * 100 + '%';
+      const span = d.scrollHeight - innerHeight;
+      if (progressBar) progressBar.style.width = (span > 0 ? (scrollY / span) * 100 : 0) + '%';
 
       // timeline fill follows the scroll
       const tl = $('#timeline'), fill = $('#timelineFill');
@@ -471,7 +675,13 @@
         const p = Math.min(Math.max((innerHeight * 0.75 - r.top) / r.height, 0), 1);
         fill.style.height = p * 100 + '%';
       }
+    };
+    addEventListener('scroll', () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(onScroll);
     }, { passive: true });
+    onScroll();
 
     burger?.addEventListener('click', () => {
       burger.classList.toggle('on');
@@ -504,6 +714,240 @@
       });
       el.addEventListener('pointerleave', () => (el.style.transform = ''));
     });
+  }
+
+  /* ================================================ ANNOUNCEMENTS
+     Written in the admin panel, stored in the database with the rest of
+     the content, shown in two places: a section on the page and a short
+     list behind the bell in the nav.
+
+     "Unread" is a fact about one browser, not about a person, so it is
+     kept in localStorage and never sent anywhere. Nobody is counted.
+
+     An announcement is identified by its `id`, which is why editing the
+     wording of one does not re-notify everybody who already read it —
+     and why giving it a new id deliberately is how you do.
+  ================================================================= */
+  const NEWS_SEEN = 'rp_news_seen';
+
+  const seenIds = () => {
+    try { return new Set(JSON.parse(localStorage.getItem(NEWS_SEEN) || '[]')); }
+    catch { return new Set(); }
+  };
+  const saveSeen = (set) => {
+    try { localStorage.setItem(NEWS_SEEN, JSON.stringify(Array.from(set).slice(-200))); }
+    catch { /* private browsing; the badge simply comes back */ }
+  };
+
+  /** Published, newest first, pinned above everything. */
+  function liveNews(list) {
+    return (list || [])
+      .filter((a) => a && a.published !== false && (a.title || a.body))
+      .map((a, i) => ({ ...a, id: a.id || `a-${i}-${String(a.title || '').slice(0, 24)}` }))
+      .sort((a, b) => {
+        if (!!b.pinned !== !!a.pinned) return b.pinned ? 1 : -1;
+        return String(b.date || '').localeCompare(String(a.date || ''));
+      });
+  }
+
+  const niceDate = (raw) => {
+    const d = new Date(raw);
+    if (!raw || isNaN(d)) return String(raw || '');
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  let NEWS = [];
+
+  function paintBadge() {
+    const bell = $('#bellBtn'), badge = $('#bellBadge');
+    if (!bell || !badge) return;
+    const seen = seenIds();
+    const unread = NEWS.filter((a) => !seen.has(a.id)).length;
+    badge.textContent = unread > 9 ? '9+' : String(unread);
+    badge.hidden = unread === 0;
+    bell.classList.toggle('unread', unread > 0);
+    bell.setAttribute('aria-label', unread ? `Announcements, ${unread} unread` : 'Announcements');
+    // Nothing to announce at all: the bell would be a dead control.
+    bell.hidden = NEWS.length === 0;
+  }
+
+  function markAllSeen() {
+    const seen = seenIds();
+    let changed = false;
+    NEWS.forEach((a) => { if (!seen.has(a.id)) { seen.add(a.id); changed = true; } });
+    if (changed) { saveSeen(seen); paintBadge(); }
+  }
+
+  function renderNews(list) {
+    NEWS = liveNews(list);
+    const section = $('#news');
+    const grid = $('#newsGrid');
+    if (!grid || !section) return;
+
+    // An empty announcements section is worse than no section: it reads
+    // as an unfinished site. If there is nothing published, it is gone —
+    // and so is its entry in the nav and in the other modes' contents.
+    const empty = NEWS.length === 0;
+    section.hidden = empty;
+    $$('#navLinks a[href="#news"]').forEach((a) => (a.hidden = empty));
+    if (empty) { paintBadge(); return; }
+
+    const seen = seenIds();
+    grid.innerHTML = NEWS.map((a) => `
+      <article class="news-card reveal${a.pinned ? ' pinned' : ''}${seen.has(a.id) ? '' : ' fresh'}">
+        <div class="news-when">
+          <span class="news-date">${esc(niceDate(a.date))}</span>
+          ${a.tag ? `<span class="news-tag">${esc(a.tag)}</span>` : ''}
+        </div>
+        <h3>${esc(a.title)}</h3>
+        <p>${esc(a.body)}</p>
+        ${a.link ? `<a class="news-more" href="${esc(a.link)}"${/^https?:/i.test(a.link) ? ' target="_blank" rel="noopener"' : ''} data-cursor="open">Read more</a>` : ''}
+      </article>`).join('');
+
+    paintBadge();
+  }
+
+  function initBell() {
+    const bell = $('#bellBtn');
+    const pop = $('#newsPop');
+    const list = $('#newsPopList');
+    if (!bell || !pop) return;
+
+    const close = () => { pop.hidden = true; bell.classList.remove('on'); };
+
+    const open = () => {
+      const seen = seenIds();
+      list.innerHTML = NEWS.slice(0, 6).map((a) => {
+        const href = a.link || '#news';
+        const external = /^https?:/i.test(a.link || '');
+        return `<a class="news-pop-item${seen.has(a.id) ? ' read' : ''}" href="${esc(href)}"${external ? ' target="_blank" rel="noopener"' : ' data-news-close'}>
+          <span class="t"><i></i>${esc(a.title)}</span>
+          <span class="b">${esc(String(a.body || '').slice(0, 120))}${String(a.body || '').length > 120 ? '…' : ''}</span>
+          <span class="d">${esc(niceDate(a.date))}${a.tag ? ' · ' + esc(a.tag) : ''}</span>
+        </a>`;
+      }).join('') || '<p class="news-pop-item">Nothing yet.</p>';
+
+      pop.hidden = false;
+      bell.classList.add('on');
+      window.SFX?.click();
+
+      // Marked read a beat after opening, so the dots are still visible
+      // when the panel appears — otherwise you never see what was new.
+      setTimeout(markAllSeen, 1000);
+    };
+
+    bell.addEventListener('click', (e) => { e.stopPropagation(); pop.hidden ? open() : close(); });
+    pop.addEventListener('click', (e) => { if (e.target.closest('[data-news-close]')) close(); });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) close(); });
+
+    // Reading the section itself counts. A short dwell, not a glance:
+    // scrolling past at speed should not clear the badge.
+    const sec = $('#news');
+    if (sec) {
+      let dwell;
+      new IntersectionObserver((entries) => {
+        entries.forEach((en) => {
+          clearTimeout(dwell);
+          if (en.isIntersecting) dwell = setTimeout(markAllSeen, 1800);
+        });
+      }, { threshold: 0.35 }).observe(sec);
+    }
+  }
+
+  /* ===================================================== ADMIN BAR
+     Signing in used to send you straight to /admin. It now leaves you on
+     the site with this strip at the top, because the thing you almost
+     always want to do after logging in is *look at the site* — and the
+     editor is one click away when you actually want it.
+  ================================================================= */
+  /** Show the bar. Called from two places — the session check on load,
+      and the moment the login form succeeds — so it lives on its own. */
+  function showAdminBar(username) {
+    const bar = $('#adminBar');
+    if (!bar) return;
+    $('#adminBarUser').textContent = username || 'admin';
+    bar.hidden = false;
+    document.body.classList.add('has-adminbar');
+  }
+  window.showAdminBar = showAdminBar;
+
+  function bindAdminBar() {
+    const bar = $('#adminBar');
+    if (!bar) return;
+
+    // Bound once, whether or not anyone is signed in yet. Binding these
+    // only after a successful session check would leave the buttons dead
+    // for the one case that matters most: the click straight after login.
+    $('#adminBarNews')?.addEventListener('click', () => { location.href = '/admin#news'; });
+
+    $('#adminBarOut')?.addEventListener('click', async () => {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+        sessionStorage.removeItem('rp_token');
+      } catch { /* ignore */ }
+      bar.hidden = true;
+      document.body.classList.remove('has-adminbar');
+      toast('Signed out.');
+    });
+  }
+
+  async function checkSession() {
+    // The session lives in an HttpOnly cookie, with a header fallback for
+    // browsers that refuse cookies. Either way the answer comes from the
+    // server: this page cannot decide for itself that it is signed in,
+    // and showing the bar would not grant anything if it lied — every
+    // write endpoint checks the token again.
+    let token = null;
+    try { token = sessionStorage.getItem('rp_token'); } catch { /* ignore */ }
+
+    try {
+      const res = await fetch('/api/auth/me', {
+        credentials: 'same-origin',
+        headers: token ? { Authorization: 'Bearer ' + token } : {}
+      });
+      if (!res.ok) return;                 // anonymous: no bar, no trace
+      const me = await res.json();
+      showAdminBar(me.username);
+    } catch { /* offline; stay a visitor */ }
+  }
+
+  /* ============================================ PERFORMANCE CONTROL
+     The automatic tier is right most of the time and wrong sometimes.
+     This is the escape hatch, and it is honest about what it does. */
+  function initPerfTab() {
+    if (!window.PERF) return;
+    const actions = $('.nav-actions');
+    if (!actions) return;
+
+    const btn = document.createElement('button');
+    btn.className = 'perf-tab';
+    btn.id = 'perfTab';
+    btn.type = 'button';
+    btn.dataset.cursor = 'quality';
+
+    const LABEL = { high: 'Full', mid: 'Balanced', low: 'Fast' };
+    const NOTE = {
+      high: 'Every effect on.',
+      mid: 'Blur faked, grain still. Looks the same, costs less.',
+      low: 'No blur, no grain, small network. Built for a tired laptop.'
+    };
+    const paint = () => {
+      const t = window.PERF.tier;
+      btn.innerHTML = `<i></i><span>${LABEL[t]}</span>`;
+      btn.title = `Graphics: ${LABEL[t]} — ${NOTE[t]}`;
+    };
+    paint();
+    document.addEventListener('perf:changed', paint);
+
+    btn.addEventListener('click', () => {
+      const order = ['high', 'mid', 'low'];
+      const next = order[(order.indexOf(window.PERF.tier) + 1) % 3];
+      window.PERF.set(next);
+      paint();
+      toast(`Graphics: ${LABEL[next]} — ${NOTE[next]}`, 3600);
+    });
+
+    actions.insertBefore(btn, actions.firstChild);
   }
 
   /* ================================================== RENDERING */
@@ -554,6 +998,11 @@
           )}">0</b><span>${esc(st.label)}</span><i>${esc(st.detail || '')}</i></li>`
       )
       .join('');
+
+    /* announcements */
+    $('#newsKicker').textContent = s.newsKicker || '';
+    $('#newsTitle').textContent = s.newsTitle || 'Announcements';
+    renderNews(c.announcements);
 
     /* about */
     $('#aboutKicker').textContent = s.aboutKicker || '';
@@ -714,7 +1163,9 @@
     /* re-bind everything that was just injected */
     bindTilt();
     bindMagnetic();
+    refreshParallax();
     observe();
+    document.dispatchEvent(new CustomEvent('content:rendered', { detail: c }));
   }
 
   /* ======================================================== BOOT */
@@ -726,6 +1177,10 @@
     initSound();
     initThemeSwitch();
     initSecretAdmin();
+    initBell();
+    initPerfTab();
+    bindAdminBar();
+    checkSession();          // async on purpose: never blocks the page
 
     // signature as logo, under the photo and in the footer — always drawing
     $('#navSignature').appendChild(window.buildSignature({ strokeWidth: 9, duration: 4200, delay: 1200 }));

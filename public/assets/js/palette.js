@@ -53,6 +53,7 @@
   function commands() {
     const list = [
       { g: 'go', label: ':top', hint: 'back to the top', keys: 'home basa yukari start', run: () => goTo('#top') },
+      { g: 'go', label: ':news', hint: 'announcements — what is new', keys: 'duyuru duyurular haber news guncel', run: () => goTo('#news') },
       { g: 'go', label: ':about', hint: 'who is behind the signature', keys: 'hakkimda kim about', run: () => goTo('#about') },
       { g: 'go', label: ':skills', hint: 'languages, frameworks, hardware', keys: 'yetenekler beceri skills', run: () => goTo('#skills') },
       { g: 'go', label: ':experience', hint: 'internships and roles', keys: 'deneyim is tecrube staj work', run: () => goTo('#experience') },
@@ -108,7 +109,15 @@
       });
     });
 
-    return list;
+    /* A section can remove itself from the page — Announcements does,
+       whenever nothing is published. Offering a command that jumps to
+       nothing is worse than not offering it, so the list is rebuilt on
+       every open (see show()) and checks. */
+    return list.filter((c) => {
+      if (c.g !== 'go' || !c.label.startsWith(':')) return true;
+      const el = document.querySelector('#' + c.label.slice(1));
+      return !el || !el.hidden;
+    });
   }
 
   /* ------------------------------------------------------ the sheet */

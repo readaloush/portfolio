@@ -117,7 +117,7 @@
   setTimeout(applySideReveals, 3000);
 
   /* ------------------------------------------- keyboard navigation */
-  const SECTIONS = ['#top', '#about', '#skills', '#experience', '#projects', '#education', '#contact'];
+  const SECTIONS = ['#top', '#news', '#about', '#skills', '#experience', '#projects', '#education', '#contact'];
 
   const currentIndex = () => {
     if (window.PRESS) {
@@ -391,6 +391,7 @@
      be kept in step with the page by one observer rather than by a
      rebuild on every switch. */
   const SECTION_NOTES = {
+    news: 'what has happened lately.',
     about: 'who is behind the signature.',
     skills: 'what he reaches for, and how far.',
     experience: 'everything shipped, in order.',
@@ -408,11 +409,18 @@
      cover — and the palette, the menu and the browser's own back button
      all move between them. The other three modes stay a single scroll,
      because a notebook and a walking robot both want continuity. */
-  const VIEWS = ['#about', '#skills', '#experience', '#projects', '#education', '#contact'];
+  const VIEWS = ['#news', '#about', '#skills', '#experience', '#projects', '#education', '#contact'];
   let pressView = '';
 
   function pressShow(sel, push) {
-    const wanted = VIEWS.includes(sel) ? sel : '';
+    let wanted = VIEWS.includes(sel) ? sel : '';
+
+    /* A section can take itself off the page. Announcements does exactly
+       that when nothing is published, and app.js sets `hidden` on it. A
+       view that renders nothing is a dead end you cannot see your way
+       out of, so asking for one lands on the cover instead. */
+    if (wanted && document.querySelector(wanted)?.hidden) wanted = '';
+
     pressView = wanted;
 
     /* On the cover, every section is put away — the cover is the
@@ -480,14 +488,14 @@
     index.id = 'pressIndex';
     index.className = 'press-index';
     index.setAttribute('aria-label', 'In this issue');
-    const rows = Object.keys(SECTION_NOTES).map((k, i) => {
+    const rows = Object.keys(SECTION_NOTES).map((k) => {
       const el = document.querySelector('#' + k);
       const title = el?.querySelector('.section-title')?.textContent?.trim() || k;
-      return `<a href="#${k}"><b>${String(i + 1).padStart(2, '0')}</b>` +
+      return `<a href="#${k}" data-index-for="${k}"><b>00</b>` +
              `<em>${title}</em><i>${SECTION_NOTES[k]}</i></a>`;
     }).join('');
     index.innerHTML = '<p class="press-index-label">In this issue</p>' + rows +
-      '<a href="#arcade" data-arcade><b>07</b><em>Arcade</em>' +
+      '<a href="#arcade" data-arcade><b>00</b><em>Arcade</em>' +
       '<i>snake, tetris, breakout \u2014 while you decide.</i></a>';
     index.addEventListener('click', (e) => {
       const a = e.target.closest('[data-arcade]');
@@ -507,9 +515,39 @@
     back.innerHTML = '<span>&larr;</span> Contents';
     document.querySelector('main')?.insertBefore(back, document.querySelector('main').firstChild);
 
+    syncIndex();
     // arriving on a deep link should open that view, not the cover
     pressShow(location.hash, false);
   }
+
+  /* The index is built once, before the database has answered, so its
+     titles and its numbering both have to be corrected afterwards.
+
+     The numbering is not decoration here: a contents page that lists
+     01, 03, 04 is a contents page with a missing item, and the section
+     that goes missing is Announcements whenever nothing is published.
+     So the numbers are assigned to what is actually there, in order,
+     every time the content changes. */
+  function syncIndex() {
+    const index = document.getElementById('pressIndex');
+    if (!index) return;
+
+    index.querySelectorAll('[data-index-for]').forEach((a) => {
+      const key = a.dataset.indexFor;
+      const sec = document.getElementById(key);
+      a.hidden = !sec || sec.hidden;
+      const title = sec?.querySelector('.section-title')?.textContent?.trim();
+      if (title) a.querySelector('em').textContent = title;
+    });
+
+    let n = 0;
+    index.querySelectorAll('a').forEach((a) => {
+      if (a.hidden) return;
+      a.querySelector('b').textContent = String(++n).padStart(2, '0');
+    });
+  }
+
+  document.addEventListener('content:rendered', syncIndex);
 
   /* --------------------------------------------------- neural mode
      The intro is a whole scene of its own, so it lives in its own
@@ -635,7 +673,7 @@
   /* ------------------------------------- turn the page when you move
      Scrolling is kept. What changes is that crossing from one section
      into the next is treated as a page boundary.                     */
-  const PAGES = ['#top', '#about', '#skills', '#experience', '#projects', '#education', '#contact'];
+  const PAGES = ['#top', '#news', '#about', '#skills', '#experience', '#projects', '#education', '#contact'];
 
   function pageIndex() {
     let best = 0;

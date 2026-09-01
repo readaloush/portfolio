@@ -113,7 +113,7 @@
 
   /* ------------------------------------------------- the file tree */
   const FILES = {
-    '~': ['about.md', 'skills.json', 'experience.log', 'projects/', 'education.md', 'contact.vcf', 'cv.pdf'],
+    '~': ['about.md', 'news.log', 'skills.json', 'experience.log', 'projects/', 'education.md', 'contact.vcf', 'cv.pdf'],
     '~/projects': () => (content.projects || []).map((p) => slug(p.title))
   };
 
@@ -186,6 +186,25 @@
       say(c.profile.title || '');
       blank();
       wrap(c.profile.summary || '');
+      return;
+    }
+    if (f === 'news.log') {
+      /* Same rules as every other mode: drafts stay unpublished, pinned
+         first, then newest. A shell that quietly showed the drafts would
+         be a hole in the admin panel, not a joke. */
+      const live = (c.announcements || [])
+        .filter((a) => a && a.published !== false && (a.title || a.body))
+        .sort((a, b) => (!!b.pinned !== !!a.pinned)
+          ? (b.pinned ? 1 : -1)
+          : String(b.date || '').localeCompare(String(a.date || '')));
+      if (!live.length) return say('news.log: empty');
+      live.forEach((a) => {
+        say(`${a.date || '          '}  ${a.pinned ? '[pinned] ' : ''}${a.title}`);
+        if (a.body) wrap('    ' + a.body);
+        if (a.link) say('    ' + a.link);
+        blank();
+      });
+      say(`-- ${live.length} entr${live.length === 1 ? 'y' : 'ies'}`);
       return;
     }
     if (f === 'skills.json') {

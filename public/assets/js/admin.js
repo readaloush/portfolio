@@ -78,6 +78,16 @@
   const area = (label, path, rows = 4, ph = '') =>
     `<label>${esc(label)}<textarea rows="${rows}" data-path="${path}" placeholder="${esc(ph)}">${esc(get(path) ?? '')}</textarea></label>`;
 
+  const date = (label, path) =>
+    `<label>${esc(label)}<input type="date" data-path="${path}" value="${esc(String(get(path) || '').slice(0, 10))}"></label>`;
+
+  /** A real checkbox. The input handler reads .checked for these, not
+      .value — a checkbox's value is the string "on" whether it is ticked
+      or not, which would have saved `published: "on"` forever. */
+  const bool = (label, path, hint = '') =>
+    `<label class="check"><input type="checkbox" data-path="${path}" data-bool="1"${get(path) ? ' checked' : ''}>
+      <span>${esc(label)}${hint ? `<em>${esc(hint)}</em>` : ''}</span></label>`;
+
   const csv = (label, path, ph = '') =>
     `<label>${esc(label)}<input type="text" data-path="${path}" data-csv="1" value="${esc((get(path) || []).join(', '))}" placeholder="${esc(ph)}"></label>`;
 
@@ -185,6 +195,43 @@
           ${text('Booking page URL', 'profile.calendarUrl', 'https://calendar.google.com/calendar/appointments/schedules/… or https://calendly.com/…')}
           ${area('Text next to the calendar', 'profile.calendarNote', 3)}
         </div>
+      </section>`,
+
+    news: () => `
+      <section class="panel">
+        <h2>Announcements</h2>
+        <p class="desc">
+          These appear in their own section on the site and behind the bell in the menu.
+          Untick <b>Published</b> to keep one as a draft nobody can see.
+        </p>
+        <div class="note">
+          <b>The ID matters.</b> A visitor's browser remembers which IDs it has already
+          opened, and that is how the little "new" dot decides. So fixing a typo in an
+          announcement does <b>not</b> ring the bell again for people who already read it —
+          and if you want it to, change the ID.
+          <br><br>
+          Newest date first. A <b>pinned</b> announcement sits above everything regardless of its date.
+        </div>
+        ${(state.announcements || [])
+          .map(
+            (a, i) => `<div class="item${a.published === false ? ' muted' : ''}">
+              ${head(i, 'ANNOUNCEMENT', 'announcements')}
+              ${text('Title', `announcements.${i}.title`)}
+              ${area('Text', `announcements.${i}.body`, 4)}
+              <div class="grid three">
+                ${date('Date', `announcements.${i}.date`)}
+                ${text('Tag', `announcements.${i}.tag`, 'Milestone, Project, Award…')}
+                ${text('Link (optional)', `announcements.${i}.link`, '#projects or https://…')}
+              </div>
+              <div class="grid three">
+                ${bool('Published', `announcements.${i}.published`, 'visible on the site')}
+                ${bool('Pinned', `announcements.${i}.pinned`, 'always at the top')}
+                ${text('ID', `announcements.${i}.id`, 'a-2026-09-01')}
+              </div>
+            </div>`
+          )
+          .join('') || '<p class="desc">Nothing yet. The section stays hidden on the site until you publish one.</p>'}
+        ${addBtn('announcements', 'Write an announcement', 'announcement')}
       </section>`,
 
     stats: () => `
@@ -348,6 +395,8 @@
         <h2>Section titles</h2>
         <p class="desc">Rename any heading on the site.</p>
         <div class="grid two">
+          ${text('Announcements — small line', 'sections.newsKicker')}
+          ${text('Announcements — title', 'sections.newsTitle')}
           ${text('About — small line', 'sections.aboutKicker')}
           ${text('About — title', 'sections.aboutTitle')}
           ${text('Skills — small line', 'sections.skillsKicker')}
@@ -407,6 +456,17 @@
 
   const TEMPLATES = {
     string: () => '',
+    /* Dated today and given an id derived from today, because the two
+       fields people forget to fill in are the two that decide the order
+       and the unread dot. A new one starts published — you opened this
+       panel to say something, not to file a draft. */
+    announcement: () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const existing = new Set((state.announcements || []).map((a) => a.id));
+      let id = 'a-' + today, n = 2;
+      while (existing.has(id)) id = `a-${today}-${n++}`;
+      return { id, title: 'New announcement', body: '', date: today, tag: '', link: '', pinned: false, published: true };
+    },
     stat: () => ({ value: 0, suffix: '', decimals: 0, label: 'New stat', detail: '' }),
     social: () => ({ label: 'New link', icon: 'web', url: 'https://' }),
     skill: () => ({ name: 'New skill', level: 70 }),
@@ -429,6 +489,11 @@
     const el = e.target;
     const path = el.dataset.path;
     if (!path) return;
+    // Checkboxes fire input *and* change. This handler would read .value,
+    // which for a checkbox is the string "on" no matter what state it is
+    // in, so `published` would be saved as "on" and could never be turned
+    // off. They are handled in the change listener below instead.
+    if (el.dataset.bool) return;
     let v = el.value;
     if (el.dataset.num) v = v === '' ? 0 : Number(v);
     if (el.dataset.csv) v = v.split(',').map((s) => s.trim()).filter(Boolean);
@@ -440,7 +505,17 @@
   });
 
   $('#pane').addEventListener('change', (e) => {
-    if (e.target.tagName === 'SELECT' && e.target.dataset.path) set(e.target.dataset.path, e.target.value);
+    const el = e.target;
+    if (!el.dataset.path) return;
+    if (el.tagName === 'SELECT') return set(el.dataset.path, el.value);
+
+    // A checkbox reports value "on" whether or not it is ticked, so it has
+    // to be read from .checked. Ticking Published is also the one edit
+    // that changes how the row *looks*, so redraw the tab for it.
+    if (el.dataset.bool) {
+      set(el.dataset.path, el.checked);
+      if (el.dataset.path.endsWith('.published')) renderTab();
+    }
   });
 
   $('#pane').addEventListener('click', (e) => {
@@ -626,6 +701,12 @@
     $('#whoami').textContent = me.username;
     $('#gate').hidden = true;
     $('#app').hidden = false;
+
+    // /admin#news opens straight on that tab. The admin bar on the site
+    // links here, so "Announcement" is one click from anywhere.
+    const wanted = location.hash.replace('#', '');
+    if (wanted && TABS[wanted]) tab = wanted;
+
     renderTab();
   }
 

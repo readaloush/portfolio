@@ -1819,3 +1819,46 @@ body.has-adminbar .news-pop-card { top: 110px; }
 .news-card[hidden] { display: none !important; }
 .press-index a[hidden] { display: none !important; }
 .nav-links a[hidden] { display: none !important; }
+
+
+/* ------------------------------------------------------------------
+   mid, second pass — measured on the live site
+
+   The first version of the mid tier removed the aurora blur and left
+   every backdrop-filter alone. Counting them in the browser showed 29
+   still live, and the split matters: a handful are *chrome* — the nav,
+   the chat panel, the command palette, this bar — which are few, fixed
+   in place, and where the frosted glass actually reads as a material.
+
+   The rest are *content* cards: .card, .project, .tl-item, .news-card.
+   Those are the ones that multiply. Open the skills section and there
+   are six of them at blur(12px), each the width of the column, each
+   re-blurring whatever scrolls behind it. That is the repeated cost,
+   and it is the one worth spending at the full tier only.
+
+   So mid keeps the chrome frosted and gives the cards an opaque
+   surface derived from the current mode's own palette.
+------------------------------------------------------------------- */
+html[data-perf="mid"] .card,
+html[data-perf="mid"] .project,
+html[data-perf="mid"] .tl-item,
+html[data-perf="mid"] .news-card,
+html[data-perf="mid"] .calendar-box,
+html[data-perf="mid"] .socials li,
+html[data-perf="mid"] #cvButton {
+  -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+}
+html[data-perf="mid"] .card,
+html[data-perf="mid"] .project,
+html[data-perf="mid"] .tl-item,
+html[data-perf="mid"] .news-card,
+html[data-perf="mid"] .calendar-box {
+  background: color-mix(in srgb, var(--bg2) 94%, var(--text) 6%);
+}
+
+/* The grain rule above only named the mid tier. At low the layer is
+   display:none so nothing was ever painted, but leaving a running
+   animation declared on a hidden element is untidy and it made the
+   measurement read as though the grain were still moving. */
+html[data-perf="low"] .grain { animation: none; }

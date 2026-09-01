@@ -72,6 +72,8 @@ module.exports = {
       "date": "2026-09-01",
       "tag": "Milestone",
       "link": "",
+      "image": "",
+      "files": [],
       "pinned": false,
       "published": true
     },
@@ -82,6 +84,8 @@ module.exports = {
       "date": "2026-05-20",
       "tag": "Project",
       "link": "#projects",
+      "image": "",
+      "files": [],
       "pinned": false,
       "published": true
     }

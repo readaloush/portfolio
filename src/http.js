@@ -22,7 +22,19 @@ const MIME = {
   '.ico': 'image/x-icon',
   '.pdf': 'application/pdf',
   '.woff2': 'font/woff2',
-  '.txt': 'text/plain; charset=utf-8'
+  '.txt': 'text/plain; charset=utf-8',
+  // Attachments on announcements and projects. Without these the browser
+  // gets application/octet-stream and saves "download" with no extension,
+  // instead of a spreadsheet that opens in Excel.
+  '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.xls': 'application/vnd.ms-excel',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.ppt': 'application/vnd.ms-powerpoint',
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '.rtf': 'application/rtf',
+  '.csv': 'text/csv; charset=utf-8',
+  '.zip': 'application/zip'
 };
 
 function parseCookies(header = '') {
@@ -119,7 +131,9 @@ function createApp(options = {}) {
       const prev = res.getHeader('Set-Cookie');
       res.setHeader('Set-Cookie', prev ? [].concat(prev, bits.join('; ')) : bits.join('; '));
     };
-    res.sendFile = (p) => sendFile(res, p);
+    // sendFile takes extra headers; this wrapper used to swallow them, so a
+    // caller passing a Content-Security-Policy got no error and no policy.
+    res.sendFile = (p, extraHeaders) => sendFile(res, p, extraHeaders);
 
     req.query = Object.fromEntries(url.searchParams);
     req.cookies = parseCookies(req.headers.cookie || '');

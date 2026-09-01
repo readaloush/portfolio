@@ -988,17 +988,40 @@
       mid: 'Blur faked, grain still. Looks the same, costs less.',
       low: 'No blur, no grain, small network. Built for a tired laptop.'
     };
+
+    /* Four positions, not three. Automatic has to be one of them.
+       The first version cycled Full → Balanced → Fast and wrote a
+       permanent choice every time, which meant one curious click pinned
+       the machine to a manual setting on every future visit with nothing
+       anywhere to undo it. Auto is now both the starting state and a
+       place the cycle comes back round to. */
     const paint = () => {
       const t = window.PERF.tier;
-      btn.innerHTML = `<i></i><span>${LABEL[t]}</span>`;
-      btn.title = `Graphics: ${LABEL[t]} — ${NOTE[t]}`;
+      const auto = !window.PERF.pinned;
+      btn.innerHTML = `<i></i><span>${auto ? 'Auto' : LABEL[t]}</span>`;
+      btn.title = auto
+        ? `Graphics: measured automatically — currently ${LABEL[t]}. Click to choose one yourself.`
+        : `Graphics: ${LABEL[t]} — ${NOTE[t]} Click again to cycle; keep clicking to return to Auto.`;
     };
     paint();
     document.addEventListener('perf:changed', paint);
 
     btn.addEventListener('click', () => {
       const order = ['high', 'mid', 'low'];
-      const next = order[(order.indexOf(window.PERF.tier) + 1) % 3];
+      if (!window.PERF.pinned) {
+        // leaving automatic: start from whatever it had settled on
+        const start = order.indexOf(window.PERF.tier);
+        window.PERF.set(order[start < 0 ? 0 : start]);
+        paint();
+        return toast(`Graphics: ${LABEL[window.PERF.tier]} — ${NOTE[window.PERF.tier]}`, 3600);
+      }
+      const i = order.indexOf(window.PERF.tier);
+      if (i === order.length - 1) {
+        window.PERF.auto();
+        paint();
+        return toast('Graphics: back to automatic — measured on this machine.', 3600);
+      }
+      const next = order[i + 1];
       window.PERF.set(next);
       paint();
       toast(`Graphics: ${LABEL[next]} — ${NOTE[next]}`, 3600);

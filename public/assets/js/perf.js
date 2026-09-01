@@ -73,7 +73,7 @@
   }
 
   const saved = read(KEY);
-  const pinned = TIERS.includes(saved);           // the visitor chose this
+  let pinned = TIERS.includes(saved);             // the visitor chose this
   let tier = pinned ? saved : guess();
 
   function apply(next, why) {
@@ -139,15 +139,26 @@
     low: tier === 'low',
     high: tier === 'high',
     measured: null,
+    /** True when this machine is running a setting somebody chose by hand
+        rather than one this file worked out. The control in the nav needs
+        to know, so it can offer the way back. */
+    pinned,
     /** A deliberate choice, remembered on this machine. */
     set(next) {
       if (!TIERS.includes(next)) return;
       write(KEY, next);
+      pinned = true;
+      API.pinned = true;
       apply(next, 'chosen');
     },
-    /** Forget the choice and go back to measuring. */
+    /** Forget the choice and go back to measuring.
+        Without this being reachable from the interface, one click on the
+        control was a one-way door: pinned on this machine forever, with no
+        way to ask for the automatic answer again. */
     auto() {
       try { localStorage.removeItem(KEY); } catch { /* ignore */ }
+      pinned = false;
+      API.pinned = false;
       apply(guess(), 'auto');
       measure();
     },

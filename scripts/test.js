@@ -89,7 +89,12 @@ async function call(method, url, body) {
      browser's built-in `[hidden] { display: none }`. That once made the
      admin panel look like it never opened, so it is now checked. */
   {
-    const css = ['style.css', 'admin.css']
+    /* refine.css was missing from this list, and it is now the largest
+       stylesheet on the site — the five modes, the tiers and everything
+       added since live in it. A guard that does not read the file where
+       the rules are is not a guard; it passed for months by not looking.
+       It caught .adminbar the moment it was added. */
+    const css = ['style.css', 'refine.css', 'admin.css']
       .map((f) => fs.readFileSync(path.join(__dirname, '..', 'public', 'assets', 'css', f), 'utf8'))
       .join('\n');
 

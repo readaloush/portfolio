@@ -1450,3 +1450,372 @@ body.sh-on .sh {
 @media (min-width: 981px) and (max-width: 1500px) {
   .mode-tab { padding: 6px 7px; font-size: 8px; letter-spacing: .6px; }
 }
+
+
+/* ==================================================================
+   PERFORMANCE TIERS
+   ------------------------------------------------------------------
+   Written last on purpose. Every rule below is a plain
+   html[data-perf="…"] selector, the same specificity as the theme and
+   mode blocks above it, so being last in the file is what lets it win
+   without a single !important.
+
+   What was actually slow, measured rather than guessed:
+
+     1. .aurora span — three circles up to 46vw across carrying
+        filter: blur(110px), *animated with scale*. A blur is priced by
+        area and has to be re-rasterised whenever the thing under it
+        changes size. Three of them, forever.
+
+     2. .grain — a full-viewport SVG-noise layer whose transform steps
+        four times a second. Full-screen repaint, on a loop.
+
+     3. Twenty-two backdrop-filter surfaces sitting *in front of*
+        (1) and (2). This is the multiplier and the real answer to
+        "why one frame a second": a backdrop filter must re-blur its
+        backdrop whenever the backdrop moves, and thanks to the aurora
+        and the grain the backdrop never stopped moving. Twenty-two
+        live blurs, recomputed every frame, over a surface that is
+        itself being blurred.
+
+   The fix is not to delete the look. A circle blurred by 110px *is* a
+   radial falloff — so at the mid tier the blur is replaced with a mask
+   that produces the same soft edge for free, and the frost is dropped
+   only at the tier where the machine cannot pay for it at all.
+   ================================================================== */
+
+/* ---------------------------------------------------- mid and low */
+
+/* The aurora keeps its colour, its size and its drift. It loses the
+   thing that cost: a real gaussian blur, swapped for a radial mask
+   with the same falloff. Composited, not rasterised. */
+html[data-perf="mid"] .aurora span,
+html[data-perf="low"] .aurora span {
+  filter: none;
+  -webkit-mask-image: radial-gradient(closest-side, #000 0%, rgba(0,0,0,.55) 45%, transparent 100%);
+          mask-image: radial-gradient(closest-side, #000 0%, rgba(0,0,0,.55) 45%, transparent 100%);
+  opacity: .42;
+}
+html[data-theme="light"][data-perf="mid"] .aurora span,
+html[data-theme="light"][data-perf="low"] .aurora span { opacity: .3; }
+
+/* The grain stays, but stops moving. Static film grain reads as film
+   grain; it is the four-times-a-second full-screen repaint that was
+   never worth its price. */
+html[data-perf="mid"] .grain { animation: none; }
+
+/* The hero name stops animating its own gradient — that repaints the
+   largest piece of text on the page on every frame. */
+html[data-perf="mid"] .hero-name,
+html[data-perf="low"] .hero-name { animation: none; background-position: 0 0; }
+
+/* ------------------------------------------------------------ low */
+
+html[data-perf="low"] {
+  /* Without a backdrop filter the translucent surfaces are 3% white on
+     a dark background — invisible. So at this tier they become opaque,
+     derived from whatever --bg2 the current mode and theme set, which
+     keeps all five modes correct without repeating a palette here. */
+  --surface:   color-mix(in srgb, var(--bg2) 93%, var(--text) 7%);
+  --surface-2: color-mix(in srgb, var(--bg2) 86%, var(--text) 14%);
+}
+
+/* Every frosted panel on the site, in one place. */
+html[data-perf="low"] #nav,
+html[data-perf="low"] .card,
+html[data-perf="low"] .project,
+html[data-perf="low"] .modal-backdrop,
+html[data-perf="low"] .chat,
+html[data-perf="low"] .orb,
+html[data-perf="low"] .toast,
+html[data-perf="low"] .calendar-box,
+html[data-perf="low"] .cmdk-box,
+html[data-perf="low"] .cmdk-veil,
+html[data-perf="low"] .news-pop-card,
+html[data-perf="low"] .news-pop-veil,
+html[data-perf="low"] .news-card,
+html[data-perf="low"] .adminbar,
+html[data-perf="low"] .sh,
+html[data-perf="low"] .arcade,
+html[data-perf="low"] .arcade-veil {
+  -webkit-backdrop-filter: none !important;
+          backdrop-filter: none !important;
+}
+
+/* The grain is a full-screen layer that has to be composited even when
+   it is not moving. At this tier it goes. */
+html[data-perf="low"] .grain { display: none; }
+
+/* The drift is cheap now that the blur is gone, but on a machine this
+   slow a permanently animating full-screen element is still one thing
+   too many. */
+html[data-perf="low"] .aurora span { animation: none; opacity: .3; }
+
+/* The custom cursor is two fixed elements repainting on a permanent
+   animation loop, and it is the first thing that feels broken when the
+   frame rate drops — a laggy cursor reads as a broken site. Give the
+   real one back. */
+html[data-perf="low"] #cursorDot,
+html[data-perf="low"] #cursorRing { display: none; }
+html[data-perf="low"] body,
+html[data-perf="low"] a,
+html[data-perf="low"] button,
+html[data-perf="low"] .tilt { cursor: auto !important; }
+html[data-perf="low"] a,
+html[data-perf="low"] button { cursor: pointer !important; }
+
+/* Decorative loops that repaint on a timer and add nothing to a page
+   that is already struggling to scroll. */
+html[data-perf="low"] .photo-scan,
+html[data-perf="low"] .photo-ring,
+html[data-perf="low"] .orb-ring,
+html[data-perf="low"] .cal-card-pulse,
+html[data-perf="low"] .scroll-hint span { animation: none; }
+html[data-perf="low"] .photo-glare { display: none; }
+
+/* Long shadows are a blur too: a 80px spread is rasterised the same way
+   and there is one on every card. */
+html[data-perf="low"] { --shadow: 0 8px 20px rgba(0,0,0,.28); }
+
+/* Transitions on colour across the whole document force a repaint of
+   everything for most of a second every time the light switch flips. */
+html[data-perf="low"] body { transition: none; }
+
+/* ------------------------------------------- the manual override */
+
+.perf-tab {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 9px; border: 1px solid var(--line); border-radius: 999px;
+  font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--muted); background: transparent; cursor: pointer;
+  transition: color .25s var(--ease), border-color .25s var(--ease);
+}
+.perf-tab:hover { color: var(--text); border-color: var(--accent); }
+.perf-tab i {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--muted);
+  transition: background .25s var(--ease);
+}
+html[data-perf="high"] .perf-tab i { background: #2CE38A; }
+html[data-perf="mid"]  .perf-tab i { background: #E8B33A; }
+html[data-perf="low"]  .perf-tab i { background: #E0553B; }
+@media (max-width: 980px) { .perf-tab { display: none; } }
+
+
+/* ==================================================================
+   ANNOUNCEMENTS
+   ------------------------------------------------------------------
+   A section on the page, and a short list hanging off a bell in the
+   nav. The bell's badge counts what *this browser* has not opened yet,
+   remembered in localStorage — there is no read-receipt going back to
+   a server, because nobody needs to know who read what.
+   ================================================================== */
+
+/* --------------------------------------------------------- the bell */
+.bell-btn {
+  position: relative; display: grid; place-items: center;
+  width: 38px; height: 38px; border-radius: 12px;
+  border: 1px solid var(--line); color: var(--muted);
+  transition: color .3s var(--ease), border-color .3s var(--ease), background .3s var(--ease);
+}
+.bell-btn:hover { color: var(--text); border-color: var(--accent); background: var(--surface); }
+.bell-btn.on { color: var(--accent); border-color: var(--accent); }
+
+/* The bell only rings when there is something to ring about. */
+.bell-btn.unread .bell-body { transform-origin: 12px 4px; animation: bellSwing 3.4s var(--ease) infinite; }
+@keyframes bellSwing {
+  0%, 62%, 100% { transform: rotate(0); }
+  66% { transform: rotate(11deg); }
+  72% { transform: rotate(-9deg); }
+  78% { transform: rotate(6deg); }
+  84% { transform: rotate(-4deg); }
+  90% { transform: rotate(2deg); }
+}
+html[data-perf="low"] .bell-btn.unread .bell-body { animation: none; }
+
+.bell-badge {
+  position: absolute; top: -5px; right: -5px; min-width: 17px; height: 17px;
+  padding: 0 4px; border-radius: 999px;
+  background: var(--accent); color: #04050a;
+  font-size: 10px; font-weight: 700; line-height: 17px; text-align: center;
+  box-shadow: 0 0 0 2px var(--bg);
+  animation: badgePop .5s var(--ease);
+}
+@keyframes badgePop { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* --------------------------------------------------- the section */
+.news-grid { display: grid; gap: 14px; }
+
+.news-card {
+  position: relative; display: grid; gap: 8px;
+  grid-template-columns: 128px 1fr;
+  padding: 20px 22px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  transition: border-color .35s var(--ease), transform .35s var(--ease);
+}
+.news-card:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); transform: translateX(4px); }
+
+.news-card .news-when { grid-row: 1 / span 3; align-self: start; }
+.news-card .news-date {
+  display: block; font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 1px; color: var(--muted);
+}
+.news-card .news-tag {
+  display: inline-block; margin-top: 8px; padding: 3px 9px;
+  border: 1px solid var(--line); border-radius: 999px;
+  font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted);
+}
+.news-card h3 { font-size: clamp(17px, 2vw, 21px); font-weight: 600; line-height: 1.35; }
+.news-card p { color: var(--muted); font-size: 15px; }
+.news-card .news-more {
+  justify-self: start; font-size: 12px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--accent); border-bottom: 1px solid currentColor; padding-bottom: 2px;
+}
+
+/* Pinned: a rule down the left edge, not a different card. */
+.news-card.pinned { border-left: 3px solid var(--accent); }
+.news-card.pinned .news-tag { color: var(--accent); border-color: var(--accent); }
+
+/* Unread, from this browser's point of view. */
+.news-card.fresh::after {
+  content: ''; position: absolute; top: 16px; right: 16px;
+  width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent);
+  animation: freshPing 2.4s ease-out infinite;
+}
+@keyframes freshPing {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); }
+  70%  { box-shadow: 0 0 0 9px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+html[data-perf="low"] .news-card.fresh::after { animation: none; }
+
+.news-empty {
+  padding: 40px 24px; text-align: center; color: var(--muted);
+  border: 1px dashed var(--line); border-radius: var(--radius);
+}
+
+@media (max-width: 640px) {
+  .news-card { grid-template-columns: 1fr; }
+  .news-card .news-when { grid-row: auto; }
+  .news-card .news-tag { margin-top: 0; margin-left: 8px; }
+}
+
+/* ------------------------------------------------- the pop-out */
+.news-pop { position: fixed; inset: 0; z-index: 900; }
+.news-pop-veil { position: absolute; inset: 0; background: rgba(0,0,0,.35); animation: fadeIn .3s var(--ease); }
+
+.news-pop-card {
+  position: absolute; top: 66px; right: clamp(12px, 4vw, 46px);
+  width: min(390px, calc(100vw - 24px)); max-height: min(70vh, 560px);
+  display: flex; flex-direction: column;
+  border: 1px solid var(--line); border-radius: 16px;
+  background: color-mix(in srgb, var(--bg2) 92%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(150%); backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: var(--shadow); overflow: hidden;
+  animation: popIn .35s var(--ease);
+}
+@keyframes popIn { from { opacity: 0; transform: translateY(-10px) scale(.98); } to { opacity: 1; transform: none; } }
+html[data-perf="low"] .news-pop-card { background: var(--bg2); animation: none; }
+
+.news-pop-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border-bottom: 1px solid var(--line);
+}
+.news-pop-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+.news-pop-x { font-size: 22px; line-height: 1; color: var(--muted); }
+.news-pop-x:hover { color: var(--text); }
+
+.news-pop-list { overflow-y: auto; padding: 6px; }
+.news-pop-item {
+  display: block; padding: 13px 12px; border-radius: 11px;
+  border-bottom: 1px solid var(--line);
+}
+.news-pop-item:last-child { border-bottom: 0; }
+.news-pop-item:hover { background: var(--surface); }
+.news-pop-item .t { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; }
+.news-pop-item .t i {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none;
+}
+.news-pop-item.read .t i { background: transparent; }
+.news-pop-item .b { margin-top: 4px; font-size: 13px; color: var(--muted); }
+.news-pop-item .d { margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: .8px; }
+
+.news-pop-foot { padding: 11px 16px; border-top: 1px solid var(--line); text-align: center; }
+.news-pop-foot a { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); }
+
+/* ==================================================================
+   ADMIN BAR
+   ------------------------------------------------------------------
+   Signing in used to redirect straight into the editor. Now it puts
+   this strip at the top of the real site instead, so the first thing
+   you see after logging in is the thing you are editing.
+   ================================================================== */
+.adminbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1200;
+  display: flex; align-items: center; gap: 10px;
+  height: 44px; padding: 0 clamp(12px, 3vw, 26px);
+  background: color-mix(in srgb, var(--bg2) 88%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  animation: barDrop .45s var(--ease);
+}
+@keyframes barDrop { from { transform: translateY(-100%); } to { transform: none; } }
+html[data-perf="low"] .adminbar { background: var(--bg2); animation: none; }
+
+.adminbar-live {
+  width: 7px; height: 7px; border-radius: 50%; background: #2CE38A; flex: none;
+  box-shadow: 0 0 0 0 rgba(44,227,138,.65); animation: ping 2s infinite;
+}
+html[data-perf="low"] .adminbar-live { animation: none; }
+.adminbar-who { color: var(--muted); white-space: nowrap; }
+.adminbar-who b { color: var(--text); font-weight: 600; }
+.adminbar-spacer { flex: 1; }
+
+.adminbar-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 9px;
+  border: 1px solid var(--line); color: var(--text);
+  font-size: 12px; white-space: nowrap;
+  transition: border-color .25s var(--ease), background .25s var(--ease);
+}
+.adminbar-btn:hover { border-color: var(--accent); background: var(--surface); }
+.adminbar-btn.primary { background: var(--accent); border-color: var(--accent); color: #04050a; font-weight: 600; }
+.adminbar-btn.primary:hover { filter: brightness(1.1); }
+.adminbar-btn.ghost { color: var(--muted); }
+
+/* Everything that was pinned to the top of the viewport moves down by
+   exactly the height of the bar. */
+body.has-adminbar { padding-top: 44px; }
+body.has-adminbar #nav { top: 44px; }
+body.has-adminbar .news-pop-card { top: 110px; }
+/* The mode tabs live inside #nav, so they follow it down on their own. */
+
+@media (max-width: 720px) {
+  .adminbar-who { display: none; }
+  .adminbar-btn span { display: none; }
+  .adminbar-btn.ghost span, .adminbar-btn.ghost { display: inline-flex; }
+}
+
+
+/* ==================================================================
+   [hidden] MUST WIN
+   ------------------------------------------------------------------
+   `hidden` is only an attribute; the browser implements it as a plain
+   `display: none` rule in its own stylesheet, and *any* author rule
+   that sets display beats it. So every element this site toggles with
+   .hidden = true needs a matching rule here or it never goes away.
+
+   This is not hypothetical. `.adminbar` sets `display: flex`, and
+   without the line below the signed-in toolbar — with its Edit and
+   Sign out buttons — was rendered for every anonymous visitor.
+   scripts/test.js checks for exactly this, and it now reads this file.
+   ================================================================== */
+.adminbar[hidden] { display: none !important; }
+.bell-btn[hidden] { display: none !important; }
+.news-pop[hidden] { display: none !important; }
+.news-card[hidden] { display: none !important; }
+.press-index a[hidden] { display: none !important; }
+.nav-links a[hidden] { display: none !important; }

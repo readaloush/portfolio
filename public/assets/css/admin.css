@@ -191,3 +191,23 @@ label.check:has(input:checked) { border-color: var(--accent); background: rgba(0
    something here that the site is not showing. */
 .item.muted { opacity: .55; border-style: dashed; }
 .item.muted:focus-within { opacity: 1; }
+
+
+/* ------------------------------------------------- attachments */
+.attach-row {
+  display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.5fr) auto auto auto;
+  gap: 8px; align-items: center; margin-bottom: 8px;
+}
+.attach-row input { min-width: 0; }
+@media (max-width: 900px) {
+  .attach-row { grid-template-columns: 1fr auto; }
+  .attach-row input:nth-child(2) { grid-column: 1 / -1; }
+}
+
+/* A non-image file in the media library. It used to get an <img> tag,
+   which meant a spreadsheet rendered as a broken-image icon. */
+.media-doc {
+  aspect-ratio: 1; display: grid; place-items: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: 1px;
+  color: var(--accent); background: rgba(0,0,0,.22);
+}

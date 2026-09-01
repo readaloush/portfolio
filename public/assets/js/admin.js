@@ -147,6 +147,22 @@
     </div>`;
   };
 
+  /** A list of attachments: any number of files, each with its own label. */
+  const attachments = (arrPath) => {
+    const arr = get(arrPath) || [];
+    return `<label>Attachments — reports, spreadsheets, slides, links</label>
+      <div class="lines">
+        ${arr.map((f, i) => `<div class="attach-row">
+          <input type="text" data-path="${arrPath}.${i}.label" value="${esc(f.label || '')}" placeholder="What it is called">
+          <input type="text" data-path="${arrPath}.${i}.url" value="${esc(f.url || '')}" placeholder="/assets/uploads/… or https://…">
+          <button class="btn ghost tiny" data-upload="${arrPath}.${i}.url">Upload…</button>
+          ${f.url ? `<a class="btn ghost tiny" href="${esc(f.url)}" target="_blank" rel="noopener">Open</a>` : ''}
+          <button class="icon-btn del" data-del="${arrPath}" data-i="${i}" title="Delete">✕</button>
+        </div>`).join('')}
+      </div>
+      ${addBtn(arrPath, 'Attach a file or link', 'attachment')}`;
+  };
+
   /* --------------------------------------------------------- tabs */
   const TABS = {
     profile: () => `
@@ -218,6 +234,8 @@
               ${head(i, 'ANNOUNCEMENT', 'announcements')}
               ${text('Title', `announcements.${i}.title`)}
               ${area('Text', `announcements.${i}.body`, 4)}
+              ${image('Picture (shown beside the text)', `announcements.${i}.image`)}
+              ${attachments(`announcements.${i}.files`)}
               <div class="grid three">
                 ${date('Date', `announcements.${i}.date`)}
                 ${text('Tag', `announcements.${i}.tag`, 'Milestone, Project, Award…')}
@@ -465,7 +483,7 @@
       const existing = new Set((state.announcements || []).map((a) => a.id));
       let id = 'a-' + today, n = 2;
       while (existing.has(id)) id = `a-${today}-${n++}`;
-      return { id, title: 'New announcement', body: '', date: today, tag: '', link: '', pinned: false, published: true };
+      return { id, title: 'New announcement', body: '', date: today, tag: '', link: '', image: '', files: [], pinned: false, published: true };
     },
     stat: () => ({ value: 0, suffix: '', decimals: 0, label: 'New stat', detail: '' }),
     social: () => ({ label: 'New link', icon: 'web', url: 'https://' }),
@@ -474,7 +492,8 @@
     language: () => ({ name: 'Language', level: 'Level' }),
     experience: () => ({ role: 'New role', company: '', period: '', tools: '', bullets: [''] }),
     project: () => ({ title: 'New project', period: '', image: '/assets/img/project-waste.svg', tags: [], repo: '', link: '', report: '', bullets: [''] }),
-    education: () => ({ degree: 'New degree', school: '', period: '', note: '' })
+    education: () => ({ degree: 'New degree', school: '', period: '', note: '' }),
+    attachment: () => ({ label: '', url: '' })
   };
 
   function renderTab() {
@@ -570,6 +589,40 @@
       fr.readAsDataURL(file);
     });
 
+  /* The browser is the one that decides `file.type`, and it is not always
+     right or even present. Windows reports an empty string for Office
+     files when the registry entry is missing, and .csv is regularly
+     announced as application/vnd.ms-excel. The server judges by MIME, so
+     an empty or surprising type means a rejection the person cannot act
+     on — "that file type is not allowed" about a perfectly normal .docx.
+
+     The extension is the thing the person can actually see, so it is what
+     we fall back to. The server still decides; this only stops us sending
+     it a blank. */
+  const BY_EXTENSION = {
+    pdf: 'application/pdf',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ppt: 'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    rtf: 'application/rtf',
+    csv: 'text/csv',
+    txt: 'text/plain',
+    zip: 'application/zip',
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+    webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml'
+  };
+
+  const mimeOf = (file) => {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    // The extension wins whenever we recognise it: a .csv announced as
+    // vnd.ms-excel would be saved with an .xls extension and then refuse
+    // to open in Excel, which is a worse outcome than trusting the name.
+    return BY_EXTENSION[ext] || file.type || '';
+  };
+
   $('#hiddenFile').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -579,7 +632,7 @@
         method: 'POST',
         body: JSON.stringify({
           filename: file.name,
-          mimetype: file.type,
+          mimetype: mimeOf(file),
           data: await toBase64(file)
         })
       });
@@ -596,6 +649,14 @@
     }
   });
 
+  /* The media grid used to test for exactly one non-image type, PDF, and
+     put an <img> tag on everything else. A spreadsheet rendered as a
+     broken image icon. The extension is the honest label. */
+  const docLabel = (m) => {
+    const ext = (String(m.filename || m.url).split('.').pop() || '').toUpperCase();
+    return ext.length <= 5 ? ext : 'FILE';
+  };
+
   async function loadMedia() {
     try {
       const { media } = await api('/api/media');
@@ -604,7 +665,7 @@
       grid.innerHTML = media
         .map(
           (m) => `<div class="media-cell" data-url="${esc(m.url)}" title="Click to copy">
-            ${m.mimetype === 'application/pdf' ? '<div style="aspect-ratio:1;display:grid;place-items:center;font-size:26px">PDF</div>' : `<img src="${esc(m.url)}" alt="">`}
+            ${/^image\//.test(m.mimetype) ? `<img src="${esc(m.url)}" alt="">` : `<div class="media-doc">${esc(docLabel(m))}</div>`}
             <p>${esc(m.filename)}</p>
           </div>`
         )

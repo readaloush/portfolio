@@ -202,6 +202,10 @@
         say(`${a.date || '          '}  ${a.pinned ? '[pinned] ' : ''}${a.title}`);
         if (a.body) wrap('    ' + a.body);
         if (a.link) say('    ' + a.link);
+        (a.files || []).filter((f) => f && f.url).forEach((f) => {
+          const ext = (String(f.url).split(/[?#]/)[0].split('.').pop() || '').toLowerCase();
+          say(`    [${ext.slice(0, 4) || 'link'}] ${f.label || f.url}  ${f.url}`);
+        });
         blank();
       });
       say(`-- ${live.length} entr${live.length === 1 ? 'y' : 'ies'}`);

@@ -750,6 +750,52 @@
       });
   }
 
+  /* Attachments. The label on the chip comes from the extension, because
+     the alternative is asking him to type "PDF" into a box every time and
+     then rendering whatever he typed, including the times he did not. */
+  const FILE_KIND = {
+    pdf:  { label: 'PDF',        cls: 'pdf' },
+    doc:  { label: 'Word',       cls: 'doc' },
+    docx: { label: 'Word',       cls: 'doc' },
+    rtf:  { label: 'Word',       cls: 'doc' },
+    xls:  { label: 'Excel',      cls: 'xls' },
+    xlsx: { label: 'Excel',      cls: 'xls' },
+    csv:  { label: 'CSV',        cls: 'xls' },
+    ppt:  { label: 'Slides',     cls: 'ppt' },
+    pptx: { label: 'Slides',     cls: 'ppt' },
+    zip:  { label: 'ZIP',        cls: 'zip' },
+    txt:  { label: 'Text',       cls: 'txt' },
+    png:  { label: 'Image',      cls: 'img' },
+    jpg:  { label: 'Image',      cls: 'img' },
+    jpeg: { label: 'Image',      cls: 'img' },
+    webp: { label: 'Image',      cls: 'img' },
+    gif:  { label: 'Image',      cls: 'img' },
+    svg:  { label: 'Image',      cls: 'img' }
+  };
+
+  const fileKind = (url = '') => {
+    const clean = String(url).split(/[?#]/)[0];
+    const ext = (clean.split('.').pop() || '').toLowerCase();
+    if (FILE_KIND[ext]) return FILE_KIND[ext];
+    // No extension and an http address: it is a link, not a file.
+    return /^https?:/i.test(url) ? { label: 'Link', cls: 'link' } : { label: 'File', cls: 'txt' };
+  };
+
+  const attachmentsHTML = (files) => {
+    const list = (files || []).filter((f) => f && f.url);
+    if (!list.length) return '';
+    return `<ul class="news-files">${list.map((f) => {
+      const kind = fileKind(f.url);
+      const external = /^https?:/i.test(f.url);
+      // download only makes sense same-origin; a cross-site link is a visit
+      const dl = external ? '' : ' download';
+      return `<li><a class="news-file ${kind.cls}" href="${esc(f.url)}"${external ? ' target="_blank" rel="noopener"' : dl} data-cursor="open">
+        <span class="news-file-kind">${esc(kind.label)}</span>
+        <span class="news-file-name">${esc(f.label || kind.label)}</span>
+      </a></li>`;
+    }).join('')}</ul>`;
+  };
+
   const niceDate = (raw) => {
     const d = new Date(raw);
     if (!raw || isNaN(d)) return String(raw || '');
@@ -793,16 +839,25 @@
     if (empty) { paintBadge(); return; }
 
     const seen = seenIds();
-    grid.innerHTML = NEWS.map((a) => `
-      <article class="news-card reveal${a.pinned ? ' pinned' : ''}${seen.has(a.id) ? '' : ' fresh'}">
+    grid.innerHTML = NEWS.map((a) => {
+      const files = attachmentsHTML(a.files);
+      return `
+      <article class="news-card reveal${a.pinned ? ' pinned' : ''}${seen.has(a.id) ? '' : ' fresh'}${a.image ? ' has-image' : ''}">
         <div class="news-when">
           <span class="news-date">${esc(niceDate(a.date))}</span>
           ${a.tag ? `<span class="news-tag">${esc(a.tag)}</span>` : ''}
         </div>
-        <h3>${esc(a.title)}</h3>
-        <p>${esc(a.body)}</p>
-        ${a.link ? `<a class="news-more" href="${esc(a.link)}"${/^https?:/i.test(a.link) ? ' target="_blank" rel="noopener"' : ''} data-cursor="open">Read more</a>` : ''}
-      </article>`).join('');
+        ${a.image ? `<a class="news-shot" href="${esc(a.image)}" target="_blank" rel="noopener" data-cursor="open">
+          <img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy" decoding="async">
+        </a>` : ''}
+        <div class="news-text">
+          <h3>${esc(a.title)}</h3>
+          <p>${esc(a.body)}</p>
+          ${files}
+          ${a.link ? `<a class="news-more" href="${esc(a.link)}"${/^https?:/i.test(a.link) ? ' target="_blank" rel="noopener"' : ''} data-cursor="open">Read more</a>` : ''}
+        </div>
+      </article>`;
+    }).join('');
 
     paintBadge();
   }
@@ -820,10 +875,12 @@
       list.innerHTML = NEWS.slice(0, 6).map((a) => {
         const href = a.link || '#news';
         const external = /^https?:/i.test(a.link || '');
+        const n = (a.files || []).filter((f) => f && f.url).length;
+        const attached = n ? ` · ${n} file${n > 1 ? 's' : ''}` : '';
         return `<a class="news-pop-item${seen.has(a.id) ? ' read' : ''}" href="${esc(href)}"${external ? ' target="_blank" rel="noopener"' : ' data-news-close'}>
           <span class="t"><i></i>${esc(a.title)}</span>
           <span class="b">${esc(String(a.body || '').slice(0, 120))}${String(a.body || '').length > 120 ? '…' : ''}</span>
-          <span class="d">${esc(niceDate(a.date))}${a.tag ? ' · ' + esc(a.tag) : ''}</span>
+          <span class="d">${esc(niceDate(a.date))}${a.tag ? ' · ' + esc(a.tag) : ''}${attached}</span>
         </a>`;
       }).join('') || '<p class="news-pop-item">Nothing yet.</p>';
 

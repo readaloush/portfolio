@@ -35,7 +35,13 @@ store.bootstrap();
 const SECRET = store.getJwtSecret();
 const SECURE = process.env.NODE_ENV === 'production';
 
-const app = createApp({ bodyLimit: 24 * 1024 * 1024 });
+/* The panel sends files as base64 inside a JSON body, and base64 costs
+   about a third more bytes than the file it encodes. So the request limit
+   has to sit comfortably above MAX_UPLOAD or a 25 MB deck would be cut off
+   by the transport before the upload handler ever got to judge it — and the
+   error you would see would be "payload too large", not "file too large",
+   which sends you looking in the wrong place. */
+const app = createApp({ bodyLimit: 36 * 1024 * 1024 });
 app.staticDir = PUBLIC_DIR;
 
 /* Log API traffic so problems are visible in the terminal window. */
@@ -191,26 +197,63 @@ app.get('/api/revisions/:id', (req, res) => {
    multipart parser (and therefore avoids an npm dependency).
 --------------------------------------------------------------------- */
 
+/**
+ * What may be uploaded.
+ *
+ * This is an allow-list, not a block-list, and that direction is the whole
+ * point: anything not named here is refused, so a type nobody thought about
+ * is refused by default rather than accepted by default.
+ *
+ * What is deliberately NOT here, and why:
+ *
+ *   .html, .htm, .xhtml, .svg-as-document — a file served from this origin
+ *     that the browser will execute is a stored cross-site scripting hole.
+ *     Anyone who could get such a file onto the site could read the admin
+ *     session of whoever opened it. SVG is the awkward case: it can carry
+ *     script, so it stays allowed for images but is served as an attachment
+ *     rather than rendered (see sendFile below).
+ *   .js, .mjs, .wasm, .php — same reason, more obviously.
+ *   .exe, .msi, .dmg, .sh, .bat — nothing good comes of hosting these from
+ *     a portfolio, and a link to one is what a malware distributor wants.
+ *
+ * The Office types are safe to host because the browser downloads them; it
+ * does not execute them in this origin.
+ */
 const ALLOWED = {
+  // images
   'image/png': '.png',
   'image/jpeg': '.jpg',
   'image/webp': '.webp',
   'image/gif': '.gif',
   'image/svg+xml': '.svg',
-  'application/pdf': '.pdf'
+  // documents
+  'application/pdf': '.pdf',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'application/vnd.ms-excel': '.xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+  'application/vnd.ms-powerpoint': '.ppt',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+  'application/rtf': '.rtf',
+  'text/csv': '.csv',
+  'text/plain': '.txt',
+  'application/zip': '.zip'
 };
-const MAX_UPLOAD = 12 * 1024 * 1024;
+
+/* Office files are large. A 12 MB ceiling stops a slide deck with photos
+   in it, which is exactly the thing you would want to attach. */
+const MAX_UPLOAD = 25 * 1024 * 1024;
 
 app.post('/api/upload', (req, res) => {
   if (!requireAuth(req, res)) return;
 
   const { filename, mimetype, data } = req.body || {};
   if (!data || !mimetype) return res.json(400, { error: 'No file received.' });
-  if (!ALLOWED[mimetype]) return res.json(400, { error: 'Only PNG, JPG, WEBP, GIF, SVG or PDF files are allowed.' });
+  if (!ALLOWED[mimetype]) return res.json(400, { error: 'That file type is not allowed. Images, PDF, Word, Excel, PowerPoint, CSV, TXT and ZIP are.' });
 
   const buf = Buffer.from(String(data).replace(/^data:[^;]+;base64,/, ''), 'base64');
   if (!buf.length) return res.json(400, { error: 'The file is empty.' });
-  if (buf.length > MAX_UPLOAD) return res.json(400, { error: 'Files must be 12 MB or smaller.' });
+  if (buf.length > MAX_UPLOAD) return res.json(400, { error: `Files must be ${MAX_UPLOAD / 1024 / 1024} MB or smaller.` });
 
   const base =
     path
@@ -245,8 +288,29 @@ app.get('/assets/uploads/:file', (req, res) => {
   const name = path.basename(req.params.file); // strips any path trickery
   const onDisk = path.join(store.UPLOAD_DIR, name);
   const inRepo = path.join(PUBLIC_DIR, 'assets', 'uploads', name);
-  if (fs.existsSync(onDisk)) return res.sendFile(onDisk);
-  if (fs.existsSync(inRepo)) return res.sendFile(inRepo);
+
+  /* Uploaded files are the one place on this site where the bytes did not
+     come from the repository, so they are served under a policy of their
+     own — even though only a signed-in admin can put them here.
+
+     `sandbox` is the line that matters. An SVG is a document: open one
+     directly in a tab and any <script> inside it runs *in this origin*,
+     which would let it read the session of whoever opened it. Embedded in
+     an <img> tag it is inert, and that is how the site uses them — but a
+     link to the file is one right-click away, and the browser has no way
+     to know the difference. The sandbox removes the origin entirely, so
+     the file renders and cannot act.
+
+     `nosniff` stops the other half of the trick: a file uploaded as a .txt
+     whose contents look like HTML, which some browsers would helpfully
+     decide to render. */
+  const guard = {
+    'Content-Security-Policy': "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
+    'X-Content-Type-Options': 'nosniff'
+  };
+
+  if (fs.existsSync(onDisk)) return res.sendFile(onDisk, guard);
+  if (fs.existsSync(inRepo)) return res.sendFile(inRepo, guard);
   res.json(404, { error: 'File not found.' });
 });
 

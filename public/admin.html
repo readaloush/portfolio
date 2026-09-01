@@ -65,7 +65,12 @@
 </div>
 
 <div class="toast" id="toast" hidden><span id="toastText"></span></div>
-<input type="file" id="hiddenFile" hidden accept="image/*,application/pdf">
+<!-- The picker greys out anything not listed here, so this has to match
+     the server's allow-list or a legitimate .xlsx cannot even be chosen.
+     Extensions as well as MIME types: Windows in particular reports an
+     empty type for some Office files, and then only the extension matches. -->
+<input type="file" id="hiddenFile" hidden
+       accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.rtf,.csv,.txt,.zip">
 
 <script src="/assets/js/admin.js?v=2"></script>
 </body>

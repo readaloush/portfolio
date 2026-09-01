@@ -71,6 +71,36 @@ const INTENTS = [
   },
 
   {
+    id: 'news',
+    words: ['duyuru', 'duyurular', 'haber', 'haberler', 'yenilik', 'ne var ne yok', 'son durum',
+            'news', 'announcement', 'announcements', 'update', 'updates', 'latest', 'what is new', 'whats new'],
+    build: (c) => {
+      // Same three rules as everywhere else — published only, pinned
+      // first, then newest. The assistant reads the site; it does not get
+      // a private view of the drafts.
+      const live = (c.announcements || [])
+        .filter((a) => a && a.published !== false && (a.title || a.body))
+        .sort((a, b) => (!!b.pinned !== !!a.pinned)
+          ? (b.pinned ? 1 : -1)
+          : String(b.date || '').localeCompare(String(a.date || '')));
+
+      if (!live.length) {
+        return {
+          text: 'There are no announcements posted at the moment.',
+          chips: ['Show me his projects', 'His experience', 'Book a meeting']
+        };
+      }
+      const lines = live.slice(0, 3)
+        .map((a) => `• ${a.title}${a.date ? ` (${a.date})` : ''}\n  ${a.body || ''}`.trimEnd());
+      const more = live.length > 3 ? `\n\n…and ${live.length - 3} more in the announcements section.` : '';
+      return {
+        text: `The latest from him:\n\n${lines.join('\n\n')}${more}`,
+        chips: ['Show me his projects', 'His experience', 'Book a meeting']
+      };
+    }
+  },
+
+  {
     id: 'projects',
     words: ['proje', 'projeler', 'project', 'projects', 'ne yapti', 'portfolio', 'calisma', 'works', 'built', 'drone', 'iha', 'tumor', 'mri', 'beyin', 'brain', 'atik', 'waste', 'geri donusum', 'recycl'],
     build: (c, q) => {

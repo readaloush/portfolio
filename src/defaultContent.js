@@ -55,6 +55,37 @@ module.exports = {
       "detail": "Principal developer"
     }
   ],
+  /* Announcements.
+     Written and published from the admin panel. `published: false` keeps a
+     draft in the database without showing it to anyone, and `pinned: true`
+     forces one to the top regardless of its date.
+
+     `id` must be stable: it is what a visitor's browser remembers as
+     "already read". Editing the text of an announcement therefore does not
+     re-notify everybody, which is the behaviour you want — and changing the
+     id deliberately is how you *do* re-notify them. */
+  "announcements": [
+    {
+      "id": "a-2026-09-01",
+      "title": "Master's programme has started",
+      "body": "I have begun the Computer Engineering master's programme at Selçuk University. The research direction is edge inference for autonomous systems — the same thread as the drone and the sorting line, but with the compute budget taken seriously.",
+      "date": "2026-09-01",
+      "tag": "Milestone",
+      "link": "",
+      "pinned": false,
+      "published": true
+    },
+    {
+      "id": "a-2026-05-20",
+      "title": "Waste sorting system finished at 97.69%",
+      "body": "The internship project is complete. Five waste streams, classified in real time on a Raspberry Pi, wired into the conveyor through a ROS2 bridge. The write-up is in the projects section.",
+      "date": "2026-05-20",
+      "tag": "Project",
+      "link": "#projects",
+      "pinned": false,
+      "published": true
+    }
+  ],
   "socials": [
     {
       "label": "GitHub",
@@ -318,6 +349,8 @@ module.exports = {
     }
   ],
   "sections": {
+    "newsTitle": "Announcements",
+    "newsKicker": "What is new, straight from me",
     "aboutTitle": "About",
     "aboutKicker": "Who is behind the signature",
     "skillsTitle": "Skills",

@@ -91,11 +91,39 @@ function getJwtSecret() {
 
 /* ---------------------------------------------------------------- content */
 
+/**
+ * Fill in keys a new version of the site expects but an old saved copy has
+ * never heard of.
+ *
+ * The content row is one JSON blob written by the admin panel, so the day a
+ * feature adds a new key — `announcements`, say — every database saved before
+ * that day is missing it, and the new section renders empty forever with no
+ * error to explain why.
+ *
+ * The rule is deliberately narrow: a key is added only when it is *absent*.
+ * Anything already saved wins, including an empty array. That matters — if
+ * this merged arrays element-wise, deleting the last project in the admin
+ * panel would silently restore the three seeded ones on the next read.
+ */
+function withDefaults(saved) {
+  const out = { ...saved };
+  for (const key of Object.keys(defaultContent)) {
+    if (out[key] === undefined) out[key] = defaultContent[key];
+  }
+  // one level deeper for the two flat label objects, so new headings appear
+  for (const key of ['sections', 'meta', 'profile']) {
+    if (out[key] && typeof out[key] === 'object' && !Array.isArray(out[key])) {
+      out[key] = { ...defaultContent[key], ...out[key] };
+    }
+  }
+  return out;
+}
+
 function getContent() {
   const row = db.prepare('SELECT data, updated_at FROM content WHERE id = 1').get();
   if (!row) return { ...defaultContent };
   try {
-    return JSON.parse(row.data);
+    return withDefaults(JSON.parse(row.data));
   } catch {
     return { ...defaultContent };
   }

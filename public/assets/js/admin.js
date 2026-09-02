@@ -694,7 +694,9 @@
     }
   }
 
-  $('#saveBtn').addEventListener('click', save);
+  // After a save the durability answer can change — a push can fail — so
+  // the indicator is re-read rather than left showing what was true before.
+  $('#saveBtn').addEventListener('click', async () => { await save(); setTimeout(paintStorage, 600); });
   addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
   });
@@ -769,6 +771,41 @@
     if (wanted && TABS[wanted]) tab = wanted;
 
     renderTab();
+    paintStorage();
+  }
+
+  /**
+   * Say where the edits are going.
+   *
+   * The host gives this site a filesystem that is destroyed every time
+   * the container restarts, which on the free plan is after fifteen idle
+   * minutes. Without a durable store behind it, everything typed into
+   * this panel has a half-life measured in minutes — and there is no way
+   * to tell by looking. So the answer is on screen, always, and it is
+   * read from the server rather than assumed.
+   */
+  async function paintStorage() {
+    const el = $('#storeState');
+    const text = $('#storeText');
+    if (!el) return;
+    try {
+      const s = await api('/api/storage');
+      el.classList.toggle('good', !!s.durable);
+      el.classList.toggle('bad', !s.durable);
+      if (s.durable) {
+        text.textContent = 'saved to GitHub';
+        el.title = `Your edits are written to ${s.repo} on the “${s.branch}” branch, so they survive restarts.`
+          + (s.lastWriteAt ? `\nLast written: ${new Date(s.lastWriteAt).toLocaleString()}` : '')
+          + (s.lastError ? `\n\nLast error: ${s.lastError}` : '');
+      } else {
+        text.textContent = 'not permanent';
+        el.title = 'This server has no permanent storage, so anything you save here is lost when it restarts '
+          + '(about fifteen idle minutes on the free plan). Set GITHUB_TOKEN and GITHUB_REPO in the host’s '
+          + 'environment settings to fix it.';
+      }
+    } catch {
+      text.textContent = 'unknown';
+    }
   }
 
   (async () => {

@@ -9,14 +9,38 @@
    This wraps fetch so any /api/ request that comes back 404/5xx is
    retried while the server wakes, and tells the visitor what is
    happening instead of failing silently.
+
+   The distinction that matters: a *failure to reach* the server and a
+   *reply from* the server are not the same thing. The first version
+   retried anything that was not 200, which was fine while every endpoint
+   either worked or was asleep — and then the site grew one that answers
+   401 on purpose. /api/auth/me tells an anonymous visitor "you are not
+   signed in", which is a complete and correct answer, and the retry loop
+   read it as a sick server: seven requests over half a minute, and the
+   "Waking the server up" banner shown to someone whose server was wide
+   awake. Seen in the live log — six retries per page load, every load.
    ================================================================== */
 (() => {
   const realFetch = window.fetch.bind(window);
   const START = Date.now();
-  const WAKE_WINDOW = 75000;   // how long a cold start may reasonably take
+  const WAKE_WINDOW = 75_000;   // how long a cold start may reasonably take
   const DELAYS = [1200, 2000, 3000, 4000, 6000, 8000, 10000];
 
   let notice = null;
+
+  /**
+   * Is this status a sleeping server, or the server saying something?
+   *
+   *   404  — Render's edge answers this for a service that is still
+   *          starting, so it stays retryable even though it is a 4xx.
+   *   5xx  — the app is up but not ready, or restarting mid-deploy.
+   *
+   * Everything else is an answer. 401 means not signed in. 403 means
+   * not allowed. 429 means you are asking too often — retrying *that*
+   * one is actively harmful, since it is the login rate limiter and
+   * hammering it extends the lockout.
+   */
+  const worthRetrying = (status) => status === 404 || status >= 500;
 
   function showNotice() {
     if (notice) return;
@@ -42,7 +66,7 @@
     (document.body || document.documentElement).appendChild(notice);
   }
 
-  const hideNotice = () => { if (notice) { notice.remove(); notice = null; } };
+  const hideNotice = () => { notice?.remove(); notice = null; };
 
   window.fetch = async function (input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
@@ -57,6 +81,7 @@
     }
 
     if (!isApi || (res && res.ok)) return res;
+    if (res && !worthRetrying(res.status)) return res;
 
     // Retry only while a cold start is plausible.
     for (const wait of DELAYS) {
@@ -66,10 +91,15 @@
       try {
         // cache-bust, because the edge may have cached the 404
         const bustUrl = url + (url.includes('?') ? '&' : '?') + '_w=' + Date.now();
-        const retry = await realFetch(typeof input === 'string' ? bustUrl : input, Object.assign({}, init, { cache: 'reload' }));
+        const retry = await realFetch(typeof input === 'string' ? bustUrl : input, {
+          ...init,
+          cache: 'reload'
+        });
         if (retry.ok) { hideNotice(); return retry; }
+        // The server woke up mid-loop and gave a real answer — stop.
+        if (!worthRetrying(retry.status)) { hideNotice(); return retry; }
         res = retry;
-      } catch (e) { /* keep waiting */ }
+      } catch { /* keep waiting */ }
     }
 
     hideNotice();

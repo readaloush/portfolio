@@ -5,3 +5,6 @@ Allow: /
 Disallow: /admin
 Disallow: /console
 Disallow: /api/
+
+# Where the map is. Search Console reads this too.
+Sitemap: https://readaloush.com/sitemap.xml

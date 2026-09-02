@@ -77,7 +77,12 @@ function createApp(options = {}) {
     put: (p, h) => add('PUT', p, h),
     del: (p, h) => add('DELETE', p, h),
     staticDir: null,
-    notFound: null
+    notFound: null,
+    /* A hook the app can set to intercept an HTML page before it is sent
+       from disk. Returns true if it handled the response. Used to rewrite
+       the sharing tags so they name whatever domain the visitor actually
+       typed. Default: not interested, send the file as it is. */
+    sendPage: () => false
   };
 
   function match(pattern, pathname) {
@@ -166,8 +171,8 @@ function createApp(options = {}) {
           res.writeHead(403); return res.end('Forbidden');
         }
         if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) filePath = path.join(filePath, 'index.html');
-        if (fs.existsSync(filePath)) return sendFile(res, filePath);
-        if (fs.existsSync(filePath + '.html')) return sendFile(res, filePath + '.html');
+        if (fs.existsSync(filePath)) return app.sendPage(req, res, filePath) || sendFile(res, filePath);
+        if (fs.existsSync(filePath + '.html')) return app.sendPage(req, res, filePath + '.html') || sendFile(res, filePath + '.html');
       }
 
       if (app.notFound) return app.notFound(req, res);

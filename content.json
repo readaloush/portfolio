@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-09-02T07:23:19.262Z",
+  "savedAt": "2026-09-02T07:27:21.248Z",
   "content": {
     "profile": {
       "name": "READ LEVA ALALLOŞ",
@@ -85,6 +85,18 @@
         "tag": "Project",
         "link": "#projects",
         "image": "",
+        "files": [],
+        "pinned": false,
+        "published": true
+      },
+      {
+        "id": "a-2026-09-02-2",
+        "title": "Mechatronics Engineering programme completed",
+        "body": "I have graduated from the Mechatronics Engineering programme. The focus was on the integration of mechanics, electronics, and software — the same thread as the automated sorting line and the multi-channel IoT gateways, but culminating in a formal engineering foundation.",
+        "date": "2026-09-02",
+        "tag": "",
+        "link": "",
+        "image": "/assets/uploads/ekran-resmi-2026-09-02-10-26-47-d30a3e6d.png",
         "files": [],
         "pinned": false,
         "published": true

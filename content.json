@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-09-02T07:21:28.360Z",
+  "savedAt": "2026-09-02T07:22:42.638Z",
   "content": {
     "profile": {
       "name": "READ LEVA ALALLOŞ",
@@ -62,6 +62,18 @@
         "link": "",
         "image": "/assets/uploads/ekran-resmi-2026-09-01-16-12-58-7c84deac.png",
         "files": [],
+        "pinned": true,
+        "published": true
+      },
+      {
+        "id": "a-2026-09-02",
+        "title": "Computer Programming programme has started",
+        "body": "I have begun the Computer Programming programme at Istanbul University. The focus is on software development and embedded systems — the same thread as the IoT gateways and the automated sorting line, but with core programming principles taken seriously.",
+        "date": "2026-09-02",
+        "tag": "Milestone",
+        "link": "",
+        "image": "/assets/uploads/i-stanbul-u-niversitesi-logo-c97b33c0.png",
+        "files": [],
         "pinned": false,
         "published": true
       },
@@ -73,18 +85,6 @@
         "tag": "Project",
         "link": "#projects",
         "image": "",
-        "files": [],
-        "pinned": false,
-        "published": true
-      },
-      {
-        "id": "a-2026-09-02",
-        "title": "Computer Programming programme has started",
-        "body": "I have begun the Computer Programming programme at Istanbul University. The focus is on software development and embedded systems — the same thread as the IoT gateways and the automated sorting line, but with core programming principles taken seriously.",
-        "date": "2026-09-02",
-        "tag": "",
-        "link": "",
-        "image": "/assets/uploads/i-stanbul-u-niversitesi-logo-c97b33c0.png",
         "files": [],
         "pinned": false,
         "published": true

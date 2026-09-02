@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-09-02T08:26:34.340Z",
+  "savedAt": "2026-09-02T10:20:37.732Z",
   "content": {
     "profile": {
       "name": "Read Aloush",
@@ -141,7 +141,7 @@
       {
         "label": "Email",
         "icon": "mail",
-        "url": "mailto:readaloush@gmail.com"
+        "url": "mailto:dev@readaloush.com"
       }
     ],
     "skills": [

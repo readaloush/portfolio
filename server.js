@@ -412,19 +412,28 @@ function originFor(req) {
 
 /* Read once, rewritten per request. The file is ~20 KB and the swap is a
    split/join on a fixed string, which is far cheaper than the disk read it
-   replaces. Cached by origin so a repeat visit costs nothing at all. */
+   replaces. Cached by origin *and* by the content revision, so an edit in
+   the admin panel invalidates it immediately — a cache that served the
+   previous version of the site to search engines would be worse than no
+   cache at all. */
 const pageCache = new Map();
+const seo = require('./src/seo');
 
 app.sendPage = (req, res, filePath) => {
   if (!filePath.endsWith('.html')) return false;
 
   const origin = originFor(req);
-  const key = origin + '|' + filePath;
+  const isIndex = path.basename(filePath) === 'index.html';
+  const stamp = isIndex ? (store.getContentMeta().updatedAt || '') : '';
+  const key = origin + '|' + filePath + '|' + stamp;
 
   let html = pageCache.get(key);
   if (html === undefined) {
     try {
       html = fs.readFileSync(filePath, 'utf8').split(BAKED_ORIGIN).join(origin);
+      // The home page ships with its words in it. Everything else is
+      // served as written.
+      if (isIndex) html = seo.render(html, store.getContent(), origin);
     } catch {
       return false;                       // unreadable: let sendFile report it
     }
@@ -451,11 +460,65 @@ function serveAdminPage(req, res) {
 app.get('/admin', serveAdminPage);
 app.get('/console', serveAdminPage);
 
+/* A sitemap, built from the sections that actually exist.
+
+   The previous one was worse than missing. Asking for /sitemap.xml
+   returned 200 and a copy of the home page, because the catch-all below
+   answered every unknown path with index.html. Google calls that a soft
+   404: it asks for a hundred URLs that do not exist, gets a hundred
+   successful responses containing the same page, and concludes the site
+   is full of duplicates. */
+app.get('/sitemap.xml', (req, res) => {
+  const origin = originFor(req);
+  const content = store.getContent();
+  const updated = (store.getContentMeta().updatedAt || new Date().toISOString()).slice(0, 10);
+
+  const paths = ['/'];
+  // Only list a section if it has something in it. An empty page in a
+  // sitemap is a promise the site does not keep.
+  const has = {
+    '/#news': (content.announcements || []).some((a) => a && a.published !== false),
+    '/#about': !!(content.profile && content.profile.summary),
+    '/#skills': (content.skills || []).length > 0,
+    '/#experience': (content.experience || []).length > 0,
+    '/#projects': (content.projects || []).length > 0,
+    '/#education': (content.education || []).length > 0,
+    '/#contact': true
+  };
+  for (const [p, ok] of Object.entries(has)) if (ok) paths.push(p);
+
+  const body = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${paths.map((p) => `  <url>
+    <loc>${origin}${p === '/' ? '/' : p}</loc>
+    <lastmod>${updated}</lastmod>
+    <priority>${p === '/' ? '1.0' : '0.7'}</priority>
+  </url>`).join('\n')}
+</urlset>`;
+
+  res.writeHead(200, {
+    'Content-Type': 'application/xml; charset=utf-8',
+    'Content-Length': Buffer.byteLength(body),
+    'Cache-Control': 'public, max-age=3600'
+  });
+  res.end(body);
+});
+
+/* Anything that looks like a file and is not there is genuinely missing.
+   Only routes without an extension fall through to the app. */
+const LOOKS_LIKE_A_FILE = /\.[a-z0-9]{1,8}$/i;
+
 app.notFound = (req, res) => {
-  if (req.url.startsWith('/api/')) return res.json(404, { error: 'Not found.' });
-  // Deep links (/#projects, /news) land here, and they are real page views
-  // that get shared — so they need the rewritten sharing tags too, not just
-  // the bare file.
+  const pathname = req.url.split('?')[0];
+  if (pathname.startsWith('/api/')) return res.json(404, { error: 'Not found.' });
+
+  if (LOOKS_LIKE_A_FILE.test(pathname)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    return res.end('Not found');
+  }
+
+  // Deep links (/news, /projects) are real page views that get shared, so
+  // they get the rewritten sharing tags and the rendered content too.
   const index = path.join(PUBLIC_DIR, 'index.html');
   if (app.sendPage(req, res, index)) return;
   res.sendFile(index);

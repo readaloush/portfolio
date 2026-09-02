@@ -9,7 +9,17 @@
      several browsers decline to draw at all — hence the blank square.
      A real file, in three formats: SVG for anything modern, a 32px PNG
      for anything that is not, and a 180px one for an iOS home screen. -->
+<!-- /favicon.ico is listed first and now genuinely exists at that path.
+     Google's icon fetcher, and almost everything that predates declaring
+     icons in the head, asks for that one URL by name before reading a line
+     of HTML. It used to return 404. -->
+<link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/svg+xml" href="/assets/img/logo.svg">
+<!-- Google documents that the favicon it shows beside a search result must be
+     a square whose side is a multiple of 48. The 16 and 32 px files were not,
+     so the only candidate it could use was the SVG. 96 is the size it renders. -->
+<link rel="icon" type="image/png" sizes="96x96" href="/assets/img/favicon-96.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/img/favicon-48.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16.png">
 <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">

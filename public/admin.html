@@ -33,6 +33,12 @@
       <strong id="whoami"></strong>
     </div>
     <div class="bar-r">
+      <!-- Whether the edits survive a restart. The host throws the disk
+           away, so this is not a detail: it is the difference between
+           writing an announcement and writing one that disappears. -->
+      <span class="store" id="storeState" title="Checking where your edits are stored…">
+        <i></i><span id="storeText">checking…</span>
+      </span>
       <span class="saved" id="savedAt"></span>
       <a class="btn ghost" href="/" target="_blank" rel="noopener">Preview ↗</a>
       <button class="btn primary" id="saveBtn">Save changes</button>

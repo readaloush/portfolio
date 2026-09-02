@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-09-02T07:10:53.799Z",
+  "savedAt": "2026-09-02T07:19:18.530Z",
   "content": {
     "profile": {
       "name": "READ LEVA ALALLOŞ",
@@ -59,6 +59,18 @@
         "body": "I have begun the Computer Engineering master's programme at Selçuk University. The research direction is edge inference for autonomous systems — the same thread as the drone and the sorting line, but with the compute budget taken seriously.",
         "date": "2026-09-01",
         "tag": "Milestone",
+        "link": "",
+        "image": "/assets/uploads/ekran-resmi-2026-09-01-16-12-58-7c84deac.png",
+        "files": [],
+        "pinned": false,
+        "published": true
+      },
+      {
+        "id": "a-2026-09-02",
+        "title": "New announcement",
+        "body": "",
+        "date": "2026-09-02",
+        "tag": "",
         "link": "",
         "image": "",
         "files": [],

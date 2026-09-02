@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-09-02T07:20:26.770Z",
+  "savedAt": "2026-09-02T07:21:28.360Z",
   "content": {
     "profile": {
       "name": "READ LEVA ALALLOŞ",
@@ -66,18 +66,6 @@
         "published": true
       },
       {
-        "id": "a-2026-09-02",
-        "title": "Computer Programming programme has started",
-        "body": "I have begun the Computer Programming programme at Istanbul University. The focus is on software development and embedded systems — the same thread as the IoT gateways and the automated sorting line, but with core programming principles taken seriously.",
-        "date": "2026-09-02",
-        "tag": "",
-        "link": "",
-        "image": "/assets/uploads/i-stanbul-u-niversitesi-logo-c97b33c0.png",
-        "files": [],
-        "pinned": false,
-        "published": true
-      },
-      {
         "id": "a-2026-05-20",
         "title": "Waste sorting system finished at 97.69%",
         "body": "The internship project is complete. Five waste streams, classified in real time on a Raspberry Pi, wired into the conveyor through a ROS2 bridge. The write-up is in the projects section.",
@@ -85,6 +73,18 @@
         "tag": "Project",
         "link": "#projects",
         "image": "",
+        "files": [],
+        "pinned": false,
+        "published": true
+      },
+      {
+        "id": "a-2026-09-02",
+        "title": "Computer Programming programme has started",
+        "body": "I have begun the Computer Programming programme at Istanbul University. The focus is on software development and embedded systems — the same thread as the IoT gateways and the automated sorting line, but with core programming principles taken seriously.",
+        "date": "2026-09-02",
+        "tag": "",
+        "link": "",
+        "image": "/assets/uploads/i-stanbul-u-niversitesi-logo-c97b33c0.png",
         "files": [],
         "pinned": false,
         "published": true

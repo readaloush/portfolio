@@ -12,6 +12,7 @@ const fs = require('fs');
 const sqlite = require('./sqlite');
 const pw = require('./crypto');
 const defaultContent = require('./defaultContent');
+const remote = require('./github');
 
 const DATA_DIR = process.env.PORTFOLIO_DATA_DIR || path.join(__dirname, '..', 'data');
 const UPLOAD_DIR = process.env.PORTFOLIO_UPLOAD_DIR || path.join(__dirname, '..', 'public', 'assets', 'uploads');
@@ -134,6 +135,47 @@ function getContentMeta() {
   return { updatedAt: row ? row.updated_at : null };
 }
 
+/**
+ * Pull the durable copy in and make it the local one.
+ *
+ * Called once at startup, before the server listens. On a host with no
+ * disk this is the step that makes the difference between "your edits
+ * are still here" and "the site is back to the version I shipped".
+ *
+ * If it is not configured, or the network is down, or the file is not
+ * there yet, nothing happens and SQLite keeps whatever it seeded. That
+ * is the right failure: the site comes up with the default content
+ * rather than not coming up at all.
+ */
+async function hydrate() {
+  if (!remote.enabled()) return { hydrated: false, reason: 'not configured' };
+  try {
+    const found = await remote.readContent();
+    if (!found || !found.content || typeof found.content !== 'object') {
+      return { hydrated: false, reason: 'nothing stored yet' };
+    }
+
+    // The real edit time, carried alongside the content, so the panel does
+    // not report the moment the server happened to boot as the moment he
+    // last changed something.
+    const when = found.savedAt
+      ? new Date(found.savedAt).toISOString().slice(0, 19).replace('T', ' ')
+      : null;
+
+    // Written straight to the row: going through saveContent() would push
+    // it back to GitHub, which is a pointless write of the bytes we just
+    // read, and would add a revision on every single restart.
+    db.prepare(
+      `INSERT INTO content (id, data, updated_at) VALUES (1, ?, COALESCE(?, datetime('now')))
+       ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`
+    ).run(JSON.stringify(found.content), when);
+
+    return { hydrated: true, savedAt: found.savedAt };
+  } catch (err) {
+    return { hydrated: false, reason: err.message };
+  }
+}
+
 function saveContent(obj) {
   const json = JSON.stringify(obj);
   const existing = db.prepare('SELECT data FROM content WHERE id = 1').get();
@@ -148,6 +190,17 @@ function saveContent(obj) {
     `INSERT INTO content (id, data, updated_at) VALUES (1, ?, datetime('now'))
      ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = datetime('now')`
   ).run(json);
+
+  /* Mirror it somewhere that outlives this container.
+     Deliberately not awaited: the panel should not sit waiting on a call
+     to GitHub before it can say "saved", and the local write above has
+     already succeeded — the edit is live on the site either way. What a
+     failure here costs is durability, not the edit, and the panel reads
+     the outcome from /api/storage rather than guessing. */
+  if (remote.enabled()) {
+    remote.writeContent(obj).catch(() => { /* recorded in remote.status() */ });
+  }
+
   return getContentMeta();
 }
 
@@ -253,6 +306,8 @@ function bootstrap() {
 module.exports = {
   db,
   bootstrap,
+  hydrate,
+  remote,
   getSetting,
   setSetting,
   getJwtSecret,

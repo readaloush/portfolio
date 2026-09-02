@@ -377,6 +377,72 @@ app.get('/api/storage', (req, res) => {
   });
 });
 
+/* ------------------------------------------------- the site's own address
+
+   index.html carries absolute URLs in its sharing tags — og:url and
+   og:image have to be absolute, because WhatsApp and LinkedIn fetch them
+   from their own servers and have no page to resolve a relative path
+   against. Those URLs were written with the Render address baked in.
+
+   Which means the day a real domain is pointed at this site, pasting a
+   link to it would still show the old address and pull the preview image
+   from a hostname the visitor never typed. It is the kind of thing nobody
+   notices for months.
+
+   So the page now names whatever host the request arrived on. Buy a
+   domain, point it here, and the sharing tags are already correct — there
+   is no file to remember to edit.
+
+   The Host header is supplied by the client, so it is not trusted blindly:
+   it must look like a hostname, and SITE_URL overrides it outright if you
+   would rather pin the canonical address. The exposure is small either way
+   — the worst a forged Host can do here is make a link preview point
+   somewhere odd, for a request the attacker already controls — but a value
+   from outside should still be checked before it is echoed into a page. */
+const BAKED_ORIGIN = 'https://read-alallos-portfolio.onrender.com';
+const HOST_SHAPE = /^[a-z0-9.-]{1,253}(:\d{1,5})?$/i;
+
+function originFor(req) {
+  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, '');
+  const host = String(req.headers.host || '');
+  if (!HOST_SHAPE.test(host)) return BAKED_ORIGIN;
+  const proto = /^localhost|^127\.|^\[?::1/.test(host) ? 'http' : 'https';
+  return `${proto}://${host}`;
+}
+
+/* Read once, rewritten per request. The file is ~20 KB and the swap is a
+   split/join on a fixed string, which is far cheaper than the disk read it
+   replaces. Cached by origin so a repeat visit costs nothing at all. */
+const pageCache = new Map();
+
+app.sendPage = (req, res, filePath) => {
+  if (!filePath.endsWith('.html')) return false;
+
+  const origin = originFor(req);
+  const key = origin + '|' + filePath;
+
+  let html = pageCache.get(key);
+  if (html === undefined) {
+    try {
+      html = fs.readFileSync(filePath, 'utf8').split(BAKED_ORIGIN).join(origin);
+    } catch {
+      return false;                       // unreadable: let sendFile report it
+    }
+    if (pageCache.size > 20) pageCache.clear();
+    pageCache.set(key, html);
+  }
+
+  res.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Length': Buffer.byteLength(html),
+    'Cache-Control': 'no-store, no-cache, must-revalidate',
+    Pragma: 'no-cache',
+    Expires: '0'
+  });
+  res.end(html);
+  return true;
+};
+
 function serveAdminPage(req, res) {
   // never let a search engine index or cache the control room
   res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
@@ -387,7 +453,12 @@ app.get('/console', serveAdminPage);
 
 app.notFound = (req, res) => {
   if (req.url.startsWith('/api/')) return res.json(404, { error: 'Not found.' });
-  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+  // Deep links (/#projects, /news) land here, and they are real page views
+  // that get shared — so they need the rewritten sharing tags too, not just
+  // the bare file.
+  const index = path.join(PUBLIC_DIR, 'index.html');
+  if (app.sendPage(req, res, index)) return;
+  res.sendFile(index);
 };
 
 /* -------------------------------------------------------------- boot */

@@ -244,7 +244,7 @@ const ALLOWED = {
    in it, which is exactly the thing you would want to attach. */
 const MAX_UPLOAD = 25 * 1024 * 1024;
 
-app.post('/api/upload', (req, res) => {
+app.post('/api/upload', async (req, res) => {
   if (!requireAuth(req, res)) return;
 
   const { filename, mimetype, data } = req.body || {};
@@ -268,7 +268,18 @@ app.post('/api/upload', (req, res) => {
 
   const url = `/assets/uploads/${name}`;
   store.recordMedia({ filename: name, url, size: buf.length, mimetype });
-  res.json(200, { ok: true, url, filename: name });
+
+  /* The local copy above is a cache on a disk that will be thrown away.
+     This is the copy that lasts. Awaited, unlike the content save: an
+     upload the person is about to link to is worth the extra second, and
+     a silent failure here would mean a broken image tomorrow rather than
+     an error today. */
+  let durable = null;
+  if (store.remote.enabled()) {
+    durable = await store.remote.writeUpload(name, buf);
+  }
+
+  res.json(200, { ok: true, url, filename: name, durable });
 });
 
 app.get('/api/media', (req, res) => {
@@ -311,6 +322,32 @@ app.get('/assets/uploads/:file', (req, res) => {
 
   if (fs.existsSync(onDisk)) return res.sendFile(onDisk, guard);
   if (fs.existsSync(inRepo)) return res.sendFile(inRepo, guard);
+
+  /* Not on this disk — which on a free host means the container has been
+     rebuilt since the file was uploaded, so "not on disk" is the normal
+     case rather than the exception. Fetch it from the durable copy and
+     write it down here on the way past, so the next request for it is
+     local again. The disk is a cache; this is the store.
+
+     It is proxied rather than redirected on purpose: a redirect to raw
+     GitHub would hand the visitor a different origin with different
+     headers, and the sandbox above is the thing keeping an uploaded SVG
+     from being able to act. */
+  if (store.remote.enabled()) {
+    store.remote.readUpload(name).then((buf) => {
+      if (!buf) return res.json(404, { error: 'File not found.' });
+      try { fs.writeFileSync(onDisk, buf); } catch { /* read-only disk: serve anyway */ }
+      res.writeHead(200, {
+        'Content-Type': mimeFor(name),
+        'Content-Length': buf.length,
+        'Cache-Control': 'public, max-age=86400',
+        ...guard
+      });
+      res.end(buf);
+    }).catch(() => res.json(404, { error: 'File not found.' }));
+    return;
+  }
+
   res.json(404, { error: 'File not found.' });
 });
 
@@ -318,6 +355,27 @@ app.get('/assets/uploads/:file', (req, res) => {
 app.get('/healthz', (req, res) =>
   res.json(200, { ok: true, driver: store.db.__driver, uptime: Math.round(process.uptime()) })
 );
+
+/* The proxy path writes its own headers, so it needs the same extension
+   table the static server uses. One table, imported, rather than a second
+   copy here that would drift the first time a type is added to one. */
+const { MIME } = require('./src/http');
+const mimeFor = (name) => MIME[path.extname(name).toLowerCase()] || 'application/octet-stream';
+
+/** Where the content actually lives, and whether that is durable.
+    Read by the admin panel so the answer is never a guess. It says the
+    repository and branch, never the token. */
+app.get('/api/storage', (req, res) => {
+  if (!requireAuth(req, res)) return;
+  const remote = store.remote.status();
+  res.json(200, {
+    ...remote,
+    dataDir: store.DATA_DIR,
+    // A host that hands you a fresh filesystem every restart is the whole
+    // reason the remote store exists; say so plainly.
+    durable: remote.enabled
+  });
+});
 
 function serveAdminPage(req, res) {
   // never let a search engine index or cache the control room
@@ -335,12 +393,24 @@ app.notFound = (req, res) => {
 /* -------------------------------------------------------------- boot */
 
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`\n  ▸ Portfolio      http://localhost:${PORT}`);
-    console.log(`  ▸ Hidden admin   http://localhost:${PORT}/admin`);
-    console.log(`    (or click your profile photo 5 times on the homepage)`);
-    console.log(`  ▸ SQLite driver  ${store.db.__driver}\n`);
-  });
+  /* Pull the durable content in *before* accepting the first request, so
+     nobody can be served the seeded defaults during the second and a half
+     it takes to ask GitHub. The tests call app.listen() directly and skip
+     this, which is correct: they run unconfigured and must see the plain
+     local behaviour. */
+  (async () => {
+    const result = await store.hydrate();
+    if (result.hydrated) console.log(`  ✔ Content restored from GitHub (saved ${result.savedAt}).`);
+    else if (store.remote.enabled()) console.log(`  … GitHub store: ${result.reason}`);
+
+    app.listen(PORT, () => {
+      console.log(`\n  ▸ Portfolio      http://localhost:${PORT}`);
+      console.log(`  ▸ Hidden admin   http://localhost:${PORT}/admin`);
+      console.log(`    (or click your profile photo 5 times on the homepage)`);
+      console.log(`  ▸ SQLite driver  ${store.db.__driver}`);
+      console.log(`  ▸ Durable store  ${store.remote.enabled() ? store.remote.CONFIG.repo + ' @ ' + store.remote.CONFIG.branch : 'off — edits are lost on restart'}\n`);
+    });
+  })();
 }
 
 module.exports = app;

@@ -1,20 +1,64 @@
-# Render blueprint - Render reads this file and configures everything itself.
+# Render blueprint — Render reads this file and configures everything itself.
 # https://render.com/docs/blueprint-spec
 services:
   - type: web
     name: read-alallos-portfolio
     runtime: node
     plan: free
-    region: frankfurt
-    buildCommand: echo "no build step - this project has no dependencies"
+    region: frankfurt          # closest region to Türkiye
+    buildCommand: echo "no build step — this project has no dependencies"
     startCommand: node server.js
     healthCheckPath: /healthz
+
+    # NOTE — this disk does not exist on the free plan.
+    #
+    # Render does not attach persistent disks to free services, so this
+    # block is silently ignored and the container gets a fresh filesystem
+    # every restart (about fifteen idle minutes). That was measured on the
+    # live site: the content row's timestamp always matched the server's
+    # start time, which is what a database being re-seeded every boot
+    # looks like.
+    #
+    # The site now keeps its real copy in a GitHub branch instead — see
+    # GITHUB_TOKEN below — so this stays only for the day the service moves
+    # to a paid plan, where it starts working and becomes a local cache.
+    disk:
+      name: portfolio-data
+      mountPath: /var/data
+      sizeGB: 1
+
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORTFOLIO_DATA_DIR
+        value: /var/data
+      - key: PORTFOLIO_UPLOAD_DIR
+        value: /var/data/uploads
       - key: ADMIN_USERNAME
         value: read
+      # Render generates a strong random password on first deploy.
+      # Read it under: Dashboard → your service → Environment.
       - key: ADMIN_PASSWORD
         generateValue: true
       - key: JWT_SECRET
         generateValue: true
+
+      # ---- where the content actually lives ----
+      #
+      # Without these two, the admin panel still works but everything
+      # written in it is lost when the container restarts. With them, each
+      # save is mirrored to a branch of the repository and read back on
+      # boot, so the edits outlive the machine.
+      #
+      # GITHUB_TOKEN is a fine-grained personal access token limited to
+      # this one repository, with Contents: Read and write. Nothing else.
+      # It is set by hand in the dashboard and never appears in this file
+      # or anywhere in the repository.
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_REPO
+        value: readaloush/portfolio
+      # A branch of its own, so saving an announcement does not trigger a
+      # rebuild of the site.
+      - key: GITHUB_DATA_BRANCH
+        value: data

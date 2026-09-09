@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-09-09T11:15:53.138Z",
+  "savedAt": "2026-09-09T11:16:48.176Z",
   "content": {
     "profile": {
       "name": "Read Aloush",
@@ -375,6 +375,12 @@
         "school": "Selçuk University",
         "period": "2022 – 2026",
         "note": "Relevant coursework: Robotics, Artificial Intelligence, Computer Vision, Embedded Systems, Control Systems, Industrial Automation."
+      },
+      {
+        "degree": "Computer Programming programme",
+        "school": "Istanbul University",
+        "period": "2026 – Present",
+        "note": ""
       }
     ],
     "sections": {

@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-09-09T11:16:48.176Z",
+  "savedAt": "2026-09-09T11:19:16.337Z",
   "content": {
     "profile": {
       "name": "Read Aloush",
@@ -154,19 +154,19 @@
           },
           {
             "name": "C++",
-            "level": 85
+            "level": 90
           },
           {
             "name": "C",
-            "level": 80
+            "level": 95
           },
           {
             "name": "C#",
-            "level": 70
+            "level": 90
           },
           {
             "name": "MATLAB",
-            "level": 75
+            "level": 90
           }
         ]
       },
@@ -191,7 +191,7 @@
           },
           {
             "name": "Machine Learning",
-            "level": 88
+            "level": 95
           }
         ]
       },
@@ -204,11 +204,11 @@
           },
           {
             "name": "Pixhawk (PX4/ArduPilot)",
-            "level": 82
+            "level": 80
           },
           {
             "name": "PLC — Siemens TIA Portal",
-            "level": 80
+            "level": 70
           },
           {
             "name": "Control Systems",
@@ -233,7 +233,7 @@
           },
           {
             "name": "STM32",
-            "level": 78
+            "level": 95
           },
           {
             "name": "Industrial Control Panels",

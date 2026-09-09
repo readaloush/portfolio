@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-09-02T12:11:48.129Z",
+  "savedAt": "2026-09-09T11:08:41.543Z",
   "content": {
     "profile": {
       "name": "Read Aloush",
@@ -257,6 +257,19 @@
       }
     ],
     "experience": [
+      {
+        "role": "Embedded Software Engineer ",
+        "company": "IMAX ELEKTRONIC",
+        "period": "Jun 2026 – Present",
+        "tools": "STM32, Python, OpenCV, Flutter",
+        "bullets": [
+          "Develop production firmware in Embedded C for STM32 microcontrollers powering a photoelectric smoke detector\nproduct line, covering sensor drivers, alarm state machines and low-power operation.",
+          "Interface photoelectric smoke sensors and peripheral ICs over I2C and SPI, and implement UART and LoRa layers for\nwireless alarm networking and remote device status reporting.",
+          "Designed and tuned a fuzzy logic alarm decision algorithm that separates genuine fire smoke from nuisance sources\nsuch as cooking smoke, cigarette smoke and steam, materially reducing false alarms.",
+          "Contribute to hardware revisions through schematic design, PCB layout and pre-production circuit simulation in\nProteus, then validate firmware on the resulting boards.",
+          "Co-develop the companion Flutter mobile application for device pairing, live sensor telemetry and alarm\nnotifications, and define the data protocol shared between firmware and app."
+        ]
+      },
       {
         "role": "AI & Robotics Intern",
         "company": "Selçuk University",

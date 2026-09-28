@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-09-28T12:37:26.485Z",
+  "savedAt": "2026-09-28T13:36:25.455Z",
   "content": {
     "profile": {
       "name": "Read Aloush",
@@ -409,6 +409,15 @@
       "accent": "#00e5ff",
       "accent2": "#7c5cff"
     },
-    "certificates": []
+    "certificates": [
+      {
+        "title": "New certificate",
+        "issuer": "",
+        "date": "",
+        "url": "",
+        "image": "",
+        "pdf": ""
+      }
+    ]
   }
 }

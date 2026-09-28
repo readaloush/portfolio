@@ -165,6 +165,52 @@
 
   /* --------------------------------------------------------- tabs */
   const TABS = {
+    cv: () => {
+      const v = get('profile.cvUrl') || '';
+      const name = v.split('/').pop();
+      return `
+      <section class="panel">
+        <h2>CV</h2>
+        <p class="desc">The CV button at the top of the site opens this file. Upload a new PDF and it replaces the old one straight away &mdash; it is saved for you, no need to press Save.</p>
+        <div class="cv-box">
+          <div class="thumb doc"><span>PDF</span></div>
+          <div class="cv-meta">
+            <b>${v ? esc(name) : 'No CV linked yet'}</b>
+            <span>${v ? esc(v) : 'Upload a PDF to put the CV button to work.'}</span>
+          </div>
+          <div class="row-actions">
+            <button class="btn primary" data-upload="profile.cvUrl" data-autosave="1">Upload new CV (PDF)…</button>
+            ${v ? `<a class="btn ghost" href="${esc(v)}" target="_blank" rel="noopener">Open current CV</a>` : ''}
+          </div>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          ${text('Or paste a link to the CV', 'profile.cvUrl', '/assets/uploads/cv.pdf or https://…')}
+        </div>
+      </section>`;
+    },
+
+    certificates: () => `
+      <section class="panel">
+        <h2>Certificates</h2>
+        <p class="desc">Shown as a wheel you turn. Just add the picture of the certificate — that is all it needs. Every certificate gets a "View" button that opens the picture full size (or the verify link / PDF if you add one). The text fields are optional.</p>
+        ${(state.certificates || [])
+          .map(
+            (c, i) => `<div class="item">
+              ${head(i, 'CERTIFICATE', 'certificates')}
+              ${image('Certificate picture', `certificates.${i}.image`)}
+              <div class="grid two">
+                ${text('Title (optional)', `certificates.${i}.title`)}
+                ${text('Issued by (optional)', `certificates.${i}.issuer`, 'Coursera, TÜBİTAK, Udemy…')}
+                ${text('Date (optional)', `certificates.${i}.date`, 'Mar 2026')}
+                ${text('Verify link (optional)', `certificates.${i}.url`, 'https://…')}
+              </div>
+              ${file('Certificate PDF (optional)', `certificates.${i}.pdf`)}
+            </div>`
+          )
+          .join('') || '<p class="desc">No certificates yet. The section stays hidden on the site until you add one.</p>'}
+        ${addBtn('certificates', 'Add certificate', 'certificate')}
+      </section>`,
+
     profile: () => `
       <section class="panel">
         <h2>Profile</h2>
@@ -177,7 +223,6 @@
           ${text('Location', 'profile.location')}
           ${text('Email', 'profile.email')}
           ${text('Phone', 'profile.phone')}
-          ${text('CV link (opens in a new tab)', 'profile.cvUrl', '/assets/files/cv.pdf')}
         </div>
         <div class="grid" style="margin-top:14px">
           ${text('Tagline under the title', 'profile.tagline')}
@@ -345,7 +390,8 @@
     experience: () => `
       <section class="panel">
         <h2>Experience</h2>
-        <p class="desc">Shown as an animated timeline that fills as the visitor scrolls.</p>
+        <p class="desc">Shown as a timeline that slides sideways as the visitor scrolls, oldest on the left. Newest first here.</p>
+        ${image('Picture at the start of the timeline (optional — your profile photo is used otherwise)', 'sections.experienceImage')}
         ${(state.experience || [])
           .map(
             (x, i) => `<div class="item">
@@ -402,6 +448,7 @@
                 ${text('Period', `education.${i}.period`)}
               </div>
               ${area('Note', `education.${i}.note`, 3)}
+              ${image('Picture — a logo or photo (optional, shown on the card in the glass lens)', `education.${i}.image`)}
             </div>`
           )
           .join('')}
@@ -423,6 +470,8 @@
           ${text('Experience — title', 'sections.experienceTitle')}
           ${text('Projects — small line', 'sections.projectsKicker')}
           ${text('Projects — title', 'sections.projectsTitle')}
+          ${text('Certificates — small line', 'sections.certificatesKicker')}
+          ${text('Certificates — title', 'sections.certificatesTitle')}
           ${text('Education — small line', 'sections.educationKicker')}
           ${text('Education — title', 'sections.educationTitle')}
           ${text('Contact — small line', 'sections.contactKicker')}
@@ -433,10 +482,8 @@
     meta: () => `
       <section class="panel">
         <h2>Theme &amp; SEO</h2>
-        <p class="desc">The two accent colours drive every glow, gradient and line on the site.</p>
+        <p class="desc">The colours are fixed by the site's palette (black, violet #8052ff, amber #ffb829) so every page matches.</p>
         <div class="grid two">
-          ${text('Accent colour 1', 'meta.accent', '#00e5ff')}
-          ${text('Accent colour 2', 'meta.accent2', '#7c5cff')}
           ${text('Browser tab title', 'meta.siteTitle')}
           ${text('Footer note', 'meta.footerNote')}
         </div>
@@ -492,7 +539,8 @@
     language: () => ({ name: 'Language', level: 'Level' }),
     experience: () => ({ role: 'New role', company: '', period: '', tools: '', bullets: [''] }),
     project: () => ({ title: 'New project', period: '', image: '/assets/img/project-waste.svg', tags: [], repo: '', link: '', report: '', bullets: [''] }),
-    education: () => ({ degree: 'New degree', school: '', period: '', note: '' }),
+    education: () => ({ degree: 'New degree', school: '', period: '', note: '', image: '' }),
+    certificate: () => ({ title: 'New certificate', issuer: '', date: '', url: '', image: '', pdf: '' }),
     attachment: () => ({ label: '', url: '' })
   };
 
@@ -569,14 +617,16 @@
     }
     if (up) {
       e.preventDefault();
-      pickFile(up.dataset.upload);
+      pickFile(up.dataset.upload, up.dataset.autosave === '1');
     }
   });
 
   /* -------------------------------------------------------- upload */
   let uploadTarget = null;
-  function pickFile(path) {
+  let uploadAutosave = false;
+  function pickFile(path, autosave = false) {
     uploadTarget = path;
+    uploadAutosave = autosave;
     const input = $('#hiddenFile');
     input.value = '';
     input.click();
@@ -639,7 +689,12 @@
       if (uploadTarget && uploadTarget !== '__library__') {
         set(uploadTarget, data.url);
         renderTab();
-        toast('Uploaded and linked. Do not forget to save.');
+        if (uploadAutosave) {
+          await save();
+          toast('New CV uploaded and live on the site.');
+        } else {
+          toast('Uploaded and linked. Do not forget to save.');
+        }
       } else {
         toast('Uploaded: ' + data.url);
         if (tab === 'media') loadMedia();

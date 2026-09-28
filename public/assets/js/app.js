@@ -162,7 +162,7 @@
     });
 
     /* ---- colours, read rarely instead of twice a frame ---- */
-    let LINE = '255,255,255', AC = '#00e5ff';
+    let LINE = '255,255,255', AC = '#8052ff';
     function readColours() {
       const cs = getComputedStyle(document.documentElement);
       LINE = cs.getPropertyValue('--net-line').trim() || LINE;
@@ -842,7 +842,7 @@
     grid.innerHTML = NEWS.map((a) => {
       const files = attachmentsHTML(a.files);
       return `
-      <article class="news-card reveal${a.pinned ? ' pinned' : ''}${seen.has(a.id) ? '' : ' fresh'}${a.image ? ' has-image' : ''}">
+      <article data-id="${esc(a.id || '')}" class="news-card reveal${a.pinned ? ' pinned' : ''}${seen.has(a.id) ? '' : ' fresh'}${a.image ? ' has-image' : ''}">
         <div class="news-when">
           <span class="news-date">${esc(niceDate(a.date))}</span>
           ${a.tag ? `<span class="news-tag">${esc(a.tag)}</span>` : ''}
@@ -1036,9 +1036,7 @@
     const s = c.sections || {};
     const m = c.meta || {};
 
-    if (m.accent) document.documentElement.style.setProperty('--accent', m.accent);
-    if (m.accent2) document.documentElement.style.setProperty('--accent2', m.accent2);
-    if (m.siteTitle) document.title = m.siteTitle;
+    if (m.siteTitle) document.title = String(m.siteTitle).trim();
     if (m.metaDescription) $('#metaDescription').setAttribute('content', m.metaDescription);
 
     /* hero */
@@ -1129,46 +1127,12 @@
     /* experience */
     $('#experienceKicker').textContent = s.experienceKicker || '';
     $('#experienceTitle').textContent = s.experienceTitle || 'Experience';
-    const tl = $('#timeline');
-    tl.innerHTML = '<span class="timeline-rail"><i id="timelineFill"></i></span>' +
-      (c.experience || [])
-        .map(
-          (x) => `<article class="tl-item card glow tilt reveal" data-tilt="5">
-            <div class="tl-head">
-              <h3 class="tl-role">${esc(x.role)}</h3>
-              <span class="tl-period">${esc(x.period)}</span>
-            </div>
-            <p class="tl-company">${esc(x.company)}</p>
-            ${x.tools ? `<span class="tl-tools">${esc(x.tools)}</span>` : ''}
-            <ul class="bullets">${(x.bullets || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>
-          </article>`
-        )
-        .join('');
+    // the timeline itself is built by showcase.js
 
     /* projects */
     $('#projectsKicker').textContent = s.projectsKicker || '';
     $('#projectsTitle').textContent = s.projectsTitle || 'Projects';
-    $('#projectGrid').innerHTML = (c.projects || [])
-      .map(
-        (pr, i) => `<article class="project tilt reveal" data-tilt="3.5">
-          <div class="project-media">
-            <img src="${esc(pr.image || '/assets/img/project-waste.svg')}" alt="${esc(pr.title)}" loading="lazy">
-          </div>
-          <div class="project-body">
-            <p class="project-num">PROJECT ${String(i + 1).padStart(2, '0')}</p>
-            <h3>${esc(pr.title)}</h3>
-            <p class="period">${esc(pr.period)}</p>
-            <ul class="bullets">${(pr.bullets || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>
-            <ul class="tags">${(pr.tags || []).map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
-            <div class="project-links">
-              ${pr.repo ? `<a class="btn btn-ghost project-link magnetic" href="${esc(pr.repo)}" target="_blank" rel="noopener" data-cursor="code"><span>Code</span></a>` : ''}
-              ${pr.report ? `<a class="btn btn-ghost project-link magnetic" href="${esc(pr.report)}" target="_blank" rel="noopener" data-cursor="read"><span>Report (PDF)</span></a>` : ''}
-              ${pr.link ? `<a class="btn btn-ghost project-link magnetic" href="${esc(pr.link)}" target="_blank" rel="noopener" data-cursor="open"><span>View project</span></a>` : ''}
-            </div>
-          </div>
-        </article>`
-      )
-      .join('');
+    // the spreading stack and the write-ups are built by showcase.js
 
     /* education */
     $('#educationKicker').textContent = s.educationKicker || '';
@@ -1186,7 +1150,7 @@
 
     /* contact + google schedule */
     $('#contactKicker').textContent = s.contactKicker || '';
-    $('#contactTitle').textContent = s.contactTitle || 'Let us talk';
+    $('#contactTitle').textContent = s.contactTitle || "Let's talk";
     $('#calendarNote').textContent = p.calendarNote || '';
 
     const box = $('#calendarBox');
@@ -1250,7 +1214,7 @@
 
   /* ======================================================== BOOT */
   async function boot() {
-    initNetwork();
+    // the network background has been replaced by the rain (showcase.js)
     initCursor();
     initParallax();
     initNav();
@@ -1286,7 +1250,8 @@
       if (name && !reduced && !nameSettled) {
         nameSettled = true;
         const realName = name.dataset.realName || name.textContent;
-        scramble(name, realName, 1500);
+        // no scramble: the random glyphs it flashed read as a glitch
+        name.textContent = realName;
       }
       window.SFX?.chime();   // the system comes online
       observe();

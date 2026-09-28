@@ -57,8 +57,8 @@
     });
     const dot = notice.querySelector('.wake-dot');
     Object.assign(dot.style, {
-      width: '7px', height: '7px', borderRadius: '50%', background: '#00e5ff',
-      boxShadow: '0 0 10px #00e5ff', animation: 'wakePulse 1.1s ease-in-out infinite'
+      width: '7px', height: '7px', borderRadius: '50%', background: '#8052ff',
+      boxShadow: '0 0 10px #8052ff', animation: 'wakePulse 1.1s ease-in-out infinite'
     });
     const style = document.createElement('style');
     style.textContent = '@keyframes wakePulse{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.25)}}';

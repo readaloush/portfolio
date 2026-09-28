@@ -80,6 +80,13 @@ function projectsHTML(c) {
   </article>`).join('');
 }
 
+function certificatesHTML(c) {
+  const list = (c.certificates || []).filter((x) => x && (x.title || x.image || x.pdf || x.url))
+    .map((x, i) => ({ ...x, title: x.title || `Certificate ${i + 1}` }));
+  if (!list.length) return '';
+  return `<ul>${list.map((x) => `<li>${esc(x.title)}${x.issuer ? ' — ' + esc(x.issuer) : ''}${x.date ? ' · ' + esc(x.date) : ''}</li>`).join('')}</ul>`;
+}
+
 function educationHTML(c) {
   return (c.education || []).map((e) => `<div class="edu-card">
     <h3>${esc(e.degree)}</h3>
@@ -180,22 +187,35 @@ function render(html, content, origin) {
   // the substance
   html = fill(html, 'aboutCopy', aboutHTML(c));
   html = fill(html, 'skillGrid', skillsHTML(c));
-  html = fill(html, 'projectGrid', projectsHTML(c));
+  html = fill(html, 'projectList', projectsHTML(c));
+  html = fill(html, 'journeyDetails', experienceHTML(c));
+  html = fill(html, 'wheel', certificatesHTML(c));
   html = fill(html, 'eduGrid', educationHTML(c));
   html = fill(html, 'newsGrid', newsHTML(c));
   html = fill(html, 'langList', li((c.languages || []).map((l) => `${l.name} — ${l.level}`)));
 
-  // the timeline keeps its rail, so it is filled by appending rather than
-  // replacing an empty element
-  const tl = experienceHTML(c);
-  if (tl) html = html.replace(/(<div class="timeline" id="timeline">)/i, `$1${tl}`);
 
   // title and description from the database, not the file
-  if (m.siteTitle) html = html.replace(/<title>[^<]*<\/title>/i, `<title>${esc(m.siteTitle)}</title>`);
+  if (m.siteTitle) html = html.replace(/<title>[^<]*<\/title>/i, `<title>${esc(String(m.siteTitle).trim())}</title>`);
   if (m.metaDescription) {
     html = html.replace(/(<meta name="description" id="metaDescription" content=")[^"]*(")/i,
       `$1${esc(m.metaDescription)}$2`);
   }
+
+  // what a shared link shows: the name comes from the database too, so a
+  // rename in the panel reaches WhatsApp and LinkedIn previews
+  const who = p.name || '';
+  const title = m.siteTitle ? String(m.siteTitle).trim() : (who && p.title ? `${who} — ${p.title}` : '');
+  const meta = (attr, key, val) => {
+    if (!val) return;
+    const re = new RegExp(`(<meta ${attr}="${key}" content=")[^"]*(")`, 'i');
+    html = html.replace(re, `$1${esc(val)}$2`);
+  };
+  meta('property', 'og:site_name', who);
+  meta('property', 'og:title', title);
+  meta('name', 'twitter:title', title);
+  if (who) html = html.replace(/(<img id="profilePhoto"[^>]*alt=")[^"]*(")/i, `$1${esc(who)}$2`);
+  if (p.photo) html = html.replace(/(<img id="profilePhoto" src=")[^"]*(")/i, `$1${esc(p.photo)}$2`);
 
   // canonical + structured data, injected just before </head>
   const canonical = `<link rel="canonical" href="${esc(origin)}/">`;

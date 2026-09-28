@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-09-09T11:46:02.462Z",
+  "savedAt": "2026-09-28T12:37:21.554Z",
   "content": {
     "profile": {
       "name": "Read Aloush",
@@ -18,7 +18,7 @@
       "email": "dev@readaloush.com",
       "phone": "+90 552 676 79 83",
       "availability": "Open to AI / Robotics roles",
-      "cvUrl": "/assets/files/cv.pdf",
+      "cvUrl": "/assets/uploads/read-alallos-cv-6-622fe724.pdf",
       "calendarUrl": "https://calendar.app.google/oGEBijhJ1Nf4xxVb8",
       "calendarNote": "Pick a slot that works for you — the calendar shows my real availability, no forms, no waiting for a reply."
     },
@@ -394,6 +394,9 @@
       "experienceKicker": "Where I have shipped",
       "projectsTitle": "Projects",
       "projectsKicker": "Things I built and measured",
+      "certificatesTitle": "Certificates",
+      "certificatesKicker": "Proof, on paper",
+      "experienceImage": "",
       "educationTitle": "Education",
       "educationKicker": "Academic background",
       "contactTitle": "Let us talk",
@@ -405,6 +408,7 @@
       "footerNote": "Designed, coded and signed by Read Aloush.",
       "accent": "#00e5ff",
       "accent2": "#7c5cff"
-    }
+    },
+    "certificates": []
   }
 }

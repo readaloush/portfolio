@@ -6,44 +6,61 @@
 
 
 /* ==================================================================
-   PALETTE — paper and ink
-   Away from the black-plus-cyan-gradient look that every generated
-   portfolio wears. This is an engineer's notebook: bone paper, dense
-   ink, and one burnt red that does all the pointing. No gradients
-   between two hues; where a gradient is needed it stays within the
-   same red so it reads as ink density, not decoration.
+   PALETTE — void, iris and spark
+   One system for every mode. Pure black is the page, one violet
+   (Electric Iris) does all the pointing, and a warm amber (Saffron
+   Spark) is kept for small labels and highlights. Teal (Deep Verdant)
+   only ever appears inside the particle work. No two-hue gradients on
+   UI: where a gradient is needed it stays inside the violet family.
 
-   Light is now the default. The switch turns the lamp off and gives
-   you the same page at night: warm charcoal, never blue-black.
+   Dark is the default. The switch turns the lights on and gives you
+   the same page on a pale, faintly violet paper.
    ================================================================== */
 
-html[data-theme="light"] {
-  --bg:        #F1EEE7;   /* bone paper */
-  --bg2:       #FBFAF6;   /* card stock */
-  --surface:   rgba(20,17,13,.032);
-  --surface-2: rgba(20,17,13,.06);
-  --line:      rgba(20,17,13,.15);
-  --text:      #14110D;   /* ink */
-  --muted:     #6A6357;   /* pencil */
-  --accent:    #B4361F;   /* burnt red */
-  --accent2:   #8A2716;   /* deeper red, same family */
-  --net-line:  20,17,13;
-  --shadow:    0 18px 44px rgba(20,17,13,.10);
+:root {
+  --void:    #000000;
+  --iris:    #8052ff;
+  --spark:   #ffb829;
+  --verdant: #15846e;
+  --ash:     #9a9a9a;
+  --silver:  #bdbdbd;
+  --radius:  24px;
 }
 
 html[data-theme="dark"] {
-  --bg:        #141210;   /* warm charcoal, not blue-black */
-  --bg2:       #1C1916;
-  --surface:   rgba(241,238,231,.045);
-  --surface-2: rgba(241,238,231,.075);
-  --line:      rgba(241,238,231,.14);
-  --text:      #F1EEE7;
-  --muted:     #9C9488;
-  --accent:    #E0553B;   /* the same red, lifted for dark */
-  --accent2:   #C2452E;
-  --net-line:  241,238,231;
-  --shadow:    0 26px 64px rgba(0,0,0,.5);
+  --bg:        #000000;
+  --bg2:       #0b0a10;
+  --surface:   rgba(255,255,255,.035);
+  --surface-2: rgba(255,255,255,.065);
+  --line:      rgba(255,255,255,.11);
+  --text:      #ffffff;
+  --muted:     #9a9a9a;
+  --accent:    #8052ff;
+  --accent2:   #6a3df0;
+  --label:     #ffb829;   /* small uppercase labels */
+  --on-accent: #ffffff;
+  --net-line:  255,255,255;
+  --shadow:    0 26px 64px rgba(0,0,0,.6);
 }
+
+html[data-theme="light"] {
+  --bg:        #f6f5f9;
+  --bg2:       #ffffff;
+  --surface:   rgba(16,12,32,.03);
+  --surface-2: rgba(16,12,32,.06);
+  --line:      rgba(16,12,32,.12);
+  --text:      #0c0a14;
+  --muted:     #5e5b6a;
+  --accent:    #6b3cf5;   /* iris, deepened a step so it holds on white */
+  --accent2:   #5327de;
+  --label:     #a86a00;   /* the same amber, dark enough to read on paper */
+  --on-accent: #ffffff;
+  --net-line:  16,12,32;
+  --shadow:    0 18px 44px rgba(16,12,32,.10);
+}
+
+/* small uppercase labels carry the amber */
+.section-kicker, .kicker, .project-num, .tl-period, .press-index-label { color: var(--label) !important; }
 
 /* The name was a two-hue gradient; make it solid ink with the red
    reserved for the words that matter. */
@@ -63,9 +80,9 @@ html[data-theme="dark"] {
 .modal-lock span,
 .badge {
   background: var(--accent) !important;
-  color: #FBFAF6 !important;
+  color: var(--on-accent) !important;
 }
-.msg .go { background: var(--accent) !important; color: #FBFAF6 !important; }
+.msg .go { background: var(--accent) !important; color: var(--on-accent) !important; }
 ::-webkit-scrollbar-thumb { background: var(--accent); }
 .bar i { background: var(--accent); box-shadow: none; }
 #scrollBar { background: var(--accent); box-shadow: none; }
@@ -73,7 +90,7 @@ html[data-theme="dark"] {
 /* The aurora blobs were the most generated-looking thing on the page.
    Keep a whisper of warmth instead of two coloured lamps. */
 .aurora span:nth-child(1) { background: var(--accent); opacity: .07; }
-.aurora span:nth-child(2) { background: #8A7B5F; opacity: .07; }
+.aurora span:nth-child(2) { background: var(--spark); opacity: .05; }
 .aurora span:nth-child(3) { display: none; }
 html[data-theme="dark"] .aurora span { opacity: .10; }
 
@@ -174,7 +191,7 @@ html { overflow-x: clip; }
 }
 .kbd-hint.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .kbd-hint kbd {
-  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text);
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text);
   border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px;
   padding: 2px 7px; background: var(--surface);
 }
@@ -184,49 +201,6 @@ html { overflow-x: clip; }
   .grain { animation: none; }
 }
 
-
-/* ==================================================================
-   ================  N O T E B O O K   M O D E  =====================
-
-   Two modes, not two colour schemes. "Modern" is the site as it was.
-   "Notebook" turns the whole thing into an engineer's ruled notebook:
-   real rules, a red margin, punched holes, handwriting, cards that sit
-   on the page like taped-in cuttings, and a page that turns as you
-   move between sections.
-
-   The light/dark switch still works inside each mode, so there are
-   four states in total: modern day, modern night, paper day, paper
-   night (a notebook read under a desk lamp).
-
-   Everything below is scoped to html[data-mode="paper"] so the modern
-   mode cannot be touched by accident.
-   ================================================================== */
-
-/* ---- the mode selector, top of the page ------------------------- */
-.mode-tabs {
-  position: relative; display: inline-flex; align-items: center;
-  padding: 3px; border-radius: 999px;
-  border: 1px solid var(--line); background: var(--surface);
-  margin-right: 10px;
-}
-.mode-tab {
-  position: relative; z-index: 2;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px; letter-spacing: 1.6px; text-transform: uppercase;
-  padding: 7px 13px; border-radius: 999px; color: var(--muted);
-  transition: color .35s var(--ease);
-  white-space: nowrap;
-}
-.mode-tab.is-on { color: #FBFAF6; }
-.mode-thumb {
-  position: absolute; z-index: 1; top: 3px; bottom: 3px;
-  border-radius: 999px; background: var(--accent);
-  transition: left .45s cubic-bezier(.22,1,.36,1), width .45s cubic-bezier(.22,1,.36,1);
-}
-@media (max-width: 700px) {
-  .mode-tabs { margin-right: 6px; }
-  .mode-tab { padding: 6px 9px; font-size: 9px; letter-spacing: 1px; }
-}
 
 /* ==================================================================
    PAPER PALETTE
@@ -240,11 +214,12 @@ html[data-mode="paper"][data-theme="light"] {
   --line:      rgba(26,39,64,.18);
   --text:      #182338;   /* blue-black ink */
   --muted:     #5A6A85;   /* pencil */
-  --accent:    #C0392B;   /* the red pen */
-  --accent2:   #96271C;
+  --accent:    #6b3cf5;   /* the violet pen */
+  --accent2:   #5327de;
+  --label:     #a86a00;
   --shadow:    0 10px 26px rgba(26,39,64,.12);
   --rule:      rgba(60,96,160,.28);      /* the printed lines */
-  --margin-ln: rgba(192,57,43,.42);      /* the red margin */
+  --margin-ln: rgba(107,60,245,.40);     /* the margin, in the same ink */
   --hole:      rgba(26,39,64,.13);
 }
 html[data-mode="paper"][data-theme="dark"] {
@@ -255,11 +230,12 @@ html[data-mode="paper"][data-theme="dark"] {
   --line:      rgba(240,234,220,.16);
   --text:      #F0EADC;
   --muted:     #A79C88;
-  --accent:    #E8674F;
-  --accent2:   #C64832;
+  --accent:    #9a78ff;
+  --accent2:   #8052ff;
+  --label:     #ffb829;
   --shadow:    0 16px 40px rgba(0,0,0,.55);
   --rule:      rgba(240,234,220,.13);
-  --margin-ln: rgba(232,103,79,.36);
+  --margin-ln: rgba(154,120,255,.36);
   --hole:      rgba(0,0,0,.4);
 }
 
@@ -313,7 +289,7 @@ html[data-mode="paper"] .hero-name,
 html[data-mode="paper"] .section-title,
 html[data-mode="paper"] .stats b,
 html[data-mode="paper"] .modal-card h3 {
-  font-family: 'Caveat', 'Sora', cursive;
+  font-family: 'Bodoni Moda', 'Bodoni Moda', cursive;
   font-weight: 700; letter-spacing: .5px; text-transform: none;
   color: var(--text);
 }
@@ -610,7 +586,7 @@ html[data-mode="paper"] .section-title::after {
 .skip-link {
   position: fixed; top: 10px; left: 50%; transform: translate(-50%, -160%);
   z-index: 100002; padding: 11px 20px; border-radius: 999px;
-  background: var(--accent); color: #FBFAF6; font-size: 13px;
+  background: var(--accent); color: var(--on-accent, #fff); font-size: 13px;
   transition: transform .3s var(--ease);
 }
 .skip-link:focus { transform: translate(-50%, 0); }
@@ -651,176 +627,6 @@ html[data-mode="paper"] .glow::after { display: none !important; }
 
 
 /* ==================================================================
-   ==================  N E U R A L   M O D E  =======================
-
-   The third mode. A network trains, becomes a robot, greets you, and
-   then stays behind the site for as long as you are reading it.
-
-   Two custom properties carry the colours into the canvas, because a
-   canvas cannot read a stylesheet: --neuro-node for the live parts
-   (eyes, core, signals) and --neuro-link for the structure.
-   ================================================================== */
-
-html[data-mode="neural"][data-theme="dark"] {
-  --bg:        #0E0D0C;
-  --bg2:       #17140F;
-  --surface:   rgba(241,238,231,.05);
-  --surface-2: rgba(241,238,231,.08);
-  --line:      rgba(241,238,231,.15);
-  --text:      #F1EEE7;
-  --muted:     #98907F;
-  --accent:    #E0553B;
-  --accent2:   #C2452E;
-  --shadow:    0 26px 64px rgba(0,0,0,.6);
-  --neuro-node: 224,85,59;
-  --neuro-link: 241,238,231;
-}
-html[data-mode="neural"][data-theme="light"] {
-  --bg:        #F1EEE7;
-  --bg2:       #FBFAF6;
-  --text:      #14110D;
-  --muted:     #6A6357;
-  --accent:    #B4361F;
-  --accent2:   #8A2716;
-  --neuro-node: 180,54,31;
-  --neuro-link: 20,17,13;
-}
-
-/* the old dot-field would be a second network arguing with the robot */
-html[data-mode="neural"] #netCanvas { display: none !important; }
-
-/* ---- the stage --------------------------------------------------- */
-.neuro {
-  position: fixed; inset: 0; z-index: 9500;
-  background: var(--bg);
-  transition: background .6s var(--ease);
-}
-.neuro-canvas { position: absolute; inset: 0; display: block; }
-
-/* Once the intro is over the same canvas keeps running, but it stops
-   being a screen and becomes wallpaper: behind everything, dimmed,
-   and deaf to the mouse so it can never swallow a click. */
-.neuro.done {
-  z-index: 0; background: transparent; pointer-events: none;
-}
-.neuro.done .neuro-ui { opacity: 0; pointer-events: none; }
-.neuro.done .neuro-canvas { opacity: .5; transition: opacity 1.2s var(--ease); }
-html[data-theme="light"] .neuro.done .neuro-canvas { opacity: .38; }
-
-/* while the scene is playing the site underneath is held still */
-body.neuro-intro { overflow: hidden; }
-body.neuro-intro main,
-body.neuro-intro #nav,
-body.neuro-intro #footer,
-body.neuro-intro .orb { opacity: 0; pointer-events: none; }
-body.neuro-bg main,
-body.neuro-bg #nav,
-body.neuro-bg #footer,
-body.neuro-bg .orb { animation: neuroIn 1s var(--ease) both; }
-@keyframes neuroIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-
-/* ---- the read-out ------------------------------------------------ */
-.neuro-ui {
-  position: absolute; inset: 0; display: grid;
-  align-content: center; justify-items: center; gap: 22px;
-  padding: 30px; text-align: center;
-  transition: opacity .7s var(--ease);
-}
-.neuro-hud {
-  position: absolute; top: 6vh; left: 50%; transform: translateX(-50%);
-  display: grid; gap: 5px; min-width: 216px;
-  font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 1.4px;
-  color: var(--muted);
-  transition: opacity .6s var(--ease), transform .6s var(--ease);
-}
-.neuro-hud.out { opacity: 0; transform: translateX(-50%) translateY(-12px); }
-.nh-row { display: flex; justify-content: space-between; gap: 20px; }
-.nh-row b { font-weight: 400; text-transform: uppercase; opacity: .7; }
-.nh-row i { font-style: normal; color: var(--text); }
-.nh-bar { display: block; height: 2px; background: var(--surface-2); margin-top: 4px; }
-.nh-bar u { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s linear; }
-
-/* ---- what it says ------------------------------------------------ */
-.neuro-say {
-  margin-top: 34vh; max-width: 720px; min-height: 3.2em;
-  opacity: 0; transition: opacity .6s var(--ease);
-}
-.neuro-say.show { opacity: 1; }
-.neuro-say b {
-  display: block; font-weight: 300;
-  font-size: clamp(1.3rem, 3.4vw, 2.3rem); letter-spacing: .5px; color: var(--text);
-}
-.neuro-say span {
-  display: block; margin-top: 12px;
-  font-size: clamp(.85rem, 1.6vw, 1rem); color: var(--muted); line-height: 1.6;
-}
-
-/* ---- the way in -------------------------------------------------- */
-.neuro-go {
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 13px 24px; border-radius: 999px;
-  border: 1px solid var(--line); color: var(--text);
-  font-family: 'JetBrains Mono', monospace; font-size: 11px;
-  letter-spacing: 2.4px; text-transform: uppercase;
-  opacity: 0; transform: translateY(12px);
-  transition: opacity .6s var(--ease), transform .6s var(--ease), border-color .3s, background .3s;
-}
-.neuro-go.show { opacity: 1; transform: none; }
-.neuro-go:hover { border-color: var(--accent); background: var(--surface); }
-.neuro-go svg { width: 15px; height: 15px; animation: neuroNudge 1.8s var(--ease) infinite; }
-@keyframes neuroNudge { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
-
-.neuro-skip {
-  position: absolute; right: 22px; bottom: 20px;
-  font-family: 'JetBrains Mono', monospace; font-size: 10px;
-  letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
-  padding: 8px 12px; border-radius: 999px; border: 1px solid transparent;
-}
-.neuro-skip:hover { color: var(--text); border-color: var(--line); }
-
-@media (max-width: 620px) {
-  .neuro-say { margin-top: 40vh; }
-  .neuro-hud { top: 4vh; min-width: 180px; font-size: 10.5px; }
-}
-
-/* Someone who has asked for less motion still gets the site; the
-   scene simply is not staged for them. */
-@media (prefers-reduced-motion: reduce) {
-  .neuro-ui { display: none; }
-  body.neuro-intro { overflow: auto; }
-  body.neuro-intro main, body.neuro-intro #nav, body.neuro-intro #footer { opacity: 1; }
-  body.neuro-bg main, body.neuro-bg #nav, body.neuro-bg #footer, body.neuro-bg .orb { animation: none; }
-}
-
-/* three tabs need a little more room than two */
-@media (min-width: 981px) and (max-width: 1300px) {
-  .mode-tab { padding: 6px 9px; font-size: 9px; letter-spacing: 1px; }
-}
-
-/* ---- the 3D figure ------------------------------------------------
-   The WebGL canvas is transparent, so the page's own background shows
-   through and the robot appears to stand on the page rather than in a
-   black box of its own. */
-.robo3d { background: var(--bg); }
-.robo3d .neuro-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.robo3d.done { background: transparent; }
-.robo3d.done .neuro-canvas { opacity: 1; }
-
-/* With the figure standing on the right, the greeting takes the left
-   half instead of sitting on top of it. */
-.robo3d .neuro-ui { justify-items: start; text-align: left; padding-left: 6vw; }
-.robo3d .neuro-say { margin-top: 0; max-width: 42vw; }
-.robo3d .neuro-hud { left: 6vw; transform: none; }
-.robo3d .neuro-hud.out { transform: translateY(-12px); }
-@media (max-width: 1100px) {
-  .robo3d .neuro-ui { justify-items: center; text-align: center; padding-left: 0; }
-  .robo3d .neuro-say { max-width: 80vw; margin-top: 34vh; }
-  .robo3d .neuro-hud { left: 50%; transform: translateX(-50%); }
-  .robo3d .neuro-hud.out { transform: translateX(-50%) translateY(-12px); }
-}
-
-
-/* ==================================================================
    THE COMMAND LINE
    A sheet over everything, monospace, with the site's own palette so
    it belongs to all three modes rather than looking bolted on.
@@ -849,16 +655,16 @@ body.neuro-bg .orb { animation: neuroIn 1s var(--ease) both; }
 .cmdk.on .cmdk-box { transform: none; }
 
 .cmdk-line { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
-.cmdk-caret { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 17px; }
+.cmdk-caret { color: var(--accent); font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 17px; }
 .cmdk-input {
   flex: 1; background: none; border: 0; outline: 0; color: var(--text);
-  font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: .4px;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: .4px;
 }
 .cmdk-input::placeholder { color: var(--muted); }
 
 .cmdk-list { max-height: min(52vh, 420px); overflow-y: auto; padding: 6px 0 8px; }
 .cmdk-group {
-  font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 2.4px;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 2.4px;
   color: var(--muted); padding: 12px 18px 6px; text-transform: uppercase;
 }
 .cmdk-row {
@@ -866,7 +672,7 @@ body.neuro-bg .orb { animation: neuroIn 1s var(--ease) both; }
   padding: 9px 18px; text-align: left; border-left: 2px solid transparent;
 }
 .cmdk-row b {
-  font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 13.5px;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 13.5px;
   color: var(--text); flex: none; min-width: 190px;
 }
 .cmdk-row i { font-style: normal; font-size: 12.5px; color: var(--muted); }
@@ -880,11 +686,11 @@ body.neuro-bg .orb { animation: neuroIn 1s var(--ease) both; }
   font-size: 11px; color: var(--muted);
 }
 .cmdk-foot kbd {
-  font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text);
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text);
   border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px;
   padding: 1px 5px; margin-right: 3px; background: var(--surface);
 }
-.cmdk-count { margin-left: auto; font-family: 'JetBrains Mono', monospace; }
+.cmdk-count { margin-left: auto; font-size-adjust: none; font-family: 'JetBrains Mono', monospace; }
 
 /* the way in for anyone who never reaches for a keyboard */
 .cmdk-tip {
@@ -898,7 +704,7 @@ body.neuro-bg .orb { animation: neuroIn 1s var(--ease) both; }
 }
 .cmdk-tip:hover { opacity: 1; border-color: var(--accent); color: var(--text); }
 .cmdk-tip kbd {
-  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10px;
   border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
 }
 @media (max-width: 720px) { .cmdk-tip { display: none; } .cmdk-row b { min-width: 130px; } }
@@ -919,27 +725,29 @@ body.neuro-bg .orb { animation: neuroIn 1s var(--ease) both; }
    ================================================================== */
 
 html[data-mode="press"][data-theme="dark"] {
-  --bg:        #12100E;
-  --bg2:       #12100E;
-  --surface:   rgba(242,237,227,.045);
-  --surface-2: rgba(242,237,227,.075);
-  --line:      rgba(242,237,227,.18);
-  --text:      #F2EDE3;
-  --muted:     #97907F;
-  --accent:    #D8503A;
-  --accent2:   #B23A24;
+  --bg:        #000000;
+  --bg2:       #000000;
+  --surface:   rgba(255,255,255,.04);
+  --surface-2: rgba(255,255,255,.07);
+  --line:      rgba(255,255,255,.16);
+  --text:      #ffffff;
+  --muted:     #9a9a9a;
+  --accent:    #8052ff;
+  --accent2:   #6a3df0;
+  --label:     #ffb829;
   --shadow:    none;
 }
 html[data-mode="press"][data-theme="light"] {
-  --bg:        #F7F3EA;
-  --bg2:       #F7F3EA;
+  --bg:        #f6f5f9;
+  --bg2:       #f6f5f9;
   --surface:   rgba(20,18,16,.04);
   --surface-2: rgba(20,18,16,.07);
   --line:      rgba(20,18,16,.2);
-  --text:      #141210;
-  --muted:     #6B6357;
-  --accent:    #B23A24;
-  --accent2:   #8A2716;
+  --text:      #0c0a14;
+  --muted:     #5e5b6a;
+  --accent:    #6b3cf5;
+  --accent2:   #5327de;
+  --label:     #a86a00;
   --shadow:    none;
 }
 
@@ -960,7 +768,7 @@ html[data-mode="press"] .press-head {
   position: relative; z-index: 3;
   padding: 16px clamp(20px, 5vw, 60px) 12px;
   border-bottom: 1px solid var(--line);
-  font-family: 'JetBrains Mono', monospace;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace;
   font-size: 10.5px; letter-spacing: 2.4px; text-transform: uppercase;
   color: var(--muted);
 }
@@ -981,7 +789,7 @@ html[data-mode="press"] .project h3,
 html[data-mode="press"] .edu-card h3,
 html[data-mode="press"] .tl-role,
 html[data-mode="press"] .stats b {
-  font-family: 'Bodoni Moda', 'Sora', serif;
+  font-family: 'Bodoni Moda', 'Bodoni Moda', serif;
   font-weight: 700; letter-spacing: -0.01em;
   color: var(--text); background: none; -webkit-text-fill-color: currentColor;
 }
@@ -989,7 +797,7 @@ html[data-mode="press"] .hero-name {
   font-size: clamp(3rem, 9vw, 7rem); line-height: .92; text-transform: none;
 }
 html[data-mode="press"] .section-title { font-size: clamp(2rem, 5vw, 3.4rem); }
-html[data-mode="press"] .hero-role { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; }
+html[data-mode="press"] .hero-role { font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; }
 
 /* the summary becomes a pull quote, which is what a magazine does
    with the one sentence it wants you to keep */
@@ -1008,7 +816,7 @@ html[data-mode="press"] .press-index {
   padding: 0 clamp(20px, 5vw, 40px);
 }
 html[data-mode="press"] .press-index-label {
-  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px;
   text-transform: uppercase; color: var(--muted);
   padding-bottom: 10px; border-bottom: 1px solid var(--line);
 }
@@ -1020,7 +828,7 @@ html[data-mode="press"] .press-index a {
 }
 html[data-mode="press"] .press-index a:hover { background: var(--surface); padding-left: 14px; }
 html[data-mode="press"] .press-index b {
-  font-family: 'JetBrains Mono', monospace; font-weight: 400;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-weight: 400;
   font-size: 12px; color: var(--accent);
 }
 html[data-mode="press"] .press-index em { font-style: normal; font-size: clamp(1.1rem, 2vw, 1.5rem); }
@@ -1086,7 +894,7 @@ html[data-mode="press"] .photo-frame img { border-radius: 0; filter: grayscale(1
 /* buttons are rules and small caps, not pills */
 html[data-mode="press"] .btn {
   border-radius: 0; border: 1px solid var(--line);
-  font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2.4px;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2.4px;
   text-transform: uppercase; background: none;
 }
 html[data-mode="press"] .btn-primary { background: var(--accent) !important; border-color: var(--accent); }
@@ -1163,14 +971,11 @@ html[data-mode="press"] .stats li::after { display: none !important; }
    step, and without the door existing anywhere it should not.
    ================================================================== */
 html[data-mode="paper"] .photo-frame,
-html[data-mode="neural"] .photo-frame,
 html[data-mode="press"] .photo-frame,
 html[data-mode="paper"] .photo-caption,
-html[data-mode="neural"] .photo-caption,
 html[data-mode="press"] .photo-caption { display: none !important; }
 
 html[data-mode="paper"] .photo-signature,
-html[data-mode="neural"] .photo-signature,
 html[data-mode="press"] .photo-signature {
   margin: 0 auto;
   width: min(100%, 620px);
@@ -1179,14 +984,12 @@ html[data-mode="press"] .photo-signature {
   filter: none;
 }
 html[data-mode="paper"] .hero-visual,
-html[data-mode="neural"] .hero-visual,
 html[data-mode="press"] .hero-visual {
   display: grid; place-items: center; min-height: clamp(220px, 34vh, 420px);
 }
 @media (max-width: 980px) {
   html[data-mode="paper"] .photo-signature,
-  html[data-mode="neural"] .photo-signature,
-  html[data-mode="press"] .photo-signature { transform: scale(1.35); }
+    html[data-mode="press"] .photo-signature { transform: scale(1.35); }
 }
 
 /* ==================================================================
@@ -1202,7 +1005,7 @@ html[data-mode="press"] .hero-visual {
 }
 button.key-chip:hover { border-color: var(--accent); color: var(--text); }
 .key-chip kbd {
-  font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text);
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text);
   border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px;
   padding: 2px 6px; background: var(--bg2);
 }
@@ -1220,7 +1023,7 @@ html[data-mode="press"] .press-off { display: none !important; }
 html[data-mode="press"] .press-back {
   display: inline-flex; align-items: center; gap: 9px;
   max-width: 1180px; margin: 26px auto 0; padding: 0 clamp(20px, 5vw, 40px);
-  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
   letter-spacing: 2.4px; text-transform: uppercase; color: var(--muted);
   transition: color .3s var(--ease);
 }
@@ -1248,7 +1051,7 @@ html[data-mode="press"] .section { animation: pressIn .5s var(--ease) both; }
 .press-back {
   display: inline-flex; align-items: center; gap: 9px;
   max-width: 1180px; margin: 26px auto 0; padding: 0 clamp(20px, 5vw, 40px);
-  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
   letter-spacing: 2.4px; text-transform: uppercase; color: var(--muted);
   transition: color .3s var(--ease);
 }
@@ -1262,7 +1065,7 @@ html[data-mode="press"] .section { animation: pressIn .5s var(--ease) both; }
   padding: 0 clamp(20px, 5vw, 40px);
 }
 .press-index-label {
-  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px;
   text-transform: uppercase; color: var(--muted);
   padding-bottom: 10px; border-bottom: 1px solid var(--line);
 }
@@ -1274,7 +1077,7 @@ html[data-mode="press"] .section { animation: pressIn .5s var(--ease) both; }
 }
 .press-index a:hover { background: var(--surface); padding-left: 14px; }
 .press-index b {
-  font-family: 'JetBrains Mono', monospace; font-weight: 400;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-weight: 400;
   font-size: 12px; color: var(--accent);
 }
 .press-index em { font-style: normal; font-size: clamp(1.1rem, 2vw, 1.5rem); font-weight: 600; }
@@ -1284,7 +1087,7 @@ html[data-mode="press"] .section { animation: pressIn .5s var(--ease) both; }
   .press-index i { grid-column: 2; }
 }
 /* each mode keeps its own voice for the contents */
-html[data-mode="paper"] .press-index em { font-family: 'Caveat', cursive; font-size: clamp(1.5rem, 2.6vw, 2rem); }
+html[data-mode="paper"] .press-index em { font-family: 'Bodoni Moda', cursive; font-size: clamp(1.5rem, 2.6vw, 2rem); }
 html[data-mode="paper"] .press-index i { font-family: 'Kalam', cursive; }
 html[data-mode="press"] .press-index em,
 html[data-mode="press"] .press-index i { font-family: 'Bodoni Moda', serif; }
@@ -1331,12 +1134,12 @@ main .section { animation: viewIn .45s var(--ease) both; }
   padding: 12px 14px; border-bottom: 1px solid var(--line);
 }
 .arc-head b {
-  font-family: 'JetBrains Mono', monospace; font-weight: 400;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-weight: 400;
   font-size: 12px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--text);
 }
 .arc-tabs { display: flex; gap: 4px; margin-left: auto; }
 .arc-tab {
-  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1.4px;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1.4px;
   text-transform: uppercase; color: var(--muted);
   padding: 6px 10px; border-radius: 999px; border: 1px solid transparent;
   transition: color .25s, border-color .25s;
@@ -1357,11 +1160,11 @@ main .section { animation: viewIn .45s var(--ease) both; }
   backdrop-filter: blur(3px); border-radius: 6px; text-align: center;
 }
 .arc-over[hidden] { display: none; }
-.arc-over p { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text); }
+.arc-over p { font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text); }
 .arc-btn {
   justify-self: center; padding: 10px 20px; border-radius: 999px;
-  background: var(--accent); color: #FBFAF6;
-  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  background: var(--accent); color: var(--on-accent, #fff);
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 11px;
   letter-spacing: 2px; text-transform: uppercase;
 }
 .arc-btn:hover { filter: brightness(1.08); }
@@ -1369,7 +1172,7 @@ main .section { animation: viewIn .45s var(--ease) both; }
 .arc-foot {
   display: flex; align-items: center; gap: 18px;
   padding: 10px 16px; border-top: 1px solid var(--line);
-  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
   letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted);
 }
 .arc-foot i { font-style: normal; color: var(--text); margin-left: 6px; }
@@ -1384,8 +1187,8 @@ main .section { animation: viewIn .45s var(--ease) both; }
    you get back out — and `exit` and `mode modern` do the same thing
    from inside.
    ================================================================== */
-html[data-mode="shell"] { --bg: #0B0D0C; --bg2: #101312; --text: #C8D6CC; --muted: #6E7F74; --accent: #6EE7A0; --line: rgba(110,231,160,.16); }
-html[data-mode="shell"][data-theme="light"] { --bg: #F4F3EE; --bg2: #FFFFFF; --text: #14180F; --muted: #5C6357; --accent: #1F7A4C; --line: rgba(20,24,15,.16); }
+html[data-mode="shell"] { --bg: #000000; --bg2: #07060b; --text: #e9e6f5; --muted: #8b86a0; --accent: #ffb829; --label: #9a78ff; --line: rgba(255,184,41,.18); }
+html[data-mode="shell"][data-theme="light"] { --bg: #f6f5f9; --bg2: #FFFFFF; --text: #0c0a14; --muted: #5e5b6a; --accent: #6b3cf5; --label: #a86a00; --line: rgba(16,12,32,.16); }
 
 /* everything the shell is not */
 body.sh-on main,
@@ -1412,7 +1215,7 @@ body.sh-on .sh {
 .sh-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--muted); opacity: .6; }
 .sh-dot.r { background: #E0553B; } .sh-dot.y { background: #D8A13A; } .sh-dot.g { background: #4CAF7D; }
 .sh-bar b {
-  margin-left: 10px; font-family: 'JetBrains Mono', monospace;
+  margin-left: 10px; font-size-adjust: none; font-family: 'JetBrains Mono', monospace;
   font-weight: 400; font-size: 11.5px; letter-spacing: 1px; color: var(--muted);
 }
 
@@ -1421,7 +1224,7 @@ body.sh-on .sh {
   padding: 16px clamp(14px, 3vw, 22px) 20px;
   border: 1px solid var(--line); border-radius: 0 0 10px 10px;
   background: var(--bg2);
-  font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.55;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.55;
   color: var(--text);
   cursor: text;
 }
@@ -1635,7 +1438,7 @@ html[data-perf="low"] .bell-btn.unread .bell-body { animation: none; }
 .bell-badge {
   position: absolute; top: -5px; right: -5px; min-width: 17px; height: 17px;
   padding: 0 4px; border-radius: 999px;
-  background: var(--accent); color: #04050a;
+  background: var(--accent); color: var(--on-accent, #fff);
   font-size: 10px; font-weight: 700; line-height: 17px; text-align: center;
   box-shadow: 0 0 0 2px var(--bg);
   animation: badgePop .5s var(--ease);
@@ -1680,7 +1483,7 @@ html[data-perf="low"] .news-shot:hover img { transform: none; }
 
 .news-card .news-when { align-self: start; }
 .news-card .news-date {
-  display: block; font-family: 'JetBrains Mono', monospace;
+  display: block; font-size-adjust: none; font-family: 'JetBrains Mono', monospace;
   font-size: 11px; letter-spacing: 1px; color: var(--muted);
 }
 .news-card .news-tag {
@@ -1736,7 +1539,7 @@ html[data-perf="low"] .news-card.fresh::after { animation: none; }
 
 .news-file-kind {
   padding: 3px 8px; border-radius: 999px;
-  font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 600;
+  font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 600;
   letter-spacing: .8px; text-transform: uppercase; color: #0b0b0d;
   background: var(--muted);
 }
@@ -1750,7 +1553,7 @@ html[data-perf="low"] .news-card.fresh::after { animation: none; }
 .news-file.ppt  .news-file-kind { background: #D24726; color: #fff; }
 .news-file.zip  .news-file-kind { background: #7A6C55; color: #fff; }
 .news-file.img  .news-file-kind { background: #6A4FBF; color: #fff; }
-.news-file.link .news-file-kind { background: var(--accent); color: #04050a; }
+.news-file.link .news-file-kind { background: var(--accent); color: var(--on-accent, #fff); }
 
 @media (max-width: 820px) {
   .news-card, .news-card.has-image { grid-template-columns: 1fr; gap: 14px; }
@@ -1798,7 +1601,7 @@ html[data-perf="low"] .news-pop-card { background: var(--bg2); animation: none; 
 }
 .news-pop-item.read .t i { background: transparent; }
 .news-pop-item .b { margin-top: 4px; font-size: 13px; color: var(--muted); }
-.news-pop-item .d { margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: .8px; }
+.news-pop-item .d { margin-top: 6px; font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: .8px; }
 
 .news-pop-foot { padding: 11px 16px; border-top: 1px solid var(--line); text-align: center; }
 .news-pop-foot a { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); }
@@ -1840,7 +1643,7 @@ html[data-perf="low"] .adminbar-live { animation: none; }
   transition: border-color .25s var(--ease), background .25s var(--ease);
 }
 .adminbar-btn:hover { border-color: var(--accent); background: var(--surface); }
-.adminbar-btn.primary { background: var(--accent); border-color: var(--accent); color: #04050a; font-weight: 600; }
+.adminbar-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); font-weight: 600; }
 .adminbar-btn.primary:hover { filter: brightness(1.1); }
 .adminbar-btn.ghost { color: var(--muted); }
 

@@ -1,23 +1,23 @@
 :root {
-  --accent: #00e5ff;
-  --accent2: #7c5cff;
-  --bg: #05060c;
-  --bg2: #0b0d17;
+  --accent: #8052ff;
+  --accent2: #6a3df0;
+  --bg: #000000;
+  --bg2: #0b0a10;
   --surface: rgba(255,255,255,.04);
   --surface2: rgba(255,255,255,.07);
   --line: rgba(255,255,255,.10);
-  --text: #eef1f7;
-  --muted: #8990a5;
+  --text: #ffffff;
+  --muted: #9a9a9a;
   --ease: cubic-bezier(.16,1,.3,1);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   background:
-    radial-gradient(900px 500px at 12% -10%, rgba(0,229,255,.14), transparent 60%),
-    radial-gradient(800px 500px at 90% 10%, rgba(124,92,255,.14), transparent 60%),
+    radial-gradient(900px 500px at 12% -10%, rgba(128,82,255,.16), transparent 60%),
+    radial-gradient(800px 500px at 90% 10%, rgba(255,184,41,.07), transparent 60%),
     var(--bg);
   color: var(--text);
-  font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 300; line-height: 1.6; min-height: 100vh;
 }
 a { color: var(--accent); text-decoration: none; }
@@ -41,7 +41,7 @@ kbd { font-family: 'JetBrains Mono', monospace; font-size: 10px; background: var
 .gate-lock span {
   width: 50px; height: 50px; border-radius: 15px; display: grid; place-items: center; position: relative;
   background: linear-gradient(130deg, var(--accent), var(--accent2));
-  box-shadow: 0 0 40px rgba(0,229,255,.4);
+  box-shadow: 0 0 40px rgba(128,82,255,.4);
 }
 .gate-lock span::before { content: ''; width: 13px; height: 11px; border-radius: 2px; background: #05060c; }
 .gate-lock span::after { content: ''; position: absolute; top: 12px; width: 15px; height: 13px; border: 2.5px solid #05060c; border-bottom: 0; border-radius: 9px 9px 0 0; }
@@ -57,11 +57,11 @@ label { display: grid; gap: 6px; font-size: 11px; letter-spacing: 1.5px; text-tr
 input[type=text], input[type=password], input[type=number], input[type=url], input[type=email], textarea, select {
   width: 100%; padding: 11px 13px; border-radius: 11px; border: 1px solid var(--line);
   background: var(--surface); color: var(--text);
-  font-family: 'Sora', sans-serif; font-size: 14.5px; font-weight: 300;
+  font-family: 'Inter', sans-serif; font-size: 14.5px; font-weight: 300;
   letter-spacing: normal; text-transform: none; transition: border-color .25s, box-shadow .25s;
   resize: vertical;
 }
-input:focus, textarea:focus, select:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(0,229,255,.12); }
+input:focus, textarea:focus, select:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(128,82,255,.12); }
 textarea { min-height: 96px; line-height: 1.6; }
 
 .btn {
@@ -70,7 +70,7 @@ textarea { min-height: 96px; line-height: 1.6; }
   transition: .3s var(--ease);
 }
 .btn.primary { background: linear-gradient(115deg, var(--accent), var(--accent2)); color: #05060c; border-color: transparent; font-weight: 600; }
-.btn.primary:hover { box-shadow: 0 12px 34px rgba(0,229,255,.32); transform: translateY(-2px); }
+.btn.primary:hover { box-shadow: 0 12px 34px rgba(128,82,255,.32); transform: translateY(-2px); }
 .btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
 .btn.danger { border-color: rgba(255,107,129,.4); color: #ff6b81; }
 .btn.danger:hover { background: rgba(255,107,129,.12); }
@@ -152,8 +152,8 @@ textarea { min-height: 96px; line-height: 1.6; }
 
 .row-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
 .note {
-  font-size: 12.5px; color: var(--muted); background: rgba(0,229,255,.06);
-  border: 1px solid rgba(0,229,255,.2); border-radius: 12px; padding: 12px 14px; line-height: 1.65;
+  font-size: 12.5px; color: var(--muted); background: rgba(128,82,255,.06);
+  border: 1px solid rgba(128,82,255,.2); border-radius: 12px; padding: 12px 14px; line-height: 1.65;
 }
 .note b { color: var(--accent); font-weight: 600; }
 .note code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; background: rgba(0,0,0,.35); padding: 2px 6px; border-radius: 5px; }
@@ -185,7 +185,7 @@ label.check:hover { border-color: var(--accent); }
 label.check input { width: 17px; height: 17px; margin-top: 1px; accent-color: var(--accent); flex: none; cursor: pointer; }
 label.check span { font-size: 13px; line-height: 1.35; }
 label.check em { display: block; font-style: normal; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
-label.check:has(input:checked) { border-color: var(--accent); background: rgba(0,229,255,.05); }
+label.check:has(input:checked) { border-color: var(--accent); background: rgba(128,82,255,.05); }
 
 /* A draft. Dimmed rather than hidden, so it is obvious there is
    something here that the site is not showing. */
@@ -226,3 +226,13 @@ label.check:has(input:checked) { border-color: var(--accent); background: rgba(0
 .store.bad { color: #E8B33A; border-color: rgba(232,179,58,.35); }
 .store.bad i { background: #E8B33A; }
 @media (max-width: 760px) { .store { display: none; } }
+
+/* the CV panel: one file, one big button */
+.cv-box {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center;
+  padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface);
+}
+.cv-meta { display: grid; gap: 4px; min-width: 0; }
+.cv-meta b { font-weight: 500; }
+.cv-meta span { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 720px) { .cv-box { grid-template-columns: 1fr; } }

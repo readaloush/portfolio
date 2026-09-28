@@ -1,4 +1,4 @@
-# Read Leva Alalloş — Portfolio
+# Read Aloush — Portfolio
 
 Animated portfolio site with a **real SQLite database** and a **hidden admin panel**.
 Every word, number, link and image on the site is stored in the database and edited
@@ -66,16 +66,18 @@ node scripts/reset-password.js
 
 | Tab | What it controls |
 |---|---|
-| **Profile** | Name, title, summary, photo, phone, email, CV link, **Google Schedule link** |
+| **Profile** | Name, title, summary, photo, phone, email, **Google Schedule link** |
+| **CV** | Upload a new CV PDF — it goes live immediately |
 | **Stats** | The four animated counters under the hero |
 | **Social links** | GitHub, LinkedIn, Instagram, Facebook, TikTok, X, YouTube, email — add or remove any |
 | **Skills** | Skill groups and the 0–100 level of each animated bar |
 | **Languages** | Arabic / Turkish / English … |
 | **Experience** | Every job in the animated timeline |
 | **Projects** | Title, period, **photo**, tags, bullets, link |
+| **Certificates** | Title, issuer, date, picture, verify link or PDF |
 | **Education** | Degrees |
 | **Section titles** | Rename any heading on the site |
-| **Theme & SEO** | The two accent colours, page title, meta description |
+| **Theme & SEO** | Page title, meta description, footer note |
 | **Media library** | Everything you have uploaded |
 | **Security** | Change your username and password |
 
@@ -115,7 +117,11 @@ in a new tab.
 | **Logo** | The same signature, redrawing itself forever in the navbar |
 | **Under your photo** | The signature again, always moving, glowing in the accent colour |
 | **Footer** | A third, slower copy of the signature |
-| **Background** | A neural network of nodes and links; the mouse pushes them away, draws lines to nearby nodes, and a click sends a shockwave |
+| **Background** | Rain across the whole page, sparking where it hits the credential badge in the hero |
+| **Experience** | A timeline that pins and slides sideways as you scroll |
+| **Projects** | A stack of cards that scatters across the screen as you scroll |
+| **Certificates** | A 3D wheel you turn with the mouse wheel, a drag or the arrow keys |
+| **Between views** | A constellation of coloured triangles gathers and scatters |
 | **Cursor** | A custom dot + trailing ring that grows and shows a label over anything clickable |
 | **Projects & Experience** | 3D tilt following the mouse, with a light glare that tracks the pointer |
 | **Hero** | Name scrambles into place, job titles type themselves, everything drifts with the mouse (parallax) |

@@ -19,11 +19,11 @@
 })();
 
 (() => {
-  // Paper is the default now. Only fall back to it when the visitor has
+  // Dark (the void) is the default now. Only fall back to it when the visitor has
   // not chosen a side themselves.
   try {
-    if (!localStorage.getItem('theme')) document.documentElement.dataset.theme = 'light';
-  } catch (e) { document.documentElement.dataset.theme = 'light'; }
+    if (!localStorage.getItem('theme')) document.documentElement.dataset.theme = 'dark';
+  } catch (e) { document.documentElement.dataset.theme = 'dark'; }
 })();
 
 /* ==================================================================
@@ -189,6 +189,7 @@
 
   let hintTimer;
   function showHint() {
+    if (matchMedia('(hover: none), (pointer: coarse)').matches) return;
     try { if (localStorage.getItem('rp_kbd_hint') === 'seen') return; } catch { /* ignore */ }
     hint.classList.add('show');
     hintTimer = setTimeout(hideHint, 7000);
@@ -213,8 +214,8 @@
    ================================================================== */
 (() => {
   const KEY = 'rp_mode';
-  const MODES = ['modern', 'paper', 'neural', 'press', 'shell'];
-  const LABEL = { modern: 'Modern', paper: 'Notebook', neural: 'Neural', press: 'Press', shell: 'Terminal' };
+  const MODES = ['modern', 'press', 'shell'];
+  const LABEL = { modern: 'Modern', press: 'Press', shell: 'Terminal' };
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const read = () => {
@@ -364,25 +365,6 @@
     } catch { /* sound is decoration; never let it break the page */ }
   }
 
-  /* The shortcuts have to be visible to exist. A key nobody is told
-     about is a key nobody presses. */
-  (() => {
-    const cta = document.querySelector('.hero-cta');
-    if (!cta || document.getElementById('keyChips')) return;
-    const wrap = document.createElement('div');
-    wrap.id = 'keyChips';
-    wrap.className = 'key-chips';
-    wrap.innerHTML =
-      '<button type="button" class="key-chip" data-open-cmdk>' +
-        '<kbd>`</kbd><span>or</span><kbd>&#8984;K</kbd><i>command palette</i></button>' +
-      '<span class="key-chip">' +
-        '<kbd>&larr;</kbd><kbd>&rarr;</kbd><i>move between sections</i></span>';
-    cta.parentNode.insertBefore(wrap, cta.nextSibling);
-    wrap.addEventListener('click', (e) => {
-      if (e.target.closest('[data-open-cmdk]')) window.CMDK?.show();
-    });
-  })();
-
   /* ---------------------------------------------------- press mode
      A quarterly, not a website: a masthead across the top and a
      numbered index of what is in this issue. Both are built once and
@@ -396,6 +378,7 @@
     skills: 'what he reaches for, and how far.',
     experience: 'everything shipped, in order.',
     projects: 'the work itself.',
+    certificates: 'proof, on paper.',
     education: 'where the theory came from.',
     contact: 'all the ways you can reach him.'
   };
@@ -409,10 +392,22 @@
      cover — and the palette, the menu and the browser's own back button
      all move between them. The other three modes stay a single scroll,
      because a notebook and a walking robot both want continuity. */
-  const VIEWS = ['#news', '#about', '#skills', '#experience', '#projects', '#education', '#contact'];
+  const VIEWS = ['#news', '#about', '#skills', '#experience', '#projects', '#certificates', '#education', '#contact'];
+  let pressReady = false;
   let pressView = '';
 
+  /* Moving between views plays the constellation: the triangles gather,
+     the page is swapped behind them, and they scatter. The notebook keeps
+     its page-turn instead, and the very first view on arrival is shown
+     without ceremony. */
   function pressShow(sel, push) {
+    const next = VIEWS.includes(sel) ? sel : '';
+    const paper = document.documentElement.dataset.mode === 'paper';
+    if (!pressReady || next === pressView || paper || !window.CONSTELLATION) return pressApply(sel, push);
+    window.CONSTELLATION.play(() => pressApply(sel, push));
+  }
+
+  function pressApply(sel, push) {
     let wanted = VIEWS.includes(sel) ? sel : '';
 
     /* A section can take itself off the page. Announcements does exactly
@@ -433,6 +428,7 @@
       sec.classList.toggle('press-off', wanted ? ('#' + sec.id) !== wanted : true);
     });
     document.querySelector('#hero')?.classList.toggle('press-off', !!wanted);
+    document.querySelector('#intro')?.classList.toggle('press-off', !!wanted);
     document.getElementById('pressIndex')?.classList.toggle('press-off', !!wanted);
     document.getElementById('pressBack')?.classList.toggle('press-off', !wanted);
 
@@ -481,7 +477,7 @@
     head.className = 'press-head';
     head.innerHTML =
       `<span>VOL. I</span><span>NO. 1</span><span>${month} ${now.getFullYear()}</span>` +
-      '<span class="press-title">READ LEVA ALALLOŞ — AN ENGINEERING QUARTERLY</span>';
+      '<span class="press-title">READ ALOUSH — AN ENGINEERING QUARTERLY</span>';
     document.body.insertBefore(head, document.body.firstChild);
 
     const index = document.createElement('nav');
@@ -518,6 +514,7 @@
     syncIndex();
     // arriving on a deep link should open that view, not the cover
     pressShow(location.hash, false);
+    pressReady = true;
   }
 
   /* The index is built once, before the database has answered, so its
@@ -548,54 +545,6 @@
   }
 
   document.addEventListener('content:rendered', syncIndex);
-
-  /* --------------------------------------------------- neural mode
-     The intro is a whole scene of its own, so it lives in its own
-     file and is fetched only when someone actually asks for it. It
-     goes in the same folder as this one, which is also why it is a
-     separate file: uploading it costs no extra step.
-
-     It cannot begin until the signature has finished, or the two
-     would be on screen at once. */
-  let loaderDone = false;
-  let neuroWanted = false;
-
-  function startNeuro() {
-    if (!loaderDone || !neuroWanted || !window.NEURO) return;
-    window.NEURO.start();
-  }
-
-  /** Can this machine carry a lit, shadowed, jointed 3D figure? */
-  function heavyEnough() {
-    if (reduced) return false;
-    if (matchMedia('(max-width: 900px)').matches) return false;
-    if (matchMedia('(pointer: coarse)').matches) return false;
-    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) return false;
-    if (navigator.deviceMemory && navigator.deviceMemory < 4) return false;
-    try {
-      const c = document.createElement('canvas');
-      return !!(c.getContext('webgl2') || c.getContext('webgl'));
-    } catch { return false; }
-  }
-
-  function loadNeural() {
-    if (window.NEURO) { startNeuro(); return; }
-    if (document.getElementById('neuroScript')) return;
-    const sc = document.createElement('script');
-    sc.id = 'neuroScript';
-    // The 3D figure is worth it on a desktop with a real GPU and
-    // actively harmful on a phone, where it would cost seconds of
-    // load and a visible bite out of the battery. Both files expose
-    // the same window.NEURO, so nothing below here knows which ran.
-    sc.src = heavyEnough() ? '/assets/js/robot3d.js' : '/assets/js/neural.js';
-    sc.defer = true;
-    sc.addEventListener('load', startNeuro);
-    document.head.appendChild(sc);
-  }
-
-  document.addEventListener('loader:done', () => { loaderDone = true; startNeuro(); });
-  // if the signature never announces itself, do not hold the scene hostage
-  setTimeout(() => { loaderDone = true; startNeuro(); }, 9000);
 
   /* ------------------------------------------------------- applying */
   const TILT_PAPER = { '.project': '1.2', '.tl-item': '1.6', '.card': '2' };
@@ -648,9 +597,6 @@
       window.TERMINAL?.unmount();
     }
 
-    neuroWanted = mode === 'neural';
-    if (neuroWanted) loadNeural();
-    else if (window.NEURO) window.NEURO.stop();
     if (announce && mode === 'paper') flip(false);
     document.dispatchEvent(new CustomEvent('mode:changed', { detail: { mode } }));
   }

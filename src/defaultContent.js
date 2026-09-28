@@ -1,12 +1,12 @@
 /**
- * Default portfolio content, generated from READ LEVA ALALLOŞ's CV.
+ * Default portfolio content, generated from Read Aloush's CV.
  * This is only used to seed the database on the very first run.
  * After that, everything is edited through the hidden admin panel.
  */
 module.exports = {
   "profile": {
-    "name": "READ LEVA ALALLOŞ",
-    "shortName": "Read Alalloş",
+    "name": "Read Aloush",
+    "shortName": "Read Aloush",
     "title": "AI & Robotics Engineer",
     "roles": [
       "AI & Robotics Engineer",
@@ -15,7 +15,7 @@ module.exports = {
       "Autonomous Systems Builder"
     ],
     "tagline": "Computer Vision · Embedded AI · Autonomous Systems",
-    "summary": "AI & Robotics Engineer and Information Technologies Master's student with proven experience in computer vision, embedded AI, and autonomous systems. Demonstrated success in deploying high-accuracy deep learning models (>97%) on edge devices such as the Raspberry Pi, and engineering TÜBİTAK-funded autonomous drone projects. Adept at bridging the gap between advanced software architectures (ROS2, TensorFlow, PyTorch) and industrial automation systems.",
+    "summary": "AI & Robotics Engineer and Computer Engineering Master's student with proven experience in computer vision, embedded AI, and autonomous systems. Demonstrated success in deploying high-accuracy deep learning models (>97%) on edge devices such as the Raspberry Pi, and engineering TÜBİTAK-funded autonomous drone projects. Adept at bridging the gap between advanced software architectures (ROS2, TensorFlow, PyTorch) and industrial automation systems.",
     "photo": "/assets/uploads/0-gpbx9dqnhzxv-lyi-a81ac98b.webp",
     "location": "Konya, Türkiye",
     "email": "readaloush@gmail.com",
@@ -352,6 +352,7 @@ module.exports = {
       "note": "Relevant coursework: Robotics, Artificial Intelligence, Computer Vision, Embedded Systems, Control Systems, Industrial Automation."
     }
   ],
+  "certificates": [],
   "sections": {
     "newsTitle": "Announcements",
     "newsKicker": "What is new, straight from me",
@@ -363,16 +364,17 @@ module.exports = {
     "experienceKicker": "Where I have shipped",
     "projectsTitle": "Projects",
     "projectsKicker": "Things I built and measured",
+    "certificatesTitle": "Certificates",
+    "certificatesKicker": "Proof, on paper",
+    "experienceImage": "",
     "educationTitle": "Education",
     "educationKicker": "Academic background",
-    "contactTitle": "Let us talk",
+    "contactTitle": "Let's talk",
     "contactKicker": "Book a slot, not a contact form"
   },
   "meta": {
-    "siteTitle": "Read Leva Alalloş — AI & Robotics Engineer",
-    "metaDescription": "Portfolio of Read Leva Alalloş, AI & Robotics Engineer specialising in computer vision, embedded AI and autonomous systems.",
-    "footerNote": "Designed, coded and signed by Read Leva Alalloş.",
-    "accent": "#00e5ff",
-    "accent2": "#7c5cff"
+    "siteTitle": "Read Aloush — AI & Robotics Engineer",
+    "metaDescription": "Portfolio of Read Aloush, AI & Robotics Engineer specialising in computer vision, embedded AI and autonomous systems.",
+    "footerNote": "Designed, coded and signed by Read Aloush."
   }
 };

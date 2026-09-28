@@ -58,13 +58,12 @@
       { g: 'go', label: ':skills', hint: 'languages, frameworks, hardware', keys: 'yetenekler beceri skills', run: () => goTo('#skills') },
       { g: 'go', label: ':experience', hint: 'internships and roles', keys: 'deneyim is tecrube staj work', run: () => goTo('#experience') },
       { g: 'go', label: ':projects', hint: 'what he has built', keys: 'projeler proje work', run: () => goTo('#projects') },
+      { g: 'go', label: ':certificates', hint: 'certificates and awards', keys: 'sertifika sertifikalar certificate award belge', run: () => goTo('#certificates') },
       { g: 'go', label: ':education', hint: 'degrees and coursework', keys: 'egitim okul universite school', run: () => goTo('#education') },
       { g: 'go', label: ':contact', hint: 'book a slot, or just write', keys: 'iletisim contact mail', run: () => goTo('#contact') },
       { g: 'go', label: ':contents', hint: 'back to the contents page', keys: 'icindekiler kapak index son', run: () => goTo('#top') },
 
       { g: 'mode', label: ':modern', hint: 'the site as built', keys: 'modern normal varsayilan', run: () => mode('modern') },
-      { g: 'mode', label: ':notebook', hint: 'ruled paper, turning pages', keys: 'defter kagit notebook paper', run: () => mode('paper') },
-      { g: 'mode', label: ':neural', hint: 'the robot, in three dimensions', keys: 'neural robot 3d sinir', run: () => mode('neural') },
       { g: 'mode', label: ':press', hint: 'the site as a printed quarterly', keys: 'dergi gazete press editorial matbaa', run: () => mode('press') },
       { g: 'mode', label: ':terminal', hint: 'the site as a shell — ls, cat, git log', keys: 'terminal shell konsol komut satiri', run: () => mode('shell') },
 

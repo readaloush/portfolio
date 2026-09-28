@@ -93,11 +93,19 @@
           <p id="arcOverText">Game over</p>
           <button class="arc-btn" id="arcAgain">Play again</button>
         </div>
+        <div class="arc-ready" id="arcReady">
+          <p class="arc-ready-name" id="arcReadyName">Snake</p>
+          <p class="arc-ready-how" id="arcReadyHow"></p>
+          <button class="arc-btn big" id="arcStart">▶ Start</button>
+          <p class="arc-ready-hint">or press Space · pick another game above</p>
+        </div>
       </div>
+      <div class="arc-pad" id="arcPad" aria-label="On-screen controls"></div>
       <footer class="arc-foot">
         <span>score <i id="arcScore">0</i></span>
         <span>best <i id="arcBest">0</i></span>
         <span class="arc-keys" id="arcKeys"></span>
+        <button type="button" class="arc-pause" id="arcPause">Pause</button>
       </footer>
     </div>`;
   document.body.appendChild(shell);
@@ -111,6 +119,51 @@
   const elOver = shell.querySelector('#arcOver');
   const elOverText = shell.querySelector('#arcOverText');
   const elTabs = shell.querySelector('#arcTabs');
+  const elReady = shell.querySelector('#arcReady');
+  const elPad = shell.querySelector('#arcPad');
+  const elPause = shell.querySelector('#arcPause');
+  /* A game waits on its start screen until it is asked to begin, so
+     switching games with the mouse never throws you into a running one. */
+  let waiting = true;
+  const HOW = {
+    snake: 'Eat the dots, do not bite yourself. Arrow keys, swipes, or the buttons below.',
+    tetris: 'Fill whole rows. ← → move, ↑ turns, ↓ drops faster, Space drops.',
+    breakout: 'Keep the ball up and clear the bricks. Move the paddle with the mouse or ← →.'
+  };
+  const PADS = {
+    snake: [['ArrowLeft', '←'], ['ArrowUp', '↑'], ['ArrowDown', '↓'], ['ArrowRight', '→']],
+    tetris: [['ArrowLeft', '←'], ['ArrowUp', '↻'], ['ArrowDown', '↓'], ['ArrowRight', '→'], [' ', 'Drop']],
+    breakout: [['ArrowLeft', '←'], [' ', 'Launch'], ['ArrowRight', '→']]
+  };
+  function begin() {
+    if (!waiting || !current) return;
+    waiting = false;
+    elReady.hidden = true;
+    last = performance.now(); acc = 0;
+    beep(880, 0.06, 0.04, 'triangle');
+  }
+  function setPaused(v) {
+    paused = v;
+    elPause.textContent = paused ? 'Resume' : 'Pause';
+  }
+  shell.querySelector('#arcStart').addEventListener('click', begin);
+  elPause.addEventListener('click', () => { if (!waiting && !dead) setPaused(!paused); });
+  // on-screen buttons: a press is a key-down, holding keeps the key held
+  elPad.addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('[data-key]');
+    if (!b) return;
+    e.preventDefault();
+    if (waiting) { begin(); return; }
+    const k = b.dataset.key;
+    current?.press?.(k);
+    keys.add(k);
+    const up = () => { keys.delete(k); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); };
+    addEventListener('pointerup', up); addEventListener('pointercancel', up);
+  });
+  canvas.addEventListener('click', () => {
+    if (waiting) { begin(); return; }
+    if (current && current.id === 'breakout') current.press?.(' ');
+  });
 
   /* ------------------------------------------------------ the keys */
   const keys = new Set();
@@ -127,7 +180,11 @@
     }
     if (e.type === 'keydown') {
       if (e.key === 'Escape') { close(); return; }
-      if (e.key === 'p' || e.key === 'P') { paused = !paused; return; }
+      if (waiting) {
+        if (e.key === ' ' || e.key === 'Enter') begin();
+        return;
+      }
+      if (e.key === 'p' || e.key === 'P') { if (!dead) setPaused(!paused); return; }
       if (!keys.has(e.key)) current?.press?.(e.key);
       keys.add(e.key);
     } else {
@@ -148,6 +205,7 @@
     const t = e.changedTouches[0];
     const dx = t.clientX - tStart.x;
     const dy = t.clientY - tStart.y;
+    if (waiting) { tStart = null; return; }
     if (Math.hypot(dx, dy) < 24) current?.press?.(' ');
     else if (Math.abs(dx) > Math.abs(dy)) current?.press?.(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
     else current?.press?.(dy > 0 ? 'ArrowDown' : 'ArrowUp');
@@ -193,7 +251,7 @@
     if (!open || !current) return;
     const dt = Math.min(0.25, (now - last) / 1000 || 0);
     last = now;
-    if (!paused && !dead) {
+    if (!paused && !dead && !waiting) {
       acc += dt;
       let guard = 0;
       while (acc >= STEP && guard++ < 240) {
@@ -203,7 +261,7 @@
     }
     ctx.clearRect(0, 0, current.w, current.h);
     current.draw(ctx, C);
-    if (paused && !dead) {
+    if (paused && !dead && !waiting) {
       ctx.fillStyle = 'rgba(0,0,0,.55)';
       ctx.fillRect(0, 0, current.w, current.h);
       ctx.fillStyle = C.text;
@@ -589,7 +647,12 @@
     current = MAKE[name]();
     current.reset();
     dead = false;
-    paused = false;
+    setPaused(false);
+    waiting = true;
+    elReady.hidden = false;
+    shell.querySelector('#arcReadyName').textContent = current.name;
+    shell.querySelector('#arcReadyHow').textContent = HOW[name] || '';
+    elPad.innerHTML = (PADS[name] || []).map(([k, l]) => `<button type="button" data-key="${k === ' ' ? ' ' : k}">${l}</button>`).join('');
     acc = 0;
     last = performance.now();
     setScore(0);
@@ -601,10 +664,9 @@
       b.classList.toggle('on', b.dataset.game === name);
     });
     fit();
-    beep(880, 0.06, 0.04, 'triangle');
   }
 
-  shell.querySelector('#arcAgain').addEventListener('click', () => start(current.id));
+  shell.querySelector('#arcAgain').addEventListener('click', () => { start(current.id); begin(); });
   shell.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) close(); });
 
   function show(name) {
@@ -628,7 +690,7 @@
   }
 
   addEventListener('resize', () => { if (open) fit(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) paused = true; });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && !waiting) setPaused(true); });
   new MutationObserver(readColours).observe(document.documentElement, {
     attributes: true, attributeFilter: ['data-theme', 'data-mode']
   });

@@ -16,7 +16,7 @@
 (() => {
   'use strict';
 
-  const HOST = 'read@alallos';
+  const HOST = 'read@aloush';
   const HISTORY_KEY = 'rp_sh_history';
 
   let content = null;
@@ -33,7 +33,7 @@
   root.innerHTML = `
     <div class="sh-bar">
       <span class="sh-dot r"></span><span class="sh-dot y"></span><span class="sh-dot g"></span>
-      <b id="shTitle">read@alallos: ~</b>
+      <b id="shTitle">read@aloush: ~</b>
     </div>
     <div class="sh-screen" id="shScreen" tabindex="-1">
       <div id="shOut"></div>
@@ -42,7 +42,12 @@
         <input class="sh-in" id="shIn" type="text" spellcheck="false"
                autocapitalize="off" autocorrect="off" aria-label="Command">
       </form>
-    </div>`;
+    </div>
+    <aside class="sh-help" aria-label="Commands you can try">
+      <p class="sh-help-title">Try a command — click it or type it</p>
+      <div class="sh-chips" id="shChips"></div>
+      <p class="sh-help-foot">Tab completes · ↑ ↓ history · <b>exit</b> goes back to the site</p>
+    </aside>`;
   document.body.appendChild(root);
 
   const out = root.querySelector('#shOut');
@@ -106,7 +111,7 @@
   }
 
   const slug = (s) => String(s || '')
-    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 28);
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 44).replace(/-$/, '');
 
   const projectBySlug = (name) =>
     (content.projects || []).find((p) => slug(p.title) === name || slug(p.title).startsWith(name));
@@ -127,8 +132,6 @@
         document.getElementById('soundBtn')?.click();
         return 'sound.js: terminated';
       } },
-    { pid: 103, cmd: 'robot3d.js', note: 'the figure in neural mode',
-      kill: () => { window.NEURO?.stop?.(); return 'robot3d.js: terminated'; } },
     { pid: 104, cmd: 'arcade.js', note: 'snake, tetris, breakout',
       kill: () => { window.ARCADE?.close?.(); return 'arcade.js: terminated'; } },
     { pid: 105, cmd: 'chat.js', note: 'the assistant',
@@ -316,7 +319,7 @@
       `Role     ${p.title || ''}`,
       `Base     ${p.location || ''}`,
       `Shell    portfolio-sh 1.0`,
-      `Modes    modern notebook neural press terminal`,
+      `Modes    modern press terminal`,
       ...stats.slice(0, 3).map((s) => `Stat     ${s.value}${s.suffix || ''} ${s.label}`)
     ];
     const n = Math.max(left.length, right.length);
@@ -388,9 +391,9 @@
     say('starting ' + g + ' — esc to come back');
   });
   define('mode', 'switch presentation', (args) => {
-    const m = { modern: 'modern', notebook: 'paper', paper: 'paper', neural: 'neural',
+    const m = { modern: 'modern', 
                 press: 'press', terminal: 'shell', shell: 'shell' }[(args[0] || '').toLowerCase()];
-    if (!m) return say('mode: modern | notebook | neural | press | terminal', 'sh-err');
+    if (!m) return say('mode: modern | press | terminal', 'sh-err');
     document.querySelector(`.mode-tab[data-mode="${m}"]`)?.click();
   });
   define('theme', 'light or dark', () => {
@@ -404,7 +407,7 @@
   });
   define('echo', 'say it back', (args) => say(args.join(' ')));
   define('date', 'today', () => say(new Date().toString()));
-  define('uname', 'the system', () => say('portfolio-sh 1.0 (read@alallos) — no dependencies, no build step'));
+  define('uname', 'the system', () => say('portfolio-sh 1.0 (read@aloush) — no dependencies, no build step'));
   define('sudo', 'no', (args) => {
     say(`read is not in the sudoers file. This incident will be reported.`, 'sh-err');
     if (args.length) say('(it was not reported.)', 'sh-dim');
@@ -478,6 +481,27 @@
     if (!e.target.closest('a')) input.focus();
   });
 
+  /* ---------------------------------------------- the cheat sheet
+     The commands are on screen, not hidden behind `help`: a visitor who
+     has never used a terminal can click one and see what it does. */
+  const CHIPS = [
+    ['help', 'every command'], ['ls', 'what is here'], ['cat about.md', 'who he is'],
+    ['cat skills.json', 'the stack'], ['cat experience.log', 'where he worked'],
+    ['ls projects', 'the projects'], ['cat education.md', 'degrees'], ['cat news.log', 'announcements'],
+    ['whoami', 'in one line'], ['neofetch', 'the system'], ['cat contact.vcf', 'how to reach him'],
+    ['cv', 'open the CV'], ['book', 'book a meeting'], ['play snake', 'a game'],
+    ['theme', 'light / dark'], ['clear', 'wipe the screen'], ['exit', 'back to the site']
+  ];
+  const chips = root.querySelector('#shChips');
+  chips.innerHTML = CHIPS.map(([c, d]) =>
+    `<button type="button" class="sh-chip" data-cmd="${esc(c)}"><code>${esc(c)}</code><span>${esc(d)}</span></button>`).join('');
+  chips.addEventListener('click', (e) => {
+    const b = e.target.closest('.sh-chip');
+    if (!b) return;
+    run(b.dataset.cmd);
+    input.focus();
+  });
+
   /* ----------------------------------------------------- the boot */
   async function boot() {
     if (booted) { input.focus(); return; }
@@ -489,7 +513,8 @@
     await type(`last login: ${new Date().toDateString()} on ttys001`, 9);
     blank();
     await type(`${p.name || ''} · ${p.title || ''}`, 14);
-    say('Type `help` for the commands, or `ls` to look around.');
+    say('Type a command below, or click one of the commands on the right.');
+    say('Start with `ls` to look around, or `cat about.md` to read about him.');
     blank();
     input.focus();
   }

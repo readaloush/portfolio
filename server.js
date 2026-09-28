@@ -319,6 +319,13 @@ app.get('/assets/uploads/:file', (req, res) => {
     'Content-Security-Policy': "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
     'X-Content-Type-Options': 'nosniff'
   };
+  /* A PDF is the exception. Chrome refuses to open its PDF viewer inside a
+     sandboxed document, so the CV button showed "blocked" instead of the
+     CV. A PDF cannot run script in this origin — the viewer is isolated
+     on its own — and nosniff still pins it to application/pdf. */
+  if (path.extname(name).toLowerCase() === '.pdf') {
+    delete guard['Content-Security-Policy'];
+  }
 
   if (fs.existsSync(onDisk)) return res.sendFile(onDisk, guard);
   if (fs.existsSync(inRepo)) return res.sendFile(inRepo, guard);

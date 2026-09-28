@@ -40,7 +40,7 @@ async function call(method, url, body) {
   /* ---------- public content ---------- */
   let r = await call('GET', '/api/content');
   assert.strictEqual(r.status, 200);
-  assert.strictEqual(r.body.content.profile.name, 'READ LEVA ALALLOŞ');
+  assert.strictEqual(r.body.content.profile.name, 'Read Aloush');
   assert.strictEqual(r.body.content.projects.length, 3);
   assert.strictEqual(r.body.content.experience.length, 3);
   assert.strictEqual(r.body.content.skills.length, 4);
@@ -180,7 +180,7 @@ async function call(method, url, body) {
 
   /* ---------- editing everything ---------- */
   const { content } = (await call('GET', '/api/content')).body;
-  content.profile.name = 'READ ALALLOŞ';
+  content.profile.name = 'READ ALOUSH';
   content.profile.calendarUrl = 'https://calendar.google.com/calendar/appointments/schedules/TEST';
   content.socials[0].url = 'https://github.com/readalallos';
   content.projects[0].title = 'Renamed project';
@@ -193,7 +193,7 @@ async function call(method, url, body) {
   assert.strictEqual(r.status, 200);
 
   const after = (await call('GET', '/api/content')).body.content;
-  assert.strictEqual(after.profile.name, 'READ ALALLOŞ');
+  assert.strictEqual(after.profile.name, 'READ ALOUSH');
   assert.strictEqual(after.projects.length, 4);
   assert.strictEqual(after.projects[0].title, 'Renamed project');
   assert.strictEqual(after.experience[0].role, 'Senior AI Engineer');

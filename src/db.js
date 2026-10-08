@@ -91,13 +91,15 @@ function withDefaults(saved) {
   return out;
 }
 
+const { withCaseDefaults } = require('./caseDefaults');
+
 function getContent() {
   const row = db.prepare('SELECT data, updated_at FROM content WHERE id = 1').get();
-  if (!row) return { ...defaultContent };
+  if (!row) return withCaseDefaults({ ...defaultContent });
   try {
-    return withDefaults(JSON.parse(row.data));
+    return withCaseDefaults(withDefaults(JSON.parse(row.data)));
   } catch {
-    return { ...defaultContent };
+    return withCaseDefaults({ ...defaultContent });
   }
 }
 

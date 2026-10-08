@@ -64,7 +64,7 @@
     const nextV = next ? shape(kind, next) : null;
     const back = { projects: 'All projects', experience: 'All experience', education: 'Education' }[kind];
     const meta = [
-      ['Role', it.role && kind === 'projects' ? it.role : (kind !== 'projects' ? v.org : it.role)],
+      kind === 'projects' ? ['Role', it.role] : [kind === 'experience' ? 'Company' : 'School', v.org],
       ['When', v.when], ['Duration', it.duration], ['Team', it.team], ['Status', it.status], ['Stack', v.stack]
     ].filter(([, x]) => x && String(x).trim());
     const links = (v.links || []).filter(([, u]) => u && String(u).trim());
@@ -90,7 +90,7 @@
         ${links.length ? `<div class="case-links">${links.map(([k, u]) => {
           const ext = /^https?:/i.test(u);
           const host = ext ? String(u).replace(/^https?:\/\/(www\.)?/i, '').split('/')[0] : 'PDF';
-          return `<a class="case-link" href="${esc(u)}"${ext || /\.pdf($|\?)/i.test(u) ? ' target="_blank" rel="noopener"' : ''}><b>${esc(k)} ↗</b><span>${esc(host)}</span></a>`;
+          return `<a class="case-link" href="${esc(u)}"${ext || /\.pdf($|\?)/i.test(u) ? ' target="_blank" rel="noopener"' : ''}><b>${esc(k)} <i aria-hidden="true">↗</i></b><span>${esc(host)}</span></a>`;
         }).join('')}</div>` : ''}
 
         ${v.image ? `<figure class="case-cover"><img src="${esc(v.image)}" alt="${esc(v.title)}" loading="eager" decoding="async"><figcaption>${esc(v.title)}</figcaption></figure>` : ''}
@@ -108,6 +108,18 @@
               <div class="case-ch-s"><em>Solution</em>${para(x.solution)}</div></li>`).join('')}</ol></section>` : ''}
           ${results.length ? `<section><h2>Results</h2><ul class="case-results">${results.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></section>` : ''}
           ${it.reflection ? `<section><h2>Reflection</h2>${para(it.reflection)}</section>` : ''}
+          ${(() => {
+            const p = (content || {}).profile || {};
+            const more = links.slice();
+            if (p.email) more.push(['Ask me about it', `mailto:${p.email}?subject=${encodeURIComponent(v.title)}`]);
+            if (p.calendarUrl) more.push(['Book a call', p.calendarUrl]);
+            if (p.cvUrl) more.push(['CV', p.cvUrl]);
+            return more.length ? `<section><h2>Links</h2><div class="case-links case-links-end">${more.map(([k, u]) => {
+              const ext = /^https?:/i.test(u);
+              const host = /^mailto:/i.test(u) ? String(u).slice(7).split('?')[0] : ext ? String(u).replace(/^https?:\/\/(www\.)?/i, '').split('/')[0] : 'PDF';
+              return `<a class="case-link" href="${esc(u)}"${ext || /\.pdf($|\?)/i.test(u) ? ' target="_blank" rel="noopener"' : ''}><b>${esc(k)} <i aria-hidden="true">↗</i></b><span>${esc(host)}</span></a>`;
+            }).join('')}</div></section>` : '';
+          })()}
         </div>
 
         <nav class="case-foot">

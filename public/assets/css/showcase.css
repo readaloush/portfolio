@@ -1581,3 +1581,8 @@ html[dir="rtl"] .ww-index button, html[dir="rtl"] .ww-label, html[dir="rtl"] .ww
 html[dir="rtl"] .jt, html[dir="rtl"] .ss, html[dir="rtl"] .ww, html[dir="rtl"] .lg { margin-left: 0; margin-right: calc(50% - 50vw); }
 .case-links-end { margin-top: 6px; }
 .case-link b i { font-style: normal; }
+@media (max-width: 1220px) {
+  .nav-links { visibility: hidden; transition: transform .6s var(--ease), visibility 0s linear .6s; }
+  .nav-links.open { visibility: visible; transition: transform .6s var(--ease), visibility 0s; }
+  html[data-mode="press"] .nav-links:not(.open) { transform: translateY(calc(-100% - var(--press-head-h, 44px) - 20px)); }
+}

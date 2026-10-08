@@ -1,18 +1,3 @@
-/* ==================================================================
-   TERMINAL MODE
-   ------------------------------------------------------------------
-   The fifth presentation: the site as a shell. The sections are files,
-   the projects are a directory, and you read them with cat.
-
-   Everything printed here comes from the same database the other four
-   modes read. Nothing is retyped into this file — if he edits a bullet
-   in the admin panel, `cat projects/drone` says the new bullet. A
-   terminal that lied about the content would be a screensaver.
-
-   The jokes are real where they can be. `kill 102` does not print a
-   message about killing the sound; it mutes the site. `sudo` refuses,
-   the way sudo does.
-   ================================================================== */
 (() => {
   'use strict';
 
@@ -25,7 +10,6 @@
   let hIndex = -1;
   let booted = false;
 
-  /* ------------------------------------------------------ the DOM */
   const root = document.createElement('section');
   root.id = 'shell';
   root.className = 'sh';
@@ -56,7 +40,6 @@
   const screen = root.querySelector('#shScreen');
   const title = root.querySelector('#shTitle');
 
-  /* ----------------------------------------------------- printing */
   const esc = (s) => String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -71,7 +54,6 @@
   const say = (text, cls) => print(esc(text), cls);
   const blank = () => print('&nbsp;');
 
-  /** Print a line a character at a time — used only for the boot. */
   function type(text, speed = 12) {
     return new Promise((res) => {
       const row = print('');
@@ -91,19 +73,13 @@
     title.textContent = `${HOST}: ${cwd}`;
   };
 
-  /* -------------------------------------------------- the content
-     Read once from the same endpoint the site itself uses. */
   async function load() {
     if (content) return content;
     try {
       const r = await fetch('/api/content', { cache: 'no-store' });
       const payload = await r.json();
-      /* The endpoint wraps the content and adds metadata alongside it:
-         { content: {...}, updatedAt, revision }. app.js has always
-         unwrapped it — `render(data.content)` — and this file did not,
-         so every command that touched the database printed undefined
-         while `ls`, which reads a fixed list, looked fine. */
       content = payload.content || payload;
+      if (window.I18N) content = window.I18N.content(content);
     } catch {
       content = { profile: {}, projects: [], skills: [], experience: [], education: [] };
     }
@@ -116,14 +92,11 @@
   const projectBySlug = (name) =>
     (content.projects || []).find((p) => slug(p.title) === name || slug(p.title).startsWith(name));
 
-  /* ------------------------------------------------- the file tree */
   const FILES = {
     '~': ['about.md', 'news.log', 'skills.json', 'experience.log', 'projects/', 'education.md', 'contact.vcf', 'cv.pdf'],
     '~/projects': () => (content.projects || []).map((p) => slug(p.title))
   };
 
-  /* ----------------------------------------------- the running jobs
-     Real handles where a real handle exists. */
   const JOBS = [
     { pid: 101, cmd: 'signature.js', note: 'draws the mark', kill: () => 'signature.js: cannot kill — it is the whole point' },
     { pid: 102, cmd: 'sound.js', note: 'synthesised interface audio',
@@ -142,7 +115,6 @@
       } }
   ];
 
-  /* ------------------------------------------------- the commands */
   const CMD = {};
   const define = (name, help, run) => { CMD[name] = { help, run }; };
 
@@ -192,9 +164,6 @@
       return;
     }
     if (f === 'news.log') {
-      /* Same rules as every other mode: drafts stay unpublished, pinned
-         first, then newest. A shell that quietly showed the drafts would
-         be a hole in the admin panel, not a joke. */
       const live = (c.announcements || [])
         .filter((a) => a && a.published !== false && (a.title || a.body))
         .sort((a, b) => (!!b.pinned !== !!a.pinned)
@@ -350,7 +319,6 @@
       return;
     }
     if (sub === 'log' || !sub) {
-      // the history is real: it is his own, newest first
       const items = [
         ...(content.projects || []).map((p) => ({ when: p.period, what: p.title, type: 'feat' })),
         ...(content.experience || []).map((x) => ({ when: x.period, what: `${x.role} at ${x.company}`, type: 'work' })),
@@ -420,7 +388,6 @@
     say('    ' + c.help);
   });
 
-  /* --------------------------------------------------- the parser */
   async function run(line) {
     const trimmed = line.trim();
     print(`<span class="sh-ps1">${esc(HOST)}:${esc(cwd)}$</span> ${esc(trimmed)}`, 'sh-echo');
@@ -428,7 +395,7 @@
 
     history.unshift(trimmed);
     history = history.slice(0, 60);
-    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch { /* ignore */ }
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch {  }
     hIndex = -1;
 
     const [name, ...args] = trimmed.split(/\s+/);
@@ -441,7 +408,6 @@
     try { cmd.run(args); } catch (err) { say(String(err && err.message || err), 'sh-err'); }
   }
 
-  /* ---------------------------------------------------- the input */
   root.querySelector('#shForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const v = input.value;
@@ -481,9 +447,6 @@
     if (!e.target.closest('a')) input.focus();
   });
 
-  /* ---------------------------------------------- the cheat sheet
-     The commands are on screen, not hidden behind `help`: a visitor who
-     has never used a terminal can click one and see what it does. */
   const CHIPS = [
     ['help', 'every command'], ['ls', 'what is here'], ['cat about.md', 'who he is'],
     ['cat skills.json', 'the stack'], ['cat experience.log', 'where he worked'],
@@ -502,7 +465,6 @@
     input.focus();
   });
 
-  /* ----------------------------------------------------- the boot */
   async function boot() {
     if (booted) { input.focus(); return; }
     booted = true;
@@ -522,7 +484,7 @@
   try {
     const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
     if (Array.isArray(saved)) history = saved;
-  } catch { /* ignore */ }
+  } catch {  }
 
   setPrompt();
 

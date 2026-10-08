@@ -1,12 +1,3 @@
-/* ==================================================================
-   Interface sounds. No audio files — every tone is generated live by
-   the Web Audio API, so the site downloads nothing extra.
-
-   There is deliberately NO background drone. A sound that never stops
-   is the thing people end up muting; the site stays completely silent
-   until you actually touch something, and then answers with one short
-   note. Short, tuned, and in a small room.
-   ================================================================== */
 (() => {
   const STORAGE_KEY = 'rp_sound';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -19,13 +10,12 @@
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved !== null) return saved === '1';
-    } catch { /* ignore */ }
+    } catch {  }
     return !reduced;
   })();
 
   const MASTER_VOLUME = 0.2;
 
-  /* short generated room, so single notes do not sound bare */
   function makeImpulse(seconds = 1.6, decay = 3.4) {
     const rate = ctx.sampleRate;
     const len = Math.floor(rate * seconds);
@@ -99,7 +89,6 @@
     osc.stop(t + dur + 0.05);
   }
 
-  /* the only mechanical sound on the site: the light switch */
   function tick({ dur = 0.03, gain = 0.2, freq = 2200, Q = 2 }) {
     if (!live()) return;
     const t = now();
@@ -130,7 +119,6 @@
   const SFX = {
     get enabled() { return enabled; },
 
-    /** Browsers stay silent until the visitor interacts with the page. */
     unlockAudio() {
       const c = ensureContext();
       if (!c) return;
@@ -139,7 +127,7 @@
 
     setEnabled(v) {
       enabled = !!v;
-      try { localStorage.setItem(STORAGE_KEY, enabled ? '1' : '0'); } catch { /* ignore */ }
+      try { localStorage.setItem(STORAGE_KEY, enabled ? '1' : '0'); } catch {  }
       const c = ensureContext();
       if (!c) return;
       if (enabled && c.state === 'suspended') c.resume().catch(() => {});
@@ -150,10 +138,8 @@
 
     toggle() { this.setEnabled(!enabled); },
 
-    /* barely there — a breath, not a beep */
     hover() { tone({ freq: 1567.98, dur: 0.07, gain: 0.02, attack: 0.004, send: 0.45 }); },
 
-    /* one clean note down an octave */
     click() {
       tone({ freq: 1046.5, dur: 0.1, gain: 0.045, send: 0.35 });
       tone({ freq: 523.25, dur: 0.16, gain: 0.03, delay: 0.02, send: 0.35 });
@@ -180,7 +166,6 @@
       tone({ freq: 174.61, dur: 0.28, gain: 0.05, delay: 0.11, send: 0.35 });
     },
 
-    /* the one moment with any weight: the signature finishes drawing */
     chime() {
       [783.99, 1174.66, 1567.98].forEach((f, i) =>
         tone({ freq: f, dur: 1.8 - i * 0.35, gain: 0.042, attack: 0.012, delay: i * 0.085, send: 0.8 })

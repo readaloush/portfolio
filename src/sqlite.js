@@ -1,23 +1,11 @@
-/**
- * Tiny SQLite adapter.
- *
- * Tries `better-sqlite3` first (fastest). If it is not installed or its
- * native binary will not load, it falls back to `node:sqlite`, which is
- * built into Node 22+ and needs no installation at all.
- *
- * Both drivers expose the same surface we use: exec / prepare().get()
- * / prepare().all() / prepare().run().
- */
 function open(file) {
   try {
     const Database = require('better-sqlite3');
     const db = new Database(file);
-    // WAL is faster, but it is unsupported on some network/mounted drives.
-    try { db.pragma('journal_mode = WAL'); } catch { /* keep the default journal */ }
+    try { db.pragma('journal_mode = WAL'); } catch {  }
     db.__driver = 'better-sqlite3';
     return db;
   } catch (err) {
-    // fall through to the built-in driver
   }
 
   let sqlite;
@@ -32,9 +20,8 @@ function open(file) {
   }
 
   const raw = new sqlite.DatabaseSync(file);
-  try { raw.exec('PRAGMA journal_mode = WAL'); } catch { /* keep the default journal */ }
+  try { raw.exec('PRAGMA journal_mode = WAL'); } catch {  }
 
-  // node:sqlite returns null-prototype rows; normalise them to plain objects
   const plain = (row) => (row == null ? row : Object.assign({}, row));
 
   return {

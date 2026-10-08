@@ -3,32 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/assets/js/i18n.js?v=7"></script>
 <title>Read Aloush — AI &amp; Robotics Engineer</title>
 <meta name="description" id="metaDescription" content="Portfolio of Read Aloush, AI &amp; Robotics Engineer specialising in computer vision, embedded AI and autonomous systems.">
-<!-- The tab icon. The old one was an emoji inside an inline SVG, which
-     several browsers decline to draw at all — hence the blank square.
-     A real file, in three formats: SVG for anything modern, a 32px PNG
-     for anything that is not, and a 180px one for an iOS home screen. -->
-<!-- /favicon.ico is listed first and now genuinely exists at that path.
-     Google's icon fetcher, and almost everything that predates declaring
-     icons in the head, asks for that one URL by name before reading a line
-     of HTML. It used to return 404. -->
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" type="image/svg+xml" href="/assets/img/logo.svg">
-<!-- Google documents that the favicon it shows beside a search result must be
-     a square whose side is a multiple of 48. The 16 and 32 px files were not,
-     so the only candidate it could use was the SVG. 96 is the size it renders. -->
-<link rel="icon" type="image/png" sizes="96x96" href="/assets/img/favicon-96.png">
-<link rel="icon" type="image/png" sizes="48x48" href="/assets/img/favicon-48.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16.png">
-<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<link rel="icon" href="/favicon.ico?v=4" sizes="any">
+<link rel="alternate" type="text/markdown" href="/llms.txt" title="Read Aloush — a plain summary for AI assistants">
+<link rel="icon" type="image/svg+xml" href="/assets/img/logo.svg?v=4">
+<link rel="icon" type="image/png" sizes="96x96" href="/assets/img/favicon-96.png?v=4">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/img/favicon-48.png?v=4">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png?v=4">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16.png?v=4">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png?v=4">
 <meta name="theme-color" content="#000000">
 
-<!-- What a shared link looks like. Without these, pasting the address
-     into LinkedIn or WhatsApp produced an empty grey rectangle. The
-     image URL has to be absolute; change the host here on the day the
-     domain moves. -->
 <meta property="og:type" content="profile">
 <meta property="og:site_name" content="Read Aloush">
 <meta property="og:title" content="Read Aloush — AI &amp; Robotics Engineer">
@@ -43,21 +30,14 @@
 <meta name="twitter:image" content="https://read-alallos-portfolio.onrender.com/assets/img/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Caveat:wght@400..700&family=Italianno&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
-<!-- Decides how much animation this machine can afford and writes the
-     answer onto <html> before a single pixel is painted. It has to be a
-     blocking script in the head: if the class arrived later, a weak laptop
-     would paint the expensive version once and then flicker into the
-     cheap one, which is worse than either. Most of the file is comment;
-     the code in it is a few hundred bytes. -->
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Caveat:wght@400..700&family=Italianno&family=Fira+Code:wght@700&family=Antic&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
 <script src="/assets/js/perf.js?v=1"></script>
-<link rel="stylesheet" href="/assets/css/style.css?v=6">
-<link rel="stylesheet" href="/assets/css/refine.css?v=11">
-<link rel="stylesheet" href="/assets/css/showcase.css?v=10">
+<link rel="stylesheet" href="/assets/css/style.css?v=9">
+<link rel="stylesheet" href="/assets/css/refine.css?v=16">
+<link rel="stylesheet" href="/assets/css/showcase.css?v=50">
 </head>
 <body class="is-loading">
 
-<!-- ══════════════ PREMIUM SIGNATURE LOADING SCREEN ══════════════ -->
 <div id="site-loader">
   <div class="signature-wrap" id="sigContainer">
     <svg class="sig-svg" viewBox="0 0 772 317" xmlns="http://www.w3.org/2000/svg">
@@ -84,21 +64,9 @@
     </div>
   </div>
 </div>
-<!-- ══════════════ END LOADING SCREEN ══════════════ -->
 
-<!-- animated network background -->
-<canvas id="netCanvas" aria-hidden="true"></canvas>
-<div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
-<div class="grain" aria-hidden="true"></div>
-
-<!-- custom mouse cursor -->
-<div id="cursorRing" aria-hidden="true"><span id="cursorLabel"></span></div>
-<div id="cursorDot" aria-hidden="true"></div>
-
-<!-- scroll progress -->
 <div id="scrollBar" aria-hidden="true"></div>
 
-<!-- ─────────────────────────── NAV ─────────────────────────── -->
 <header id="nav">
   <a href="#top" class="nav-logo" data-cursor="home" aria-label="Home">
     <span class="nav-logo-sig" id="navSignature"></span>
@@ -116,8 +84,6 @@
   </nav>
 
   <div class="nav-actions">
-    <!-- announcements. The badge counts the ones this browser has not
-         opened yet; the list itself comes from the database. -->
     <button class="bell-btn" id="bellBtn" aria-label="Announcements" data-cursor="news">
       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path class="bell-body" d="M18 8a6 6 0 1 0-12 0c0 6-2 7-2 7h16s-2-1-2-7"/>
@@ -126,7 +92,6 @@
       <span class="bell-badge" id="bellBadge" hidden>0</span>
     </button>
 
-    <!-- sound: every tone is generated live, nothing is downloaded -->
     <button class="sound-btn" id="soundBtn" aria-label="Sound" data-cursor="sound">
       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M11 5 6 9H3v6h3l5 4V5z"/>
@@ -137,11 +102,13 @@
       <span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     </button>
 
-    <!-- electric wall switch -->
-    <button class="switch" id="themeSwitch" aria-label="Toggle light" data-cursor="flip">
-      <span class="switch-plate">
-        <span class="switch-screw t"></span><span class="switch-screw b"></span>
-        <span class="switch-rocker"><span class="switch-glow"></span></span>
+    <button class="switch ws tg" id="themeSwitch" aria-label="Switch between light and dark" data-cursor="flip">
+      <span class="tg-plate" aria-hidden="true">
+        <span class="tg-lamp"></span>
+        <span class="tg-mark on">I</span>
+        <span class="tg-nut"></span>
+        <span class="tg-lever"><i></i></span>
+        <span class="tg-mark off">O</span>
       </span>
       <span class="switch-spark" aria-hidden="true"></span>
     </button>
@@ -158,67 +125,40 @@
 
 <main id="top">
 
-  <!-- ─────────────────────────── INTRO ───────────────────────────
-       A poster with his name on it. Scrolling tears it in two and a tiger
-       looks through the gap. Drawn by showcase2.js. -->
-  <section class="tear" id="intro" aria-label="Intro">
-    <div class="tear-stage" id="tearStage"></div>
-  </section>
-
-  <!-- ─────────────────────────── HERO ─────────────────────────── -->
   <section class="hero" id="hero">
-    <div class="hero-inner">
-      <div class="hero-text parallax" data-depth="14">
-        <p class="kicker reveal"><span class="dot"></span><span id="heroAvailability">Open to AI / Robotics roles</span></p>
-        <h1 class="hero-name reveal" id="heroName">Read Aloush</h1>
+    <div class="ph" id="phStage">
+      <div class="ph-center">
+        <h1 class="ph-name" id="heroName">Read Aloush</h1>
+        <div class="ph-photo photo-frame" id="photoFrame" data-cursor="">
+          <img id="profilePhoto" src="/assets/img/profile.svg" alt="Read Aloush" width="258" height="436" decoding="async" fetchpriority="high">
+        </div>
+      </div>
+      <p class="ph-tagline" id="heroTagline"></p>
+      <a class="ph-scroll" href="#heroMore" aria-label="Scroll down">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </a>
+    </div>
+
+    <div class="hero-inner hero-more" id="heroMore">
+      <div class="hero-text">
+        <p class="kicker reveal" id="heroAvailabilityChip" hidden><span class="dot"></span><span id="heroAvailability">Open to AI / Robotics roles</span></p>
         <h2 class="hero-role reveal">
           <span class="typed" id="typedRole"></span><span class="caret"></span>
         </h2>
-        <p class="hero-tagline reveal" id="heroTagline"></p>
         <p class="hero-summary reveal" id="heroSummary"></p>
 
         <div class="hero-cta reveal">
-          <a href="#projects" class="btn btn-primary magnetic" data-cursor="view"><span class="btn-shine"></span><span>See the work</span></a>
-          <a href="#contact" class="btn btn-ghost magnetic" data-cursor="book"><span>Book a meeting</span></a>
+          <a href="#projects" class="btn btn-primary" data-cursor="view"><span class="btn-shine"></span><span>See the work</span></a>
+          <a href="#contact" class="btn btn-ghost" data-cursor="book"><span>Book a meeting</span></a>
         </div>
 
         <ul class="socials" id="socialList"></ul>
       </div>
-
-      <div class="hero-visual parallax" data-depth="-22">
-        <!-- 5 clicks on this photo open the hidden admin login -->
-        <!-- a credential on a lanyard, swaying in the rain -->
-        <div class="badge-drop" id="badgeDrop">
-        <div class="badge-rig" id="heroBadge">
-          <span class="badge-strap" aria-hidden="true"></span>
-          <span class="badge-clip" aria-hidden="true"></span>
-          <div class="badge-card tilt" id="badgeCard" data-tilt="6">
-            <div class="badge-top">
-              <span class="badge-org">CREDENTIAL · <b id="badgeYear">2026</b></span>
-              <span class="badge-chip" aria-hidden="true"></span>
-            </div>
-            <div class="photo-frame" id="photoFrame" data-cursor="">
-              <img id="profilePhoto" src="/assets/img/profile.svg" alt="Read Aloush">
-            </div>
-            <p class="badge-name" id="badgeName">READ ALOUSH</p>
-            <p class="badge-role" id="badgeRole">AI &amp; Robotics Engineer</p>
-            <div class="badge-foot"><span>ID · RA-01</span><span class="badge-bars" aria-hidden="true"></span></div>
-            <span class="badge-holo" aria-hidden="true"></span>
-          </div>
-        </div>
-        </div>
-        <!-- the signature lives under the photo and never stops moving -->
-        <div class="photo-signature" id="photoSignature" aria-hidden="true"></div>
-        <p class="photo-caption" id="photoCaption">Konya, Türkiye</p>
-      </div>
     </div>
 
     <ul class="stats" id="statList"></ul>
-
-    <div class="scroll-hint" aria-hidden="true"><span></span>scroll</div>
   </section>
 
-  <!-- ─────────────────────────── ANNOUNCEMENTS ─────────────────────────── -->
   <section id="news" class="section">
     <header class="section-head reveal">
       <p class="section-kicker" id="newsKicker"></p>
@@ -227,7 +167,6 @@
     <div class="news-grid" id="newsGrid"></div>
   </section>
 
-  <!-- ─────────────────────────── ABOUT ─────────────────────────── -->
   <section id="about" class="section">
     <header class="section-head reveal">
       <p class="section-kicker" id="aboutKicker"></p>
@@ -247,12 +186,10 @@
         </div>
       </aside>
       </div>
-      <!-- a small world with a robot walking on it; drag to turn it -->
       <div class="planet" id="planet"></div>
     </div>
   </section>
 
-  <!-- ─────────────────────────── SKILLS ─────────────────────────── -->
   <section id="skills" class="section">
     <header class="section-head reveal">
       <p class="section-kicker" id="skillsKicker"></p>
@@ -262,7 +199,6 @@
     <div class="skill-grid" id="skillGrid"></div>
   </section>
 
-  <!-- ─────────────────────────── EXPERIENCE ─────────────────────────── -->
   <section id="experience" class="section">
     <header class="section-head reveal">
       <p class="section-kicker" id="experienceKicker"></p>
@@ -272,7 +208,6 @@
     <div class="jt-details" id="journeyDetails"></div>
   </section>
 
-  <!-- ─────────────────────────── PROJECTS ─────────────────────────── -->
   <section id="projects" class="section">
     <header class="section-head reveal">
       <p class="section-kicker" id="projectsKicker"></p>
@@ -282,7 +217,6 @@
     <div class="pj-list" id="projectList"></div>
   </section>
 
-  <!-- ─────────────────────────── CERTIFICATES ─────────────────────────── -->
   <section id="certificates" class="section">
     <header class="section-head reveal">
       <p class="section-kicker" id="certificatesKicker"></p>
@@ -291,7 +225,6 @@
     <div class="ww" id="wheel"></div>
   </section>
 
-  <!-- ─────────────────────────── EDUCATION ─────────────────────────── -->
   <section id="education" class="section">
     <header class="section-head reveal">
       <p class="section-kicker" id="educationKicker"></p>
@@ -301,7 +234,6 @@
     <div class="edu-grid" id="eduGrid"></div>
   </section>
 
-  <!-- ─────────────────────────── CONTACT ─────────────────────────── -->
   <section id="contact" class="section">
     <header class="section-head reveal">
       <p class="section-kicker" id="contactKicker"></p>
@@ -325,11 +257,6 @@
   <p class="footer-small">© <span id="year"></span> Read Aloush. All rights reserved. Unauthorized use of any content on this site is subject to legal action.</p>
 </footer>
 
-<!-- ─────────────── ANNOUNCEMENTS PANEL ───────────────
-     The short version, hanging off the bell. The full section is #news.
-     "Unread" is remembered per browser in localStorage, never on the
-     server — nobody is being counted or identified.
------------------------------------------------------------------- -->
 <div class="news-pop" id="newsPop" hidden>
   <div class="news-pop-veil" data-news-close></div>
   <section class="news-pop-card" role="dialog" aria-modal="true" aria-label="Announcements">
@@ -344,12 +271,6 @@
   </section>
 </div>
 
-<!-- ─────────────── ADMIN BAR ───────────────
-     Shown only when the server says this browser holds a valid session.
-     Signing in no longer throws you into the editor: you land back on the
-     site, look at it as a visitor does, and open the panel when you
-     actually want to change something.
------------------------------------------------------------------- -->
 <div class="adminbar" id="adminBar" hidden>
   <span class="adminbar-live" aria-hidden="true"></span>
   <span class="adminbar-who">Signed in as <b id="adminBarUser">…</b></span>
@@ -365,11 +286,6 @@
   <button class="adminbar-btn ghost" id="adminBarOut">Sign out</button>
 </div>
 
-<!-- ─────────────── HIDDEN ADMIN LOGIN (5 clicks on the photo) ───────────────
-     No username or password exists anywhere in this file.
-     The form only POSTs to /api/auth/login, which checks a scrypt hash
-     stored in the SQLite database on the server.
-------------------------------------------------------------------------- -->
 <div class="modal" id="loginModal" hidden>
   <div class="modal-backdrop" data-close></div>
   <form class="modal-card" id="loginForm" autocomplete="off">
@@ -384,20 +300,14 @@
   </form>
 </div>
 
-<!-- ─────────────── ASSISTANT ───────────────
-     Answers come from the CV in the database. There is no language
-     model and no API key, so it is instant, free, and cannot invent
-     anything that is not on this site.
---------------------------------------------------------------- -->
-<button class="orb" id="chatOrb" aria-label="Ask about Read" data-cursor="ask">
+<button class="orb orb-ai" id="chatOrb" aria-label="Ask the AI assistant about Read" data-cursor="ask">
   <span class="orb-core">
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="3.2"/>
-      <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z"/>
+      <path d="M20 3v4M22 5h-4M4 17v2M5 18H3"/>
     </svg>
+    <span class="orb-label">Ask AI</span>
   </span>
-  <span class="orb-ring"></span>
-  <span class="orb-ring d2"></span>
   <span class="orb-badge" id="orbBadge">1</span>
 </button>
 
@@ -428,15 +338,16 @@
 <div class="toast" id="toast" hidden><span id="toastText"></span></div>
 <div class="blackout" id="blackout" aria-hidden="true"></div>
 
-<script src="/assets/js/wake.js?v=5"></script>
+<script src="/assets/js/wake.js?v=6"></script>
 <script src="/assets/js/sound.js?v=5"></script>
-<script src="/assets/js/signature.js?v=5"></script>
-<script src="/assets/js/loader.js?v=5"></script>
-<script src="/assets/js/app.js?v=9"></script>
-<script src="/assets/js/chat.js?v=5"></script>
-<script src="/assets/js/showcase.js?v=4"></script>
-<script src="/assets/js/showcase2.js?v=4"></script>
-<script src="/assets/js/showcase3.js?v=6"></script>
-<script src="/assets/js/extras.js?v=10"></script>
+<script src="/assets/js/signature.js?v=6"></script>
+<script src="/assets/js/loader.js?v=6"></script>
+<script src="/assets/js/app.js?v=14"></script>
+<script src="/assets/js/chat.js?v=6"></script>
+<script src="/assets/js/showcase.js?v=7"></script>
+<script src="/assets/js/showcase2.js?v=7"></script>
+<script src="/assets/js/showcase3.js?v=14"></script>
+<script src="/assets/js/case.js?v=3"></script>
+<script src="/assets/js/extras.js?v=20"></script>
 </body>
 </html>

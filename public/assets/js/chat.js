@@ -1,9 +1,3 @@
-/* ==================================================================
-   The assistant in the corner.
-
-   It talks to /api/chat, which builds answers out of the CV stored in
-   the database. No model, no API key, nothing to pay for.
-   ================================================================== */
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const esc = (s) =>
@@ -21,16 +15,12 @@
   let opened = false;
   let busy = false;
 
-  /* ------------------------------------------------------- rendering */
-
-  // a deliberately tiny subset of markdown: **bold**, _quiet_, • bullets
   const rich = (text) =>
     esc(text)
       .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
       .replace(/_(.+?)_/g, '<em>$1</em>');
 
   function bubble(who, text, action) {
-    // never render an empty bubble — if there is nothing to say, say so
     if (!text || !String(text).trim()) {
       text = 'Something went wrong on my side and I have no answer to show. Try again in a moment.';
       action = null;
@@ -67,7 +57,6 @@
     });
   }
 
-  /** Turn an HTTP status into something a human can act on. */
   function explain(status) {
     if (status === 404)
       return 'My side of the site is not running yet. The server needs to be restarted once — double-click BASLAT.command and reload this page.';
@@ -75,8 +64,6 @@
     if (status >= 500) return 'The server hit an error answering that. Try a different question.';
     return 'I could not get an answer for that one.';
   }
-
-  /* ---------------------------------------------------------- talking */
 
   async function ask(question) {
     if (busy || !question.trim()) return;
@@ -94,7 +81,7 @@
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: question })
+        body: JSON.stringify({ message: question, lang: (window.I18N && window.I18N.lang) || 'en' })
       });
       reply = await res.json().catch(() => ({}));
       if (!res.ok || !reply.text) reply = { text: explain(res.status), chips: [] };
@@ -102,7 +89,6 @@
       reply = { text: 'I cannot reach the server — it looks like it stopped running.', chips: [] };
     }
 
-    // a short pause so it reads like a reply rather than a lookup
     const wait = Math.max(0, 420 - (Date.now() - started));
     setTimeout(() => {
       dots.remove();
@@ -113,8 +99,6 @@
       input.focus();
     }, wait);
   }
-
-  /* ----------------------------------------------------- open / close */
 
   async function open() {
     panel.hidden = false;
@@ -128,7 +112,7 @@
       opened = true;
       const dots = typing();
       try {
-        const res = await fetch('/api/chat');
+        const res = await fetch('/api/chat?lang=' + encodeURIComponent((window.I18N && window.I18N.lang) || 'en'));
         const hello = await res.json().catch(() => ({}));
         setTimeout(() => {
           dots.remove();
@@ -163,6 +147,5 @@
     ask(input.value);
   });
 
-  // drop the unread badge once the visitor has been on the page a while
   setTimeout(() => badge.classList.add('gone'), 25000);
 })();

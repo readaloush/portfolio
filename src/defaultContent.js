@@ -1,8 +1,3 @@
-/**
- * Default portfolio content, generated from Read Aloush's CV.
- * This is only used to seed the database on the very first run.
- * After that, everything is edited through the hidden admin panel.
- */
 module.exports = {
   "profile": {
     "name": "Read Aloush",
@@ -55,15 +50,6 @@ module.exports = {
       "detail": "Principal developer"
     }
   ],
-  /* Announcements.
-     Written and published from the admin panel. `published: false` keeps a
-     draft in the database without showing it to anyone, and `pinned: true`
-     forces one to the top regardless of its date.
-
-     `id` must be stable: it is what a visitor's browser remembers as
-     "already read". Editing the text of an announcement therefore does not
-     re-notify everybody, which is the behaviour you want — and changing the
-     id deliberately is how you *do* re-notify them. */
   "announcements": [
     {
       "id": "a-2026-09-01",

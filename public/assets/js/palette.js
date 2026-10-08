@@ -1,33 +1,9 @@
-/* ==================================================================
-   THE COMMAND LINE
-   ------------------------------------------------------------------
-   A command palette over the whole site. Backtick or ⌘K opens it,
-   typing filters, the arrows move, enter runs, escape closes.
-
-   It is not a fourth mode: it sits on top of all three, so whichever
-   presentation you are looking at, the same keystroke gets you to any
-   section, any project, any setting.
-
-   Two decisions worth stating.
-
-   First, nothing here reimplements anything. ":notebook" does not
-   know how notebook mode works — it clicks the tab. ":dark" clicks the
-   wall switch. Every command drives the control a visitor would have
-   used, so the sound, the animation and the saved preference all
-   happen exactly as they otherwise would, and there is only ever one
-   copy of that logic to keep correct.
-
-   Second, the search matches Turkish as well as English. The person
-   whose site this is thinks in Turkish; typing "projeler" should find
-   the projects just as "projects" does.
-   ================================================================== */
 (() => {
   'use strict';
 
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
-  /** Fold accents and case so "Eğitim" and "egitim" are the same word. */
   const fold = (s) => (s || '')
     .toLowerCase()
     .replace(/ı/g, 'i').replace(/İ/g, 'i')
@@ -35,9 +11,6 @@
     .replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c')
     .normalize('NFD').replace(/[̀-ͯ]/g, '');
 
-  /* In press mode the sections are separate views, so "go to projects"
-     means show that view, not scroll to it. Everywhere else the page is
-     one scroll and scrolling is the right answer. */
   const goTo = (sel) => {
     if (window.PRESS) { window.PRESS.show(sel === '#top' ? '' : sel); return; }
     const el = $(sel);
@@ -49,7 +22,6 @@
     if (b) b.click();
   };
 
-  /* ------------------------------------------------ what it can do */
   function commands() {
     const list = [
       { g: 'go', label: ':top', hint: 'back to the top', keys: 'home basa yukari start', run: () => goTo('#top') },
@@ -84,8 +56,6 @@
       } }
     ];
 
-    // The social links come from the database, so read them off the
-    // page rather than hard-coding a list that will go stale.
     $$('#socialList a, #socialList2 a').forEach((a) => {
       const name = (a.getAttribute('aria-label') || a.title || '').trim();
       if (!name) return;
@@ -97,7 +67,6 @@
       });
     });
 
-    // and every project by its own title
     $$('.project').forEach((p) => {
       const h = p.querySelector('h3');
       if (!h) return;
@@ -108,10 +77,6 @@
       });
     });
 
-    /* A section can remove itself from the page — Announcements does,
-       whenever nothing is published. Offering a command that jumps to
-       nothing is worse than not offering it, so the list is rebuilt on
-       every open (see show()) and checks. */
     return list.filter((c) => {
       if (c.g !== 'go' || !c.label.startsWith(':')) return true;
       const el = document.querySelector('#' + c.label.slice(1));
@@ -119,7 +84,6 @@
     });
   }
 
-  /* ------------------------------------------------------ the sheet */
   const root = document.createElement('div');
   root.className = 'cmdk';
   root.hidden = true;
@@ -152,23 +116,10 @@
   let cursor = 0;
   let open = false;
 
-  /**
-   * Matching, in two passes.
-   *
-   * The first pass is plain substring, which is what people expect:
-   * "pro" finds ":projects". The second is a scattered-letter match,
-   * which catches typos and abbreviations — but it is far too generous
-   * to run alongside the first. Measured on the live site, "pro" under
-   * a scattered match alone returned sixteen of twenty-eight commands,
-   * including TikTok and YouTube, because p, r and o appear in that
-   * order somewhere in almost any sentence. So the scattered pass only
-   * runs when the strict one found nothing at all.
-   */
   function strictScore(cmd, q) {
     const hay = fold(cmd.label + ' ' + cmd.hint + ' ' + (cmd.keys || ''));
     const at = hay.indexOf(q);
     if (at === -1) return 0;
-    // earlier in the text, and in the label rather than the hint, wins
     const inLabel = fold(cmd.label).includes(q) ? 60 : 0;
     return 100 - Math.min(40, at) + inLabel;
   }
@@ -244,12 +195,10 @@
     const c = shown[i];
     if (!c) return;
     hide();
-    // let the sheet finish closing before the page starts moving
-    setTimeout(() => { try { c.run(); } catch { /* a bad command must not break the key */ } }, 120);
+    setTimeout(() => { try { c.run(); } catch {  } }, 120);
     window.SFX?.click?.();
   }
 
-  /* --------------------------------------------------------- input */
   input.addEventListener('input', () => { cursor = 0; render(); });
 
   input.addEventListener('keydown', (e) => {
@@ -273,10 +222,6 @@
   });
   root.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) hide(); });
 
-  /* ------------------------------------------------- the shortcut
-     A backtick is a fine trigger right up until someone is typing one
-     into the assistant, so the plain key is ignored inside any field.
-     ⌘K has no such problem and works anywhere. */
   const typing = () => {
     const a = document.activeElement;
     return !!a && a !== input && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);
@@ -290,7 +235,6 @@
     if (e.key === '`' || e.key === ':') { e.preventDefault(); show(); }
   });
 
-  // a quiet way in for anyone who never touches a keyboard
   const tip = document.createElement('button');
   tip.className = 'cmdk-tip';
   tip.type = 'button';

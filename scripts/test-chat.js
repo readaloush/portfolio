@@ -1,11 +1,4 @@
 #!/usr/bin/env node
-/**
- * The assistant's exam.
- *
- * Two things matter: it answers real questions correctly in both
- * languages, and it never pretends to know something that is not in
- * the CV. Run with:  node scripts/test-chat.js
- */
 const assert = require('assert');
 const chat = require('../src/chat');
 const content = require('../src/defaultContent');
@@ -18,7 +11,6 @@ function check(label, ok, detail = '') {
   else { fail++; console.log('  ✗ ' + label + (detail ? '\n      ' + detail : '')); }
 }
 
-/* ---------- questions it must answer, in Turkish and English ---------- */
 const MUST_ANSWER = [
   ['merhaba', 'assistant'],
   ['selam', 'assistant'],
@@ -82,7 +74,6 @@ const MUST_ANSWER = [
   ['tesekkurler', 'Anytime']
 ];
 
-/* ---------- questions it must refuse, because the CV cannot answer ---------- */
 const MUST_DECLINE = [
   'who is the president',
   'who is elon musk',
@@ -111,13 +102,12 @@ for (const q of MUST_DECLINE) {
 
 console.log('\nSAFETY\n');
 
-// it must never produce a fact that is not somewhere in the content
 const flat = JSON.stringify(content).toLowerCase();
 const numbers = new Set();
 for (const [q] of MUST_ANSWER) {
   const a = chat.answer(q, content);
   a.text
-    .replace(/\/100\b/g, '')       // "95/100" is our own scale, not a claim
+    .replace(/\/100\b/g, '')
     .match(/\d+[\d.,]*/g)
     ?.forEach((n) => numbers.add(n));
 }

@@ -1,18 +1,3 @@
-/* ==================================================================
-   SHOWCASE
-   The four big set pieces, written without a framework or a library so
-   the site keeps its promise of zero dependencies:
-
-     1. Experience   — a timeline that pins and slides sideways
-     2. Projects     — a stack of cards that scatters as you scroll
-     3. Certificates — a wheel you turn
-     4. The badge    — a credential hanging in the rain, behind the hero
-
-   Plus the constellation that plays between views.
-
-   Everything reads the same content object app.js renders, and waits
-   for its 'content:rendered' event before building anything.
-   ================================================================== */
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -30,8 +15,6 @@
   const low = () => !!(window.PERF && window.PERF.low);
   const mode = () => document.documentElement.dataset.mode || 'modern';
 
-  /* ------------------------------------------------ the scroll engine
-     One listener, one frame, every scroll-driven part updated from it. */
   const parts = new Set();
   let queued = false;
   const frame = () => { queued = false; parts.forEach((p) => p.update && p.update()); };
@@ -44,16 +27,12 @@
   document.addEventListener('mode:changed', () => requestAnimationFrame(remeasure));
   addEventListener('load', remeasure);
 
-  /** Distance from the top of the document, ignoring transforms. */
   function docTop(el) {
     let y = 0;
     for (let n = el; n; n = n.offsetParent) y += n.offsetTop;
     return y;
   }
 
-  /* ==================================================================
-     1. EXPERIENCE — the timeline
-     ================================================================== */
   const years = (list) => {
     const ys = [];
     let present = false;
@@ -72,13 +51,12 @@
     if (!host) return;
     const s = c.sections || {};
     const p = c.profile || {};
-    // the panel lists newest first; a timeline reads left to right, oldest first
     const items = (c.experience || []).filter((x) => x && (x.role || x.company)).slice().reverse();
 
     const img = s.experienceImage || p.photo || '';
     const itemHTML = (x, i) => {
       const side = i % 2 ? 'bottom' : 'top';
-      return `<div class="jt-item ${side}" data-i="${i}" style="--i:${i}">
+      return `<div class="jt-item ${side}" data-i="${i}" data-case="experience:${items.length - 1 - i}" role="link" tabindex="0" aria-label="${esc(String(x.role || '').trim())} at ${esc(x.company || '')} — read more" style="--i:${i}">
         <div class="jt-stem"><i class="jt-node"></i><span class="jt-stick"></span></div>
         <div class="jt-copy">
           <h4 class="jt-when"><span class="jt-mask"><span>${esc(x.period)}</span></span></h4>
@@ -107,7 +85,7 @@
     if (details) {
       details.innerHTML = (c.experience || [])
         .filter((x) => x && (x.role || x.company))
-        .map((x) => `<article class="jt-detail">
+        .map((x, k) => `<article class="jt-detail" data-case="experience:${k}">
           <header>
             <span class="jt-detail-when">${esc(x.period)}</span>
             <h3>${esc(String(x.role || '').trim())}</h3>
@@ -140,7 +118,6 @@
       host.classList.toggle('is-static', reduced());
       if (reduced()) { this.live = false; return; }
 
-      // how far the slider has to travel so its end reaches the right edge
       slider.style.transform = 'none';
       const W = innerWidth;
       this.travel = Math.max(0, slider.scrollWidth - W + W * 0.04);
@@ -175,9 +152,6 @@
   };
   parts.add(timeline);
 
-  /* ==================================================================
-     2. PROJECTS — the stack that spreads
-     ================================================================== */
   function spreadTargets(n, small) {
     const out = [];
     if (small) {
@@ -199,7 +173,6 @@
     return out;
   }
 
-  // the clustered pose: small offsets and a fan of angles, the same every visit
   const STACK = [
     { x: -8, y: -6, r: -14 }, { x: 10, y: -8, r: 16 }, { x: -12, y: 2, r: -5 },
     { x: 2, y: -7, r: -2 }, { x: 13, y: 2, r: 7 }, { x: -5, y: 7, r: 5 },
@@ -221,7 +194,7 @@
           <p class="ss-sub">${list.length} ${list.length === 1 ? 'project' : 'projects'} · pick one to read it</p>
         </div>
         <div class="ss-cards">
-          ${list.map((p, i) => `<a class="ss-card" href="#proj-${i + 1}" data-i="${i}" style="z-index:${i + 2}">
+          ${list.map((p, i) => `<a class="ss-card" href="#proj-${i + 1}" data-i="${i}" data-case="projects:${i}" style="z-index:${i + 2}">
             <span class="ss-face"><img src="${esc(p.image || '/assets/img/project-waste.svg')}" alt="${esc(p.title)}" draggable="false" loading="lazy"></span>
             <span class="ss-label"><em>${String(i + 1).padStart(2, '0')}</em>${esc(p.title)}</span>
           </a>`).join('')}
@@ -241,6 +214,7 @@
           <ul class="pj-bullets">${(pr.bullets || []).filter(Boolean).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>
           <ul class="pj-tags">${(pr.tags || []).map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
           <div class="pj-links">
+            <a class="btn btn-primary" href="#proj-${i + 1}" data-case="projects:${i}"><span>Read the case study</span></a>
             ${pr.repo ? `<a class="btn btn-ghost" href="${esc(pr.repo)}" target="_blank" rel="noopener"><span>Code</span></a>` : ''}
             ${pr.report ? `<a class="btn btn-ghost" href="${esc(pr.report)}" target="_blank" rel="noopener"><span>Report (PDF)</span></a>` : ''}
             ${pr.link ? `<a class="btn btn-ghost" href="${esc(pr.link)}" target="_blank" rel="noopener"><span>View project</span></a>` : ''}
@@ -249,15 +223,6 @@
       </article>`).join('');
     }
 
-    // a card is a way to its write-up, not a page jump
-    host.addEventListener('click', (e) => {
-      const a = e.target.closest('.ss-card');
-      if (!a) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const t = document.getElementById(a.getAttribute('href').slice(1));
-      if (t) t.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
-    }, true);
   }
 
   const spread = {
@@ -287,7 +252,6 @@
       const raw = reduced() ? 1 : clamp((scrollY - this.top) / this.span, 0, 1);
       const p = clamp((raw - 0.12) / (0.9 - 0.12), 0, 1);
       const spreadOut = p > 0.995;
-      // pointer parallax once the cards have landed, on a mouse only
       this.px = lerp(this.px, spreadOut && !this.small ? this.tx : 0, 0.08);
       this.py = lerp(this.py, spreadOut && !this.small ? this.ty : 0, 0.08);
 
@@ -319,9 +283,6 @@
   }, { passive: true });
   parts.add(spread);
 
-  /* ==================================================================
-     3. CERTIFICATES — the wheel
-     ================================================================== */
   const W = {
     CARD_H: 0.38, CARD_MAX_W: 0.34, CARD_RATIO: 1.45, STEP: 40, DRUM: 2.22, LENS: 2.7,
     RING_R: 1.14, BOW: 1.82, TITLE: 0.124, INDEX: 0.04, CULL: 1.6,
@@ -333,9 +294,8 @@
     `translateX(${m * bowAt(drumDeg, bow)}px) rotateZ(${(1 - m) * ringDeg}deg) translateY(${-(1 - m) * ringR}px)` +
     ` rotateX(${m * drumDeg}deg) translateZ(${m * drumR}px)`;
 
-  /** A cover drawn from the words, for a certificate with no picture yet. */
   function certCover(cert, i) {
-    const hues = ['#8052ff', '#ffb829', '#15846e', '#e05cff', '#4f8bff'];
+    const hues = ['#C3E41D', '#ffb829', '#15846e', '#e05cff', '#4f8bff'];
     const a = hues[i % hues.length];
     const wrap = (str, n) => {
       const words = String(str || '').split(/\s+/);
@@ -351,7 +311,7 @@
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 400">
       <rect width="580" height="400" fill="#07060b"/>
       <circle cx="500" cy="70" r="150" fill="${a}" opacity=".18"/>
-      <circle cx="80" cy="420" r="160" fill="#8052ff" opacity=".12"/>
+      <circle cx="80" cy="420" r="160" fill="#C3E41D" opacity=".12"/>
       <rect x="18" y="18" width="544" height="364" rx="14" fill="none" stroke="#ffffff" stroke-opacity=".14"/>
       <g font-family="Inter, Helvetica, Arial, sans-serif" fill="#ffffff">
         <text x="40" y="74" font-size="13" letter-spacing="3.5" fill="${a}">CERTIFICATE</text>
@@ -373,7 +333,6 @@
     const items = (c.certificates || []).filter((x) => x && (x.title || x.image || x.pdf || x.url))
       .map((x, i) => ({ ...x, title: x.title || `Certificate ${i + 1}` }));
 
-    // same rule as announcements: an empty section takes itself off the page
     sec.hidden = !items.length;
     $$('#navLinks a[href="#certificates"]').forEach((a) => (a.hidden = !items.length));
     const k = $('#certificatesKicker'); if (k) k.textContent = s.certificatesKicker || '';
@@ -381,7 +340,6 @@
     if (wheel.stop) wheel.stop();
     if (!items.length) {
       host.innerHTML = '';
-      // a deep link to an empty section lands on the contents instead
       if (window.PRESS && window.PRESS.current() === '#certificates') window.PRESS.show('');
       return;
     }
@@ -409,8 +367,6 @@
     wheel.start(host, items);
   }
 
-  /* The front certificate opens full size — a certificate with only a
-     picture still gets its "View". */
   function certLightbox(img, it) {
     if (!img) return;
     document.querySelector('.ww-lightbox')?.remove();
@@ -455,7 +411,6 @@
         const w = host.clientWidth, h = host.clientHeight;
         const cardW = Math.min(h * W.CARD_H * W.CARD_RATIO, w * (w < 760 ? 0.7 : W.CARD_MAX_W));
         const cardH = cardW / W.CARD_RATIO;
-        // a short list makes a small ring; a long one opens it up to full size
         const ringR = cardH * W.RING_R * clamp(0.62 + count * 0.05, 0.7, 1);
         M = {
           cardW, cardH, ringR,
@@ -485,8 +440,9 @@
         cards.forEach((c, k) => c.setAttribute('aria-selected', k === i ? 'true' : 'false'));
       };
 
+      const kick = () => { if (!raf) raf = requestAnimationFrame(draw); };
       const draw = () => {
-        raf = requestAnimationFrame(draw);
+        raf = 0;
         if (!M || !host.offsetParent) return;
         const gap = target - turn;
         if (Math.abs(gap) < 0.0005) turn = target;
@@ -507,12 +463,11 @@
         if (cue) cue.style.opacity = String(1 - m);
         front.style.opacity = String(m);
         setActive(clamp(Math.round(pos), 0, last));
+        if (turn !== target) kick();
       };
 
-      const to = (next) => { target = clamp(next, 0, last + 1); };
+      const to = (next) => { target = clamp(next, 0, last + 1); kick(); };
 
-      /* Settle onto an item in the direction the wheel was going, so a
-         single notch is enough to move one card rather than springing back. */
       const settle = (dir) => {
         const f = target - Math.floor(target);
         if (f < 0.02 || f > 0.98) return to(Math.round(target));
@@ -533,7 +488,6 @@
       };
       const onMove = (e) => {
         if (!drag) return;
-        // a finger turns the wheel sideways, so the page can still scroll under it
         const delta = drag.touch ? (drag.x - e.clientX) * 1.4 : drag.y - e.clientY;
         to(target + delta / W.DRAG_UNITS);
         drag.x = e.clientX; drag.y = e.clientY;
@@ -549,7 +503,7 @@
         else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') to(Math.round(target) - 1);
         else return;
         e.preventDefault();
-        e.stopPropagation();   // the arrows turn the wheel, not the page's views
+        e.stopPropagation();
       };
       const onIndex = (e) => {
         const b = e.target.closest('[data-to]');
@@ -563,13 +517,9 @@
       stage.addEventListener('pointercancel', onUp);
       stage.addEventListener('keydown', onKey);
       host.addEventListener('click', onIndex);
-      /* A drag that ends on a card must not also open its link, and a
-         click on a card that is not at the front brings it round first. */
       let down = null;
       stage.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
       stage.addEventListener('click', (e) => {
-        /* The stage captures the pointer for dragging, so the click lands
-           on the stage itself; find the card that is under the pointer. */
         const card = e.target.closest('.ww-card') ||
           document.elementsFromPoint(e.clientX, e.clientY).map((el) => el.closest && el.closest('.ww-card')).find(Boolean);
         if (!card) return;
@@ -592,15 +542,18 @@
         else certLightbox(card.querySelector('img'), items[active]);
       });
 
-      const ro = new ResizeObserver(measure);
+      const ro = new ResizeObserver(() => { measure(); kick(); });
       ro.observe(host);
       measure();
       setActive(0);
-      raf = requestAnimationFrame(draw);
+      kick();
+      const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) kick(); });
+      io.observe(host);
 
       this.stop = () => {
         cancelAnimationFrame(raf);
         ro.disconnect();
+        io.disconnect();
         stage.removeEventListener('wheel', onWheel);
         clearTimeout(settleT);
         this.stop = null;
@@ -609,11 +562,6 @@
     stop: null
   };
 
-  /* ==================================================================
-     4. THE BADGE IN THE RAIN
-     A credential on a lanyard, swaying behind the hero text, with rain
-     falling across the whole page and sparking where it hits the badge.
-     ================================================================== */
   function buildBadge(c) {
     const p = c.profile || {};
     const name = $('#badgeName');
@@ -624,240 +572,25 @@
     if (yr) yr.textContent = new Date().getFullYear();
   }
 
-  const rain = (() => {
-    const cv = document.createElement('canvas');
-    cv.id = 'rainCanvas';
-    cv.setAttribute('aria-hidden', 'true');
-    document.body.insertBefore(cv, document.body.firstChild);
-    const ctx = cv.getContext('2d');
-    let Wd = 0, Ht = 0, dpr = 1, drops = [], sparks = [], raf = 0, last = 0, badge = null, badgeAt = 0;
-
-    const SPARK = ['255,184,41', '128,82,255', '255,255,255', '21,132,110'];
-
-    function size() {
-      dpr = Math.min(devicePixelRatio || 1, 1.75);
-      Wd = innerWidth; Ht = innerHeight;
-      cv.width = Wd * dpr; cv.height = Ht * dpr;
-      cv.style.width = Wd + 'px'; cv.style.height = Ht + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const n = Math.round((Wd * Ht) / (low() ? 26000 : 9500));
-      drops = Array.from({ length: n }, () => fresh(true));
-    }
-    function fresh(anywhere) {
-      const z = Math.random();             // depth: far drops are thin, slow, faint
-      return {
-        x: Math.random() * (Wd + 200) - 100,
-        y: anywhere ? Math.random() * Ht : -20 - Math.random() * 120,
-        len: 8 + z * 18,
-        v: 7 + z * 11,
-        a: 0.08 + z * 0.22,
-        w: 0.6 + z * 0.8
-      };
-    }
-    function burst(x, y, n) {
-      for (let i = 0; i < n; i++) {
-        const ang = -Math.PI / 2 + (Math.random() - 0.5) * 2.2;
-        const sp = 1.2 + Math.random() * 2.6;
-        sparks.push({
-          x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
-          life: 1, decay: 0.03 + Math.random() * 0.04,
-          c: SPARK[(Math.random() * (Math.random() < 0.55 ? 1 : SPARK.length)) | 0]
-        });
-      }
-    }
-
-    function tick(now) {
-      raf = requestAnimationFrame(tick);
-      const dt = Math.min(2.5, (now - (last || now)) / 16.67);
-      last = now;
-      if (document.hidden) return;
-
-      // the badge moves (it sways), so its edge is re-read a few times a second
-      if (now - badgeAt > 120) {
-        badgeAt = now;
-        const el = document.getElementById('badgeCard');
-        const r = el && el.offsetParent ? el.getBoundingClientRect() : null;
-        badge = r && r.bottom > 0 && r.top < Ht ? r : null;
-      }
-
-      const dark = document.documentElement.dataset.theme !== 'light';
-      const ink = dark ? '255,255,255' : '40,24,90';
-      ctx.clearRect(0, 0, Wd, Ht);
-      ctx.lineCap = 'round';
-
-      for (const d of drops) {
-        const py = d.y;
-        d.y += d.v * dt;
-        d.x += d.v * 0.16 * dt;
-        if (badge && d.x > badge.left + 6 && d.x < badge.right - 6 && py < badge.top && d.y >= badge.top) {
-          if (Math.random() < 0.6) burst(d.x, badge.top, 2 + ((Math.random() * 3) | 0));
-          Object.assign(d, fresh(false));
-          continue;
-        }
-        if (d.y > Ht + 20) {
-          if (Math.random() < 0.08) burst(d.x, Ht - 2, 2);
-          Object.assign(d, fresh(false));
-          continue;
-        }
-        ctx.strokeStyle = `rgba(${ink},${d.a * (dark ? 1 : 0.8)})`;
-        ctx.lineWidth = d.w;
-        ctx.beginPath();
-        ctx.moveTo(d.x, d.y);
-        ctx.lineTo(d.x - d.len * 0.16, d.y - d.len);
-        ctx.stroke();
-      }
-
-      for (let i = sparks.length - 1; i >= 0; i--) {
-        const s = sparks[i];
-        s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 0.16 * dt;
-        s.life -= s.decay * dt;
-        if (s.life <= 0) { sparks.splice(i, 1); continue; }
-        ctx.fillStyle = `rgba(${s.c},${s.life})`;
-        ctx.fillRect(s.x - 0.9, s.y - 0.9, 1.8, 1.8);
-      }
-    }
-
-    function run() {
-      const on = !reduced() && (mode() === 'modern' || mode() === 'shell');
-      cv.style.display = on ? '' : 'none';
-      cancelAnimationFrame(raf);
-      if (on) { last = 0; raf = requestAnimationFrame(tick); }
-    }
-    addEventListener('resize', () => { size(); });
-    document.addEventListener('mode:changed', run);
-    reducedQ.addEventListener?.('change', run);
-    size();
-    run();
-    return { run };
-  })();
-
-  /* ==================================================================
-     5. THE CONSTELLATION — between views
-     Outlined triangles in every colour of the palette gather into one
-     shape, the page is swapped behind them, and they scatter again.
-     ================================================================== */
   const constellation = (() => {
-    const cv = document.createElement('canvas');
-    cv.id = 'constellation';
-    cv.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(cv);
-    const ctx = cv.getContext('2d');
-    const COLORS = ['#8052ff', '#8052ff', '#9a78ff', '#ffb829', '#ffb829', '#15846e', '#1fb89a', '#e05cff', '#4f8bff'];
+    const veil = document.createElement('div');
+    veil.id = 'viewVeil';
+    veil.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(veil);
     let busy = false;
-
-    // a brain, roughly: two lobes, a fold between them, a stem
-    function shapePoint(cx, cy, R) {
-      for (;;) {
-        const x = (Math.random() * 2 - 1);
-        const y = (Math.random() * 2 - 1);
-        const lobeL = ((x + 0.28) / 0.62) ** 2 + (y / 0.5) ** 2 < 1;
-        const lobeR = ((x - 0.28) / 0.62) ** 2 + (y / 0.5) ** 2 < 1;
-        const stem = Math.abs(x - 0.12) < 0.12 && y > 0.3 && y < 0.72;
-        const fold = Math.abs(x) < 0.025 && y < 0.1;
-        if ((lobeL || lobeR || stem) && !fold) {
-          const wob = Math.sin(x * 11) * 0.03 + Math.cos(y * 9) * 0.03;
-          return { x: cx + x * R, y: cy + (y + wob) * R * 0.95 };
-        }
-      }
-    }
-
     function play(swap) {
       if (busy || reduced()) { swap(); return; }
       busy = true;
-      const dpr = Math.min(devicePixelRatio || 1, 1.75);
-      const Wd = innerWidth, Ht = innerHeight;
-      cv.width = Wd * dpr; cv.height = Ht * dpr;
-      cv.style.width = Wd + 'px'; cv.style.height = Ht + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      cv.classList.add('on');
-
-      const light = document.documentElement.dataset.theme === 'light';
-      const veil = light ? '246,245,249' : '0,0,0';
-      const R = Math.min(Wd, Ht) * 0.34;
-      const cx = Wd / 2, cy = Ht / 2;
-      const N = low() ? 260 : 620;
-      const pts = Array.from({ length: N }, (_, i) => {
-        const ambient = i % 6 === 0;
-        const to = ambient
-          ? { x: Math.random() * Wd, y: Math.random() * Ht }
-          : shapePoint(cx, cy, R);
-        const ang = Math.atan2(to.y - cy, to.x - cx) + (Math.random() - 0.5) * 0.6;
-        return {
-          fx: Math.random() * Wd, fy: Math.random() * Ht,
-          tx: to.x, ty: to.y,
-          ox: Math.cos(ang), oy: Math.sin(ang),
-          fly: Wd * (0.25 + Math.random() * 0.6),
-          s: 2.2 + Math.random() * 4.6,
-          r: Math.random() * Math.PI * 2,
-          spin: (Math.random() - 0.5) * 0.08,
-          c: COLORS[(Math.random() * COLORS.length) | 0],
-          d: Math.random() * 0.18,
-          amb: ambient
-        };
-      });
-
-      const GATHER = 520, SWAP = 560, HOLD = 700, END = 1250;
-      let swapped = false;
-      const t0 = performance.now();
-
-      const tri = (x, y, s, r) => {
-        ctx.beginPath();
-        for (let k = 0; k < 3; k++) {
-          const a = r + (k * Math.PI * 2) / 3;
-          const px = x + Math.cos(a) * s, py = y + Math.sin(a) * s;
-          k ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
-        }
-        ctx.closePath();
-        ctx.stroke();
-      };
-
-      const step = (now) => {
-        const t = now - t0;
-        ctx.clearRect(0, 0, Wd, Ht);
-
-        // the veil hides the old page, then lets the new one through
-        const va = t < SWAP ? easeInOut(clamp(t / 420, 0, 1)) : 1 - easeInOut(clamp((t - HOLD + 60) / 460, 0, 1));
-        ctx.fillStyle = `rgba(${veil},${va})`;
-        ctx.fillRect(0, 0, Wd, Ht);
-
-        if (!swapped && t >= SWAP) { swapped = true; try { swap(); } catch (e) { console.error(e); } }
-
-        ctx.lineWidth = 1.1;
-        for (const p of pts) {
-          let x, y, a;
-          if (t < HOLD) {
-            const g = easeInOut(clamp((t / GATHER - p.d) / (1 - p.d), 0, 1));
-            x = lerp(p.fx, p.tx, g);
-            y = lerp(p.fy, p.ty, g);
-            a = (p.amb ? 0.45 : 0.95) * clamp(t / 260, 0, 1);
-          } else {
-            const o = clamp((t - HOLD) / (END - HOLD), 0, 1);
-            const e = o * o;
-            x = p.tx + p.ox * p.fly * e;
-            y = p.ty + p.oy * p.fly * e;
-            a = (p.amb ? 0.45 : 0.95) * (1 - o);
-          }
-          p.r += p.spin;
-          ctx.globalAlpha = a;
-          ctx.strokeStyle = p.c;
-          tri(x, y, p.s, p.r);
-        }
-        ctx.globalAlpha = 1;
-
-        if (t < END) requestAnimationFrame(step);
-        else {
-          ctx.clearRect(0, 0, Wd, Ht);
-          cv.classList.remove('on');
-          busy = false;
-        }
-      };
-      requestAnimationFrame(step);
+      veil.classList.add('on');
+      setTimeout(() => {
+        try { swap(); } catch (e) { console.error(e); }
+        requestAnimationFrame(() => { veil.classList.remove('on'); busy = false; });
+      }, 160);
     }
     return { play };
   })();
   window.CONSTELLATION = constellation;
 
-  /* ------------------------------------------------------ build all */
   document.addEventListener('content:rendered', (e) => {
     const c = e.detail || {};
     buildBadge(c);
@@ -867,7 +600,6 @@
     requestAnimationFrame(remeasure);
     setTimeout(remeasure, 400);
   });
-  // images change the layout as they land
   addEventListener('load', () => setTimeout(remeasure, 50));
   document.addEventListener('loader:done', () => setTimeout(remeasure, 60));
 })();

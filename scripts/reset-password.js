@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-/**
- * Reset the admin credentials from the terminal.
- *
- *   npm run reset-password
- *   npm run reset-password -- --user read --pass "MyNewPassw0rd"
- *
- * Nothing is ever written into an HTML file: only the scrypt hash in SQLite.
- */
 const readline = require('readline');
 const store = require('../src/db');
 const auth = require('../src/crypto');

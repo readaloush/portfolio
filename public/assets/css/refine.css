@@ -1,25 +1,8 @@
-/* ==================================================================
-   REFINEMENTS
-   These come last on purpose: later rules win, so this block adjusts
-   the earlier ones without touching them.
-   ================================================================== */
 
-
-/* ==================================================================
-   PALETTE — void, iris and spark
-   One system for every mode. Pure black is the page, one violet
-   (Electric Iris) does all the pointing, and a warm amber (Saffron
-   Spark) is kept for small labels and highlights. Teal (Deep Verdant)
-   only ever appears inside the particle work. No two-hue gradients on
-   UI: where a gradient is needed it stays inside the violet family.
-
-   Dark is the default. The switch turns the lights on and gives you
-   the same page on a pale, faintly violet paper.
-   ================================================================== */
 
 :root {
   --void:    #000000;
-  --iris:    #8052ff;
+  --iris:    #C3E41D;
   --spark:   #ffb829;
   --verdant: #15846e;
   --ash:     #9a9a9a;
@@ -35,10 +18,10 @@ html[data-theme="dark"] {
   --line:      rgba(255,255,255,.11);
   --text:      #ffffff;
   --muted:     #9a9a9a;
-  --accent:    #8052ff;
-  --accent2:   #6a3df0;
-  --label:     #ffb829;   /* small uppercase labels */
-  --on-accent: #ffffff;
+  --accent:    #C3E41D;
+  --accent2:   #a8c414;
+  --label:     #ffb829;
+  --on-accent: #0a0a0a;
   --net-line:  255,255,255;
   --shadow:    0 26px 64px rgba(0,0,0,.6);
 }
@@ -51,19 +34,17 @@ html[data-theme="light"] {
   --line:      rgba(16,12,32,.12);
   --text:      #0c0a14;
   --muted:     #5e5b6a;
-  --accent:    #6b3cf5;   /* iris, deepened a step so it holds on white */
-  --accent2:   #5327de;
-  --label:     #a86a00;   /* the same amber, dark enough to read on paper */
-  --on-accent: #ffffff;
+  --accent:    #C3E41D;
+  --accent2:   #a8c414;
+  --accent-ink:#0c0a14;
+  --label:     #8a5600;
+  --on-accent: #0a0a0a;
   --net-line:  16,12,32;
   --shadow:    0 18px 44px rgba(16,12,32,.10);
 }
 
-/* small uppercase labels carry the amber */
 .section-kicker, .kicker, .project-num, .tl-period, .press-index-label { color: var(--label) !important; }
 
-/* The name was a two-hue gradient; make it solid ink with the red
-   reserved for the words that matter. */
 .hero-name {
   background: none;
   color: var(--text);
@@ -71,7 +52,6 @@ html[data-theme="light"] {
   -webkit-text-fill-color: currentColor;
 }
 
-/* Buttons and chips: one flat red, no rainbow. */
 .btn-primary,
 .orb-core,
 .chat-avatar,
@@ -87,29 +67,18 @@ html[data-theme="light"] {
 .bar i { background: var(--accent); box-shadow: none; }
 #scrollBar { background: var(--accent); box-shadow: none; }
 
-/* The aurora blobs were the most generated-looking thing on the page.
-   Keep a whisper of warmth instead of two coloured lamps. */
 .aurora span:nth-child(1) { background: var(--accent); opacity: .07; }
 .aurora span:nth-child(2) { background: var(--spark); opacity: .05; }
 .aurora span:nth-child(3) { display: none; }
 html[data-theme="dark"] .aurora span { opacity: .10; }
 
-/* Paper wants a little more grain and none of the glow. */
 html[data-theme="light"] .grain { opacity: .07; }
 .sig-live path, .sig-live-dot { filter: none; }
 .photo-signature { filter: none; }
 .switch-glow { box-shadow: 0 0 6px var(--accent); }
 
-/* ---- edge flicker -------------------------------------------------
-   The grain layer was exactly viewport-sized and shifted by ±4% four
-   times a second, so every step uncovered a dark strip along the
-   edges. Oversizing it means the movement can never reach an edge. */
 .grain { inset: -15%; }
 
-/* ---- the switch actually flips ------------------------------------
-   rotateX does nothing without perspective on the parent, which is why
-   it felt like a button. Perspective plus real vertical travel gives it
-   the throw of a wall switch. */
 .switch-plate { perspective: 260px; perspective-origin: 50% 50%; }
 .switch-rocker {
   transform-origin: 50% 50%;
@@ -123,14 +92,10 @@ html[data-theme="light"] .switch-rocker {
   transform: translateY(-7px) rotateX(34deg);
   box-shadow: 0 4px 0 rgba(0,0,0,.16), inset 0 14px 16px rgba(0,0,0,.12);
 }
-/* the indicator lamp follows the rocker */
 html[data-theme="dark"] .switch-glow { bottom: 4px; }
 html[data-theme="light"] .switch-glow { bottom: 26px; }
 .switch-glow { transition: bottom .34s cubic-bezier(.34,1.4,.5,1); }
 
-/* ---- a quieter, more precise cursor -------------------------------
-   Difference blending keeps it legible on any background without the
-   glow, and the ring tracks with a softer lag. */
 #cursorDot {
   width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
   background: #fff; box-shadow: none; mix-blend-mode: difference;
@@ -151,14 +116,6 @@ html[data-theme="light"] .switch-glow { bottom: 26px; }
 }
 #cursorRing.pressed { width: 22px; height: 22px; margin: -11px 0 0 -11px; }
 
-/* ---- sections arrive from outside the page ------------------------
-   The cards start well beyond the screen edge and set back in depth,
-   then fly in and settle. html gets overflow-x: clip so nothing can
-   create a horizontal scrollbar while it is out there.
-
-   Note: the trigger cannot use IntersectionObserver here, because a
-   card parked outside the viewport never intersects and would stay
-   invisible for ever. extras.js measures layout position instead. */
 html { overflow-x: clip; }
 
 .reveal-x {
@@ -178,7 +135,6 @@ html { overflow-x: clip; }
   transform: perspective(1400px) translate3d(0, 0, 0) rotateY(0deg) scale(1);
 }
 
-/* ---- keyboard hint ------------------------------------------------ */
 .kbd-hint {
   position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(14px);
   z-index: 8000; display: flex; align-items: center; gap: 9px;
@@ -201,25 +157,21 @@ html { overflow-x: clip; }
   .grain { animation: none; }
 }
 
-
-/* ==================================================================
-   PAPER PALETTE
-   Ink on paper by day; the same notebook under a warm lamp by night.
-   ================================================================== */
 html[data-mode="paper"][data-theme="light"] {
-  --bg:        #FBF8EF;   /* the sheet */
-  --bg2:       #FFFDF6;   /* a cutting laid on top of it */
+  --bg:        #FBF8EF;
+  --bg2:       #FFFDF6;
   --surface:   rgba(26,39,64,.035);
   --surface-2: rgba(26,39,64,.065);
   --line:      rgba(26,39,64,.18);
-  --text:      #182338;   /* blue-black ink */
-  --muted:     #5A6A85;   /* pencil */
-  --accent:    #6b3cf5;   /* the violet pen */
-  --accent2:   #5327de;
-  --label:     #a86a00;
+  --text:      #182338;
+  --muted:     #5A6A85;
+  --accent:    #C3E41D;
+  --accent2:   #a8c414;
+  --accent-ink:#182338;
+  --label:     #8a5600;
   --shadow:    0 10px 26px rgba(26,39,64,.12);
-  --rule:      rgba(60,96,160,.28);      /* the printed lines */
-  --margin-ln: rgba(107,60,245,.40);     /* the margin, in the same ink */
+  --rule:      rgba(60,96,160,.28);
+  --margin-ln: rgba(107,60,245,.40);
   --hole:      rgba(26,39,64,.13);
 }
 html[data-mode="paper"][data-theme="dark"] {
@@ -230,8 +182,8 @@ html[data-mode="paper"][data-theme="dark"] {
   --line:      rgba(240,234,220,.16);
   --text:      #F0EADC;
   --muted:     #A79C88;
-  --accent:    #9a78ff;
-  --accent2:   #8052ff;
+  --accent:    #d4f05a;
+  --accent2:   #C3E41D;
   --label:     #ffb829;
   --shadow:    0 16px 40px rgba(0,0,0,.55);
   --rule:      rgba(240,234,220,.13);
@@ -239,24 +191,16 @@ html[data-mode="paper"][data-theme="dark"] {
   --hole:      rgba(0,0,0,.4);
 }
 
-/* ---- the sheet itself -------------------------------------------
-   An absolutely positioned layer inside a relative body is sized to
-   the body box, so it covers the whole document and scrolls with it —
-   which is what a real page does. A fixed layer would slide under the
-   text and give the trick away.                                     */
 html[data-mode="paper"] body { position: relative; }
 html[data-mode="paper"] body::before {
   content: '';
   position: absolute; inset: 0; z-index: -3; pointer-events: none;
-  --m: 78px;                                   /* margin position */
+  --m: 78px;
   background-image:
-    /* punched holes down the margin */
     radial-gradient(circle at 30px 120px, var(--hole) 0 6.5px, transparent 7.5px),
-    /* the red vertical margin */
     linear-gradient(to right, transparent 0 var(--m),
                     var(--margin-ln) var(--m) calc(var(--m) + 1.5px),
                     transparent calc(var(--m) + 1.5px)),
-    /* the ruled lines */
     repeating-linear-gradient(to bottom,
                     transparent 0 33px, var(--rule) 33px 34px);
   background-size: 100% 240px, 100% 100%, 100% 100%;
@@ -270,7 +214,6 @@ html[data-mode="paper"] body::before {
     repeating-linear-gradient(to bottom, transparent 0 33px, var(--rule) 33px 34px); }
 }
 
-/* the electronic background has no business on paper */
 html[data-mode="paper"] #netCanvas,
 html[data-mode="paper"] .aurora,
 html[data-mode="paper"] .photo-scan,
@@ -281,10 +224,6 @@ html[data-mode="paper"] .orb-ring { display: none !important; }
 html[data-mode="paper"] .grain { opacity: .13; mix-blend-mode: multiply; }
 html[data-mode="paper"][data-theme="dark"] .grain { mix-blend-mode: overlay; opacity: .09; }
 
-/* ---- handwriting -------------------------------------------------
-   Headings and margin notes are handwritten; body copy stays in the
-   clean face, because a whole CV in script is unreadable and this is
-   still a document someone has to hire you from.                    */
 html[data-mode="paper"] .hero-name,
 html[data-mode="paper"] .section-title,
 html[data-mode="paper"] .stats b,
@@ -295,7 +234,7 @@ html[data-mode="paper"] .modal-card h3 {
 }
 html[data-mode="paper"] .hero-name { font-size: clamp(3rem, 8.5vw, 6.4rem); line-height: .95; }
 html[data-mode="paper"] .section-title { font-size: clamp(2.2rem, 5.5vw, 3.6rem); }
-html[data-mode="paper"] .stats b { font-size: clamp(2rem, 4vw, 3rem); color: var(--accent); }
+html[data-mode="paper"] .stats b { font-size: clamp(2rem, 4vw, 3rem); color: var(--accent-ink, var(--accent)); }
 
 html[data-mode="paper"] .section-kicker,
 html[data-mode="paper"] .kicker,
@@ -307,10 +246,9 @@ html[data-mode="paper"] .contact-note {
   text-transform: none; letter-spacing: .2px;
 }
 html[data-mode="paper"] .section-kicker,
-html[data-mode="paper"] .project-num { color: var(--accent); font-size: 15px; }
+html[data-mode="paper"] .project-num { color: var(--accent-ink, var(--accent)); font-size: 15px; }
 html[data-mode="paper"] .hero-tagline { font-family: 'Kalam', cursive; text-transform: none; font-size: 15px; letter-spacing: 0; }
 
-/* ---- things stop being glass and start being paper --------------- */
 html[data-mode="paper"] .card,
 html[data-mode="paper"] .project,
 html[data-mode="paper"] .tl-item,
@@ -319,7 +257,7 @@ html[data-mode="paper"] .skill-card,
 html[data-mode="paper"] .calendar-box {
   background: var(--bg2);
   border: 1px solid var(--line);
-  border-radius: 3px;                       /* paper is cut, not rounded */
+  border-radius: 3px;
   backdrop-filter: none;
   box-shadow: 0 1px 0 var(--line), 0 10px 22px -14px rgba(26,39,64,.5);
 }
@@ -331,14 +269,6 @@ html[data-mode="paper"][data-theme="dark"] .skill-card {
   box-shadow: 0 1px 0 rgba(0,0,0,.4), 0 14px 30px -16px #000;
 }
 
-/* Laid on the page by hand, so never perfectly square.
-
-   This uses the standalone `rotate` property rather than a transform.
-   Three other things on this page write to `transform` on these very
-   elements — the mouse tilt (inline), the fly-in reveal, and the
-   parallax — and an inline transform wins outright. `rotate` is its
-   own property, so it composes with all of them instead of fighting
-   them. The crookedness survives a hover; the card still flies in. */
 html[data-mode="paper"] .project:nth-child(odd)     { rotate: -.5deg; }
 html[data-mode="paper"] .project:nth-child(even)    { rotate: .45deg; }
 html[data-mode="paper"] .skill-card:nth-child(odd)  { rotate: .4deg; }
@@ -346,7 +276,6 @@ html[data-mode="paper"] .skill-card:nth-child(even) { rotate: -.35deg; }
 html[data-mode="paper"] .edu-card:nth-child(even)   { rotate: .5deg; }
 html[data-mode="paper"] .tl-item:nth-child(odd)     { rotate: -.3deg; }
 
-/* a strip of tape at the top of every cutting */
 html[data-mode="paper"] .project,
 html[data-mode="paper"] .edu-card { position: relative; }
 html[data-mode="paper"] .project::before,
@@ -361,20 +290,18 @@ html[data-mode="paper"] .edu-card::before {
 }
 html[data-mode="paper"] .edu-card::before { width: 56px; height: 16px; transform: translateX(-50%) rotate(2deg); }
 
-/* photographs get the same treatment: printed, slightly faded, taped */
 html[data-mode="paper"] .project-media img {
   filter: saturate(.72) contrast(1.04) sepia(.12);
   border-bottom: 1px solid var(--line);
 }
 html[data-mode="paper"] .photo-frame {
   border-radius: 2px; border: 1px solid var(--line);
-  background: var(--bg2); padding: 10px 10px 42px;   /* a polaroid lip */
+  background: var(--bg2); padding: 10px 10px 42px;
   box-shadow: 0 14px 30px -16px rgba(26,39,64,.6);
   rotate: -1.4deg;
 }
 html[data-mode="paper"] .photo-frame img { border-radius: 0; }
 
-/* the skill bars become highlighter strokes */
 html[data-mode="paper"] .bar { background: transparent; border-bottom: 1px dotted var(--line); border-radius: 0; }
 html[data-mode="paper"] .bar i {
   background: var(--accent); opacity: .5; border-radius: 0;
@@ -382,7 +309,6 @@ html[data-mode="paper"] .bar i {
 }
 html[data-mode="paper"][data-theme="dark"] .bar i { mix-blend-mode: screen; opacity: .6; }
 
-/* tags read as pencil circles */
 html[data-mode="paper"] .tag,
 html[data-mode="paper"] .tl-tools {
   border: 1px solid var(--muted); border-radius: 14px 13px 15px 12px / 12px 15px 13px 14px;
@@ -390,11 +316,9 @@ html[data-mode="paper"] .tl-tools {
   background: transparent;
 }
 
-/* buttons look drawn round rather than filled, except the main one */
 html[data-mode="paper"] .btn { border-radius: 22px 20px 24px 19px / 19px 24px 20px 22px; }
-html[data-mode="paper"] .btn-ghost { border: 1.5px solid var(--accent); color: var(--accent); }
+html[data-mode="paper"] .btn-ghost { border: 1.5px solid var(--accent); color: var(--accent-ink, var(--accent)); }
 
-/* a handwritten page number in the corner of every page */
 html[data-mode="paper"] main { counter-reset: pg; }
 html[data-mode="paper"] .section { position: relative; counter-increment: pg; }
 html[data-mode="paper"] .section::after {
@@ -404,22 +328,10 @@ html[data-mode="paper"] .section::after {
   pointer-events: none;
 }
 
-/* the header sits on the page, not floating in glass */
 html[data-mode="paper"] #nav { backdrop-filter: blur(2px); }
 html[data-mode="paper"] .socials li a { border-radius: 12px 11px 13px 10px / 10px 13px 11px 12px; }
 
-/* ==================================================================
-   THE PAGE TURN
-   The leaf is a full sheet hinged on the left edge. It starts flat
-   over the viewport and swings away, so what you are looking at is
-   the page you just left going over. Backwards, it swings in.
-   Pointer events stay off throughout: this is scenery, not a gate.
-   ================================================================== */
 .flip-stage {
-  /* 480 puts the turning sheet above the page content (z 2) and the
-     background layers (0 and 1), but below the fixed header (500),
-     the assistant orb (9000) and the cursor. The header is the desk,
-     not the page: it should stay still while the paper moves. */
   position: fixed; inset: 0; z-index: 480;
   perspective: 2400px; perspective-origin: 0% 50%;
   pointer-events: none; display: none;
@@ -436,7 +348,6 @@ html[data-mode="paper"] .socials li a { border-radius: 12px 11px 13px 10px / 10p
   box-shadow: 8px 0 40px rgba(0,0,0,.28);
   backface-visibility: hidden;
 }
-/* the shading that makes it read as a curving sheet rather than a slab */
 .flip-shade {
   position: absolute; inset: 0;
   background: linear-gradient(to right, rgba(0,0,0,.30), rgba(0,0,0,0) 34%, rgba(0,0,0,.10));
@@ -460,8 +371,6 @@ html[data-mode="paper"] .socials li a { border-radius: 12px 11px 13px 10px / 10p
   100% { opacity: 0; }
 }
 
-/* Someone who has asked for less motion gets the mode without the
-   theatre: no turning page, no tilted cuttings. */
 @media (prefers-reduced-motion: reduce) {
   .flip-stage { display: none !important; }
   html[data-mode="paper"] .project,
@@ -470,20 +379,12 @@ html[data-mode="paper"] .socials li a { border-radius: 12px 11px 13px 10px / 10p
   html[data-mode="paper"] .photo-frame { rotate: 0deg !important; }
 }
 
-/* The selector inside the phone menu: full width, bigger targets. */
 .mode-tabs.in-menu {
   display: flex; width: 100%; margin: 18px 0 0; padding: 4px;
   background: var(--surface-2);
 }
 .mode-tabs.in-menu .mode-tab { flex: 1; text-align: center; padding: 12px 10px; font-size: 11px; }
 
-
-/* ---- notebook mode: the remaining glass surfaces ------------------
-   The chat panel and the login card were still floating slabs of
-   frosted glass on a sheet of paper, which broke the illusion at the
-   two moments a visitor looks hardest. Both become paper objects. */
-
-/* the assistant is a sticky note pressed onto the corner */
 html[data-mode="paper"] .chat {
   background: #FFF6C9;
   border: 1px solid rgba(26,39,64,.16);
@@ -493,7 +394,7 @@ html[data-mode="paper"] .chat {
   box-shadow: 0 18px 34px -18px rgba(26,39,64,.65);
 }
 html[data-mode="paper"][data-theme="dark"] .chat { background: #3A3320; }
-html[data-mode="paper"] .chat::before {   /* the strip holding it down */
+html[data-mode="paper"] .chat::before {
   content: ''; position: absolute; top: -10px; left: 50%;
   width: 92px; height: 22px; transform: translateX(-50%) rotate(1.6deg);
   background: rgba(214,199,142,.5);
@@ -503,14 +404,12 @@ html[data-mode="paper"] .chat-head { border-bottom: 1px dashed rgba(26,39,64,.22
 html[data-mode="paper"] .bubble { border-radius: 12px 11px 13px 10px / 10px 13px 11px 12px; }
 html[data-mode="paper"] .chat-log::-webkit-scrollbar-thumb { background: var(--muted); }
 
-/* the login card is an index card */
 html[data-mode="paper"] .modal-card {
   background: var(--bg2); backdrop-filter: none;
   border-radius: 3px; border: 1px solid var(--line);
   background-image: repeating-linear-gradient(to bottom, transparent 0 33px, var(--rule) 33px 34px);
 }
 
-/* a pen stroke under every section title, drawn slightly off-square */
 html[data-mode="paper"] .section-title { position: relative; display: inline-block; }
 html[data-mode="paper"] .section-title::after {
   content: ''; position: absolute; left: -2px; right: -8px; bottom: -2px;
@@ -519,15 +418,6 @@ html[data-mode="paper"] .section-title::after {
   rotate: -.7deg;
 }
 
-
-/* ==================================================================
-   PRINTING
-   A portfolio that a recruiter tries to print should not come out as
-   a black rectangle. Everything that exists to move is removed, the
-   fly-in cards are forced to their settled state (otherwise they
-   print blank, parked off the page), and links are given their real
-   destination in the margin, because paper cannot be clicked.
-   ================================================================== */
 @media print {
   #netCanvas, .aurora, .grain, #cursorDot, #cursorRing, #scrollBar,
   .orb, .chat, .flip-stage, .mode-tabs, .switch, .sound-btn,
@@ -541,7 +431,6 @@ html[data-mode="paper"] .section-title::after {
   }
   body::before { display: none !important; }
 
-  /* the animation systems all park elements out of frame; unpark them */
   .reveal, .reveal-x, .reveal-x:not(.in) {
     opacity: 1 !important;
     transform: none !important;
@@ -564,8 +453,6 @@ html[data-mode="paper"] .section-title::after {
     content: " (" attr(href) ")";
     font-size: 8pt; color: #555; word-break: break-all;
   }
-  /* icons and buttons carry no readable text, so an appended URL just
-     produces a wall of characters with nothing to attach it to */
   a[href^="#"]::after, .btn::after,
   .socials a::after, .nav-logo::after { content: '' !important; }
   .project-media img { max-height: 55mm; object-fit: cover; }
@@ -573,11 +460,6 @@ html[data-mode="paper"] .section-title::after {
   @page { margin: 14mm; }
 }
 
-
-/* ---- keyboard focus ----------------------------------------------
-   The custom cursor hides the pointer, and until now nothing showed
-   where the keyboard was either. :focus-visible only fires for
-   keyboard users, so mouse users never see a ring. */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
@@ -591,10 +473,6 @@ html[data-mode="paper"] .section-title::after {
 }
 .skip-link:focus { transform: translate(-50%, 0); }
 
-
-/* Between the burger breakpoint and a comfortable desktop the header
-   carries the logo, six links, the selector, sound, the switch and the
-   CV button at once. Tighten everything rather than let it wrap. */
 @media (min-width: 981px) and (max-width: 1180px) {
   .nav-actions { gap: 9px; }
   .mode-tabs { margin-right: 4px; }
@@ -603,20 +481,6 @@ html[data-mode="paper"] .section-title::after {
   .nav-links a { font-size: 13px; }
 }
 
-
-/* ---- two things the live page showed and the source did not ------
-
-   1. The tape strips were being drawn and then clipped out of
-      existence: every one of these cards carries overflow:hidden, so
-      a strip hanging 9px above the top edge simply never appeared.
-      Measured on the live site — the pseudo-element was there, 20px
-      tall, at top:-9px, and invisible. The card has to stop clipping;
-      the image inside it takes over that job.
-
-   2. .card::before is the frosted glow from the modern theme, and it
-      was still running on paper. It is excluded rather than replaced,
-      because on .edu-card that same pseudo-element is now the tape.
-   ================================================================== */
 html[data-mode="paper"] .project,
 html[data-mode="paper"] .edu-card { overflow: visible; }
 
@@ -625,12 +489,6 @@ html[data-mode="paper"] .project-media { overflow: hidden; border-radius: 2px; }
 html[data-mode="paper"] .card:not(.edu-card)::before,
 html[data-mode="paper"] .glow::after { display: none !important; }
 
-
-/* ==================================================================
-   THE COMMAND LINE
-   A sheet over everything, monospace, with the site's own palette so
-   it belongs to all three modes rather than looking bolted on.
-   ================================================================== */
 .cmdk {
   position: fixed; inset: 0; z-index: 100003;
   display: grid; place-items: start center;
@@ -655,7 +513,7 @@ html[data-mode="paper"] .glow::after { display: none !important; }
 .cmdk.on .cmdk-box { transform: none; }
 
 .cmdk-line { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
-.cmdk-caret { color: var(--accent); font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 17px; }
+.cmdk-caret { color: var(--accent-ink, var(--accent)); font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 17px; }
 .cmdk-input {
   flex: 1; background: none; border: 0; outline: 0; color: var(--text);
   font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: .4px;
@@ -676,8 +534,8 @@ html[data-mode="paper"] .glow::after { display: none !important; }
   color: var(--text); flex: none; min-width: 190px;
 }
 .cmdk-row i { font-style: normal; font-size: 12.5px; color: var(--muted); }
-.cmdk-row.on { background: var(--surface); border-left-color: var(--accent); }
-.cmdk-row.on b { color: var(--accent); }
+.cmdk-row.on { background: var(--surface); border-left-color: var(--accent-ink, var(--accent)); }
+.cmdk-row.on b { color: var(--accent-ink, var(--accent)); }
 .cmdk-empty { padding: 26px 18px; color: var(--muted); font-size: 13px; }
 
 .cmdk-foot {
@@ -692,7 +550,6 @@ html[data-mode="paper"] .glow::after { display: none !important; }
 }
 .cmdk-count { margin-left: auto; font-size-adjust: none; font-family: 'JetBrains Mono', monospace; }
 
-/* the way in for anyone who never reaches for a keyboard */
 .cmdk-tip {
   position: fixed; left: 22px; bottom: 22px; z-index: 8500;
   display: inline-flex; align-items: center; gap: 8px;
@@ -702,27 +559,13 @@ html[data-mode="paper"] .glow::after { display: none !important; }
   font-size: 11px; color: var(--muted);
   opacity: .55; transition: opacity .3s var(--ease), border-color .3s;
 }
-.cmdk-tip:hover { opacity: 1; border-color: var(--accent); color: var(--text); }
+.cmdk-tip:hover { opacity: 1; border-color: var(--accent-ink, var(--accent)); color: var(--text); }
 .cmdk-tip kbd {
   font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10px;
   border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
 }
 @media (max-width: 720px) { .cmdk-tip { display: none; } .cmdk-row b { min-width: 130px; } }
 @media print { .cmdk, .cmdk-tip { display: none !important; } }
-
-
-/* ==================================================================
-   ====================  P R E S S   M O D E  =======================
-
-   The fourth presentation: the same content set as a printed
-   quarterly. High-contrast serif for anything that would be typeset,
-   monospace for anything that would be a printer's mark, hairline
-   rules doing the work that boxes and shadows do elsewhere.
-
-   The rule of this mode is that nothing floats. No cards, no glass,
-   no drop shadows — an editorial page is flat, and its structure comes
-   from rules, numbers and space.
-   ================================================================== */
 
 html[data-mode="press"][data-theme="dark"] {
   --bg:        #000000;
@@ -732,8 +575,8 @@ html[data-mode="press"][data-theme="dark"] {
   --line:      rgba(255,255,255,.16);
   --text:      #ffffff;
   --muted:     #9a9a9a;
-  --accent:    #8052ff;
-  --accent2:   #6a3df0;
+  --accent:    #C3E41D;
+  --accent2:   #a8c414;
   --label:     #ffb829;
   --shadow:    none;
 }
@@ -745,13 +588,13 @@ html[data-mode="press"][data-theme="light"] {
   --line:      rgba(20,18,16,.2);
   --text:      #0c0a14;
   --muted:     #5e5b6a;
-  --accent:    #6b3cf5;
-  --accent2:   #5327de;
-  --label:     #a86a00;
+  --accent:    #C3E41D;
+  --accent2:   #a8c414;
+  --accent-ink:#0c0a14;
+  --label:     #8a5600;
   --shadow:    none;
 }
 
-/* nothing that glows belongs in print */
 html[data-mode="press"] #netCanvas,
 html[data-mode="press"] .aurora,
 html[data-mode="press"] .photo-scan,
@@ -761,7 +604,6 @@ html[data-mode="press"] .btn-shine,
 html[data-mode="press"] .orb-ring,
 html[data-mode="press"] .grain { display: none !important; }
 
-/* ---- the masthead ------------------------------------------------ */
 .press-head { display: none; }
 html[data-mode="press"] .press-head {
   display: flex; align-items: center; gap: 22px;
@@ -778,10 +620,6 @@ html[data-mode="press"] .press-head .press-title { margin-left: auto; color: var
   html[data-mode="press"] .press-head .press-title { display: none; }
 }
 
-/* ---- the type ----------------------------------------------------
-   One high-contrast serif carries every heading. Body copy stays in
-   the sans it was set in: a whole CV in a display face is a poster,
-   not a document, and someone has to read this to hire him. */
 html[data-mode="press"] .hero-name,
 html[data-mode="press"] .section-title,
 html[data-mode="press"] .press-index em,
@@ -799,8 +637,6 @@ html[data-mode="press"] .hero-name {
 html[data-mode="press"] .section-title { font-size: clamp(2rem, 5vw, 3.4rem); }
 html[data-mode="press"] .hero-role { font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; }
 
-/* the summary becomes a pull quote, which is what a magazine does
-   with the one sentence it wants you to keep */
 html[data-mode="press"] .hero-tagline {
   font-family: 'Bodoni Moda', serif; font-style: italic; font-weight: 400;
   font-size: clamp(1.15rem, 2.6vw, 1.8rem); line-height: 1.35;
@@ -808,7 +644,6 @@ html[data-mode="press"] .hero-tagline {
   border-left: 3px solid var(--accent); padding-left: 18px; margin: 26px 0 20px;
 }
 
-/* ---- the index --------------------------------------------------- */
 .press-index { display: none; }
 html[data-mode="press"] .press-index {
   display: block; max-width: 1180px;
@@ -829,7 +664,7 @@ html[data-mode="press"] .press-index a {
 html[data-mode="press"] .press-index a:hover { background: var(--surface); padding-left: 14px; }
 html[data-mode="press"] .press-index b {
   font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-weight: 400;
-  font-size: 12px; color: var(--accent);
+  font-size: 12px; color: var(--accent-ink, var(--accent));
 }
 html[data-mode="press"] .press-index em { font-style: normal; font-size: clamp(1.1rem, 2vw, 1.5rem); }
 html[data-mode="press"] .press-index i {
@@ -841,7 +676,6 @@ html[data-mode="press"] .press-index i {
   html[data-mode="press"] .press-index i { grid-column: 2; }
 }
 
-/* ---- rules instead of boxes -------------------------------------- */
 html[data-mode="press"] .card,
 html[data-mode="press"] .project,
 html[data-mode="press"] .tl-item,
@@ -863,7 +697,6 @@ html[data-mode="press"] .modal-card {
 }
 html[data-mode="press"] .modal-card { padding: 30px; }
 
-/* a project reads as an index entry with a plate, not as a card */
 html[data-mode="press"] .project { grid-template-columns: 1fr 220px; gap: clamp(20px, 4vw, 48px); align-items: start; }
 html[data-mode="press"] .project .project-media { order: 2; border-radius: 0; }
 html[data-mode="press"] .project .project-media img { border-radius: 0; filter: grayscale(1) contrast(1.08); transition: filter .5s var(--ease); }
@@ -876,7 +709,6 @@ html[data-mode="press"] .project h3 { font-size: clamp(1.4rem, 3vw, 2.1rem); }
   html[data-mode="press"] .project .project-body { order: 2; }
 }
 
-/* section heads carry their number, the way a chapter does */
 html[data-mode="press"] main { counter-reset: chapter; }
 html[data-mode="press"] .section { counter-increment: chapter; }
 html[data-mode="press"] .section-head {
@@ -884,21 +716,19 @@ html[data-mode="press"] .section-head {
 }
 html[data-mode="press"] .section-kicker::before {
   content: counter(chapter, decimal-leading-zero) ' · ';
-  color: var(--accent);
+  color: var(--accent-ink, var(--accent));
 }
 
-/* photograph: printed, not lit */
 html[data-mode="press"] .photo-frame { border-radius: 0; border: 1px solid var(--line); box-shadow: none; }
 html[data-mode="press"] .photo-frame img { border-radius: 0; filter: grayscale(1) contrast(1.05); }
 
-/* buttons are rules and small caps, not pills */
 html[data-mode="press"] .btn {
   border-radius: 0; border: 1px solid var(--line);
   font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2.4px;
   text-transform: uppercase; background: none;
 }
-html[data-mode="press"] .btn-primary { background: var(--accent) !important; border-color: var(--accent); }
-html[data-mode="press"] .btn:hover { border-color: var(--accent); }
+html[data-mode="press"] .btn-primary { background: var(--accent) !important; border-color: var(--accent-ink, var(--accent)); }
+html[data-mode="press"] .btn:hover { border-color: var(--accent-ink, var(--accent)); }
 html[data-mode="press"] .tag, html[data-mode="press"] .tl-tools {
   border-radius: 0; border: 1px solid var(--line); background: none;
 }
@@ -906,23 +736,10 @@ html[data-mode="press"] .socials li a { border-radius: 0; border: 1px solid var(
 html[data-mode="press"] .bar { background: var(--surface-2); border-radius: 0; }
 html[data-mode="press"] .bar i { border-radius: 0; }
 
-/* four tabs need the tightest setting of all */
 @media (min-width: 981px) and (max-width: 1440px) {
   .mode-tab { padding: 6px 8px; font-size: 8.5px; letter-spacing: .8px; }
 }
 
-
-/* ---- two things the live page showed -----------------------------
-
-   1. The masthead was inserted as the first thing in the document, but
-      the header is position:fixed at the very top — so both claimed the
-      same strip and the volume line ran straight through the logo and
-      the mode tabs. The masthead has to join the fixed stack rather
-      than sit under it, and the header has to start below it.
-
-   2. The statistics were still four rounded cards. Everything else in
-      this mode had been flattened to rules; they were simply missed.
-   ------------------------------------------------------------------ */
 html[data-mode="press"] { --press-head-h: 44px; }
 @media (max-width: 760px) { html[data-mode="press"] { --press-head-h: 36px; } }
 
@@ -934,7 +751,6 @@ html[data-mode="press"] .press-head {
 }
 html[data-mode="press"] #nav { top: var(--press-head-h); }
 html[data-mode="press"] body { padding-top: var(--press-head-h); }
-/* the phone menu drops from under the header, so it moves too */
 @media (max-width: 980px) {
   html[data-mode="press"] .nav-links { top: var(--press-head-h); }
 }
@@ -955,21 +771,6 @@ html[data-mode="press"] .stats li::after { display: none !important; }
   html[data-mode="press"] .stats li { border-right: 0; border-bottom: 1px solid var(--line); }
 }
 
-
-/* ==================================================================
-   THE PHOTOGRAPH BELONGS TO ONE MODE
-
-   A portrait is a portrait; a notebook, a robot's stage and a printed
-   quarterly each have their own idea of what stands in that corner,
-   and in all three it is the signature. Making it big is the point —
-   it is the mark he signs his work with.
-
-   This also settles where the admin panel can be opened from. The five
-   clicks are bound to the photo frame, and an element that is not
-   displayed cannot be clicked, so hiding the portrait shuts that door
-   in every mode but the main one — without a second rule to keep in
-   step, and without the door existing anywhere it should not.
-   ================================================================== */
 html[data-mode="paper"] .photo-frame,
 html[data-mode="press"] .photo-frame,
 html[data-mode="paper"] .photo-caption,
@@ -992,9 +793,6 @@ html[data-mode="press"] .hero-visual {
     html[data-mode="press"] .photo-signature { transform: scale(1.35); }
 }
 
-/* ==================================================================
-   THE SHORTCUT CHIPS
-   ================================================================== */
 .key-chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 6px; }
 .key-chip {
   display: inline-flex; align-items: center; gap: 7px;
@@ -1003,7 +801,7 @@ html[data-mode="press"] .hero-visual {
   font-size: 11px; color: var(--muted);
   transition: border-color .3s var(--ease), color .3s var(--ease);
 }
-button.key-chip:hover { border-color: var(--accent); color: var(--text); }
+button.key-chip:hover { border-color: var(--accent-ink, var(--accent)); color: var(--text); }
 .key-chip kbd {
   font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text);
   border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px;
@@ -1015,9 +813,6 @@ button.key-chip:hover { border-color: var(--accent); color: var(--text); }
 html[data-mode="press"] .key-chip { border-radius: 0; }
 @media print { .key-chips { display: none !important; } }
 
-/* ==================================================================
-   PRESS: ONE VIEW AT A TIME
-   ================================================================== */
 html[data-mode="press"] .press-off { display: none !important; }
 .press-back { display: none; }
 html[data-mode="press"] .press-back {
@@ -1027,25 +822,14 @@ html[data-mode="press"] .press-back {
   letter-spacing: 2.4px; text-transform: uppercase; color: var(--muted);
   transition: color .3s var(--ease);
 }
-html[data-mode="press"] .press-back:hover { color: var(--accent); }
+html[data-mode="press"] .press-back:hover { color: var(--accent-ink, var(--accent)); }
 html[data-mode="press"] .press-back.press-off { display: none !important; }
-html[data-mode="press"] #navLinks a.is-here { color: var(--accent); }
+html[data-mode="press"] #navLinks a.is-here { color: var(--accent-ink, var(--accent)); }
 
-/* a single view opens rather than arrives from the side: the fly-in
-   belongs to a page you scroll, not to a page you turn to */
 html[data-mode="press"] .reveal-x { opacity: 1 !important; transform: none !important; }
 html[data-mode="press"] .section { animation: pressIn .5s var(--ease) both; }
 @keyframes pressIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-
-/* ==================================================================
-   ONE SECTION AT A TIME — IN EVERY MODE
-
-   The site opens on its contents: the name, the signature, and a
-   numbered list of what is inside. A section is a page you turn to,
-   not a place you scroll past. This was built for press mode first and
-   then made general, so the class keeps its old name.
-   ================================================================== */
 .press-off { display: none !important; }
 
 .press-back {
@@ -1055,10 +839,9 @@ html[data-mode="press"] .section { animation: pressIn .5s var(--ease) both; }
   letter-spacing: 2.4px; text-transform: uppercase; color: var(--muted);
   transition: color .3s var(--ease);
 }
-.press-back:hover { color: var(--accent); }
-#navLinks a.is-here { color: var(--accent); }
+.press-back:hover { color: var(--accent-ink, var(--accent)); }
+#navLinks a.is-here { color: var(--accent-ink, var(--accent)); }
 
-/* the contents page, wherever it is shown */
 .press-index {
   display: block; max-width: 1180px;
   margin: 0 auto clamp(40px, 8vw, 90px);
@@ -1078,7 +861,7 @@ html[data-mode="press"] .section { animation: pressIn .5s var(--ease) both; }
 .press-index a:hover { background: var(--surface); padding-left: 14px; }
 .press-index b {
   font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-weight: 400;
-  font-size: 12px; color: var(--accent);
+  font-size: 12px; color: var(--accent-ink, var(--accent));
 }
 .press-index em { font-style: normal; font-size: clamp(1.1rem, 2vw, 1.5rem); font-weight: 600; }
 .press-index i { font-size: 14px; color: var(--muted); }
@@ -1086,28 +869,18 @@ html[data-mode="press"] .section { animation: pressIn .5s var(--ease) both; }
   .press-index a { grid-template-columns: 38px 1fr; gap: 10px; }
   .press-index i { grid-column: 2; }
 }
-/* each mode keeps its own voice for the contents */
 html[data-mode="paper"] .press-index em { font-family: 'Bodoni Moda', cursive; font-size: clamp(1.5rem, 2.6vw, 2rem); }
 html[data-mode="paper"] .press-index i { font-family: 'Kalam', cursive; }
 html[data-mode="press"] .press-index em,
 html[data-mode="press"] .press-index i { font-family: 'Bodoni Moda', serif; }
 html[data-mode="press"] .press-index i { font-style: italic; }
 
-/* a single view opens; it does not fly in from the side */
 .reveal-x { opacity: 1; transform: none; }
 main .section { animation: viewIn .45s var(--ease) both; }
 @keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-/* the scroll hint was advice for a page that no longer scrolls */
 .scroll-hint { display: none !important; }
 
-
-/* ==================================================================
-   THE ARCADE
-   A sheet like the command line, so the two feel like parts of the
-   same machine. The canvas keeps its own aspect ratio and scales to
-   whatever room is left, which is what makes it work on a phone.
-   ================================================================== */
 .arc {
   position: fixed; inset: 0; z-index: 100004;
   display: grid; place-items: center; padding: 20px;
@@ -1145,9 +918,9 @@ main .section { animation: viewIn .45s var(--ease) both; }
   transition: color .25s, border-color .25s;
 }
 .arc-tab:hover { color: var(--text); }
-.arc-tab.on { color: var(--accent); border-color: var(--accent); }
+.arc-tab.on { color: var(--accent-ink, var(--accent)); border-color: var(--accent-ink, var(--accent)); }
 .arc-x { font-size: 22px; line-height: 1; color: var(--muted); padding: 0 6px; }
-.arc-x:hover { color: var(--accent); }
+.arc-x:hover { color: var(--accent-ink, var(--accent)); }
 
 .arc-stage { position: relative; display: grid; place-items: center; padding: 14px; min-height: 0; }
 .arc-stage canvas {
@@ -1180,17 +953,9 @@ main .section { animation: viewIn .45s var(--ease) both; }
 @media (max-width: 620px) { .arc-keys { display: none; } .arc-head b { font-size: 10px; } }
 @media print { .arc { display: none !important; } }
 
+html[data-mode="shell"] { --bg: #000000; --bg2: #07060b; --text: #e9e6f5; --muted: #8b86a0; --accent: #C3E41D; --label: #ffb829; --line: rgba(195,228,29,.18); }
+html[data-mode="shell"][data-theme="light"] { --bg: #f6f5f9; --bg2: #FFFFFF; --text: #0c0a14; --muted: #5e5b6a; --accent: #C3E41D; --accent-ink: #0c0a14; --label: #8a5600; --line: rgba(16,12,32,.16); }
 
-/* ==================================================================
-   TERMINAL MODE
-   The shell replaces the page. The header stays, because it is how
-   you get back out — and `exit` and `mode modern` do the same thing
-   from inside.
-   ================================================================== */
-html[data-mode="shell"] { --bg: #000000; --bg2: #07060b; --text: #e9e6f5; --muted: #8b86a0; --accent: #ffb829; --label: #9a78ff; --line: rgba(255,184,41,.18); }
-html[data-mode="shell"][data-theme="light"] { --bg: #f6f5f9; --bg2: #FFFFFF; --text: #0c0a14; --muted: #5e5b6a; --accent: #6b3cf5; --label: #a86a00; --line: rgba(16,12,32,.16); }
-
-/* everything the shell is not */
 body.sh-on main,
 body.sh-on #footer,
 body.sh-on .orb,
@@ -1235,63 +1000,24 @@ body.sh-on .sh {
 .sh-echo { color: var(--muted); margin-top: 6px; }
 .sh-err { color: #E0553B; }
 .sh-dim { color: var(--muted); }
-.sh-f { color: var(--accent); }
+.sh-f { color: var(--accent-ink, var(--accent)); }
 .sh-sha { color: #D8A13A; }
-.sh-art { color: var(--accent); }
-.sh-row a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.sh-art { color: var(--accent-ink, var(--accent)); }
+.sh-row a { color: var(--accent-ink, var(--accent)); text-decoration: underline; text-underline-offset: 3px; }
 
 .sh-line { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
-.sh-ps1 { color: var(--accent); white-space: nowrap; }
+.sh-ps1 { color: var(--accent-ink, var(--accent)); white-space: nowrap; }
 .sh-in {
   flex: 1; background: none; border: 0; outline: 0;
-  font: inherit; color: var(--text); caret-color: var(--accent);
+  font: inherit; color: var(--text); caret-color: var(--accent-ink, var(--accent));
 }
 @media (max-width: 620px) { .sh-screen { font-size: 12px; height: 66vh; } }
 @media print { .sh { display: none !important; } }
 
-/* five tabs is the most this row will take */
 @media (min-width: 981px) and (max-width: 1500px) {
   .mode-tab { padding: 6px 7px; font-size: 8px; letter-spacing: .6px; }
 }
 
-
-/* ==================================================================
-   PERFORMANCE TIERS
-   ------------------------------------------------------------------
-   Written last on purpose. Every rule below is a plain
-   html[data-perf="…"] selector, the same specificity as the theme and
-   mode blocks above it, so being last in the file is what lets it win
-   without a single !important.
-
-   What was actually slow, measured rather than guessed:
-
-     1. .aurora span — three circles up to 46vw across carrying
-        filter: blur(110px), *animated with scale*. A blur is priced by
-        area and has to be re-rasterised whenever the thing under it
-        changes size. Three of them, forever.
-
-     2. .grain — a full-viewport SVG-noise layer whose transform steps
-        four times a second. Full-screen repaint, on a loop.
-
-     3. Twenty-two backdrop-filter surfaces sitting *in front of*
-        (1) and (2). This is the multiplier and the real answer to
-        "why one frame a second": a backdrop filter must re-blur its
-        backdrop whenever the backdrop moves, and thanks to the aurora
-        and the grain the backdrop never stopped moving. Twenty-two
-        live blurs, recomputed every frame, over a surface that is
-        itself being blurred.
-
-   The fix is not to delete the look. A circle blurred by 110px *is* a
-   radial falloff — so at the mid tier the blur is replaced with a mask
-   that produces the same soft edge for free, and the frost is dropped
-   only at the tier where the machine cannot pay for it at all.
-   ================================================================== */
-
-/* ---------------------------------------------------- mid and low */
-
-/* The aurora keeps its colour, its size and its drift. It loses the
-   thing that cost: a real gaussian blur, swapped for a radial mask
-   with the same falloff. Composited, not rasterised. */
 html[data-perf="mid"] .aurora span,
 html[data-perf="low"] .aurora span {
   filter: none;
@@ -1302,28 +1028,16 @@ html[data-perf="low"] .aurora span {
 html[data-theme="light"][data-perf="mid"] .aurora span,
 html[data-theme="light"][data-perf="low"] .aurora span { opacity: .3; }
 
-/* The grain stays, but stops moving. Static film grain reads as film
-   grain; it is the four-times-a-second full-screen repaint that was
-   never worth its price. */
 html[data-perf="mid"] .grain { animation: none; }
 
-/* The hero name stops animating its own gradient — that repaints the
-   largest piece of text on the page on every frame. */
 html[data-perf="mid"] .hero-name,
 html[data-perf="low"] .hero-name { animation: none; background-position: 0 0; }
 
-/* ------------------------------------------------------------ low */
-
 html[data-perf="low"] {
-  /* Without a backdrop filter the translucent surfaces are 3% white on
-     a dark background — invisible. So at this tier they become opaque,
-     derived from whatever --bg2 the current mode and theme set, which
-     keeps all five modes correct without repeating a palette here. */
   --surface:   color-mix(in srgb, var(--bg2) 93%, var(--text) 7%);
   --surface-2: color-mix(in srgb, var(--bg2) 86%, var(--text) 14%);
 }
 
-/* Every frosted panel on the site, in one place. */
 html[data-perf="low"] #nav,
 html[data-perf="low"] .card,
 html[data-perf="low"] .project,
@@ -1345,19 +1059,10 @@ html[data-perf="low"] .arcade-veil {
           backdrop-filter: none !important;
 }
 
-/* The grain is a full-screen layer that has to be composited even when
-   it is not moving. At this tier it goes. */
 html[data-perf="low"] .grain { display: none; }
 
-/* The drift is cheap now that the blur is gone, but on a machine this
-   slow a permanently animating full-screen element is still one thing
-   too many. */
 html[data-perf="low"] .aurora span { animation: none; opacity: .3; }
 
-/* The custom cursor is two fixed elements repainting on a permanent
-   animation loop, and it is the first thing that feels broken when the
-   frame rate drops — a laggy cursor reads as a broken site. Give the
-   real one back. */
 html[data-perf="low"] #cursorDot,
 html[data-perf="low"] #cursorRing { display: none; }
 html[data-perf="low"] body,
@@ -1367,8 +1072,6 @@ html[data-perf="low"] .tilt { cursor: auto !important; }
 html[data-perf="low"] a,
 html[data-perf="low"] button { cursor: pointer !important; }
 
-/* Decorative loops that repaint on a timer and add nothing to a page
-   that is already struggling to scroll. */
 html[data-perf="low"] .photo-scan,
 html[data-perf="low"] .photo-ring,
 html[data-perf="low"] .orb-ring,
@@ -1376,15 +1079,9 @@ html[data-perf="low"] .cal-card-pulse,
 html[data-perf="low"] .scroll-hint span { animation: none; }
 html[data-perf="low"] .photo-glare { display: none; }
 
-/* Long shadows are a blur too: a 80px spread is rasterised the same way
-   and there is one on every card. */
 html[data-perf="low"] { --shadow: 0 8px 20px rgba(0,0,0,.28); }
 
-/* Transitions on colour across the whole document force a repaint of
-   everything for most of a second every time the light switch flips. */
 html[data-perf="low"] body { transition: none; }
-
-/* ------------------------------------------- the manual override */
 
 .perf-tab {
   display: inline-flex; align-items: center; gap: 5px;
@@ -1393,7 +1090,7 @@ html[data-perf="low"] body { transition: none; }
   color: var(--muted); background: transparent; cursor: pointer;
   transition: color .25s var(--ease), border-color .25s var(--ease);
 }
-.perf-tab:hover { color: var(--text); border-color: var(--accent); }
+.perf-tab:hover { color: var(--text); border-color: var(--accent-ink, var(--accent)); }
 .perf-tab i {
   width: 6px; height: 6px; border-radius: 50%; background: var(--muted);
   transition: background .25s var(--ease);
@@ -1403,27 +1100,15 @@ html[data-perf="mid"]  .perf-tab i { background: #E8B33A; }
 html[data-perf="low"]  .perf-tab i { background: #E0553B; }
 @media (max-width: 980px) { .perf-tab { display: none; } }
 
-
-/* ==================================================================
-   ANNOUNCEMENTS
-   ------------------------------------------------------------------
-   A section on the page, and a short list hanging off a bell in the
-   nav. The bell's badge counts what *this browser* has not opened yet,
-   remembered in localStorage — there is no read-receipt going back to
-   a server, because nobody needs to know who read what.
-   ================================================================== */
-
-/* --------------------------------------------------------- the bell */
 .bell-btn {
   position: relative; display: grid; place-items: center;
   width: 38px; height: 38px; border-radius: 12px;
   border: 1px solid var(--line); color: var(--muted);
   transition: color .3s var(--ease), border-color .3s var(--ease), background .3s var(--ease);
 }
-.bell-btn:hover { color: var(--text); border-color: var(--accent); background: var(--surface); }
-.bell-btn.on { color: var(--accent); border-color: var(--accent); }
+.bell-btn:hover { color: var(--text); border-color: var(--accent-ink, var(--accent)); background: var(--surface); }
+.bell-btn.on { color: var(--accent-ink, var(--accent)); border-color: var(--accent-ink, var(--accent)); }
 
-/* The bell only rings when there is something to ring about. */
 .bell-btn.unread .bell-body { transform-origin: 12px 4px; animation: bellSwing 3.4s var(--ease) infinite; }
 @keyframes bellSwing {
   0%, 62%, 100% { transform: rotate(0); }
@@ -1445,12 +1130,8 @@ html[data-perf="low"] .bell-btn.unread .bell-body { animation: none; }
 }
 @keyframes badgePop { from { transform: scale(0); } to { transform: scale(1); } }
 
-/* --------------------------------------------------- the section */
 .news-grid { display: grid; gap: 14px; }
 
-/* Three columns: when it happened, what it looked like, what it says.
-   The middle one only exists when there is a picture, so the text column
-   is the last one either way and does not need to be placed by hand. */
 .news-card {
   position: relative; display: grid; align-items: start;
   grid-template-columns: 118px 1fr;
@@ -1466,10 +1147,6 @@ html[data-perf="low"] .bell-btn.unread .bell-body { animation: none; }
 
 .news-text { display: grid; gap: 8px; justify-items: start; min-width: 0; }
 
-/* A fixed square. Announcement pictures arrive at whatever size and shape
-   he had to hand — a phone photo, a wide screenshot, a scan — and a row of
-   cards whose heights are decided by the tallest of those looks like an
-   accident. object-fit does the cropping so the layout does not have to. */
 .news-shot {
   display: block; width: 132px; height: 132px; overflow: hidden;
   border-radius: 12px; border: 1px solid var(--line); background: var(--bg2);
@@ -1495,14 +1172,12 @@ html[data-perf="low"] .news-shot:hover img { transform: none; }
 .news-card p { color: var(--muted); font-size: 15px; }
 .news-card .news-more {
   justify-self: start; font-size: 12px; letter-spacing: 1px; text-transform: uppercase;
-  color: var(--accent); border-bottom: 1px solid currentColor; padding-bottom: 2px;
+  color: var(--accent-ink, var(--accent)); border-bottom: 1px solid currentColor; padding-bottom: 2px;
 }
 
-/* Pinned: a rule down the left edge, not a different card. */
 .news-card.pinned { border-left: 3px solid var(--accent); }
-.news-card.pinned .news-tag { color: var(--accent); border-color: var(--accent); }
+.news-card.pinned .news-tag { color: var(--accent-ink, var(--accent)); border-color: var(--accent-ink, var(--accent)); }
 
-/* Unread, from this browser's point of view. */
 .news-card.fresh::after {
   content: ''; position: absolute; top: 16px; right: 16px;
   width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
@@ -1521,11 +1196,6 @@ html[data-perf="low"] .news-card.fresh::after { animation: none; }
   border: 1px dashed var(--line); border-radius: var(--radius);
 }
 
-/* ------------------------------------------------ the attachments
-   A row of chips. Each one says what it is before it says what it is
-   called, because "Q1-rapor-final-v3" tells you nothing until you know
-   whether it is a spreadsheet or a slide deck. The kind comes from the
-   extension, so it cannot disagree with the file. */
 .news-files { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 0; padding: 0; }
 
 .news-file {
@@ -1535,7 +1205,7 @@ html[data-perf="low"] .news-card.fresh::after { animation: none; }
   font-size: 12.5px; color: var(--text);
   transition: border-color .25s var(--ease), background .25s var(--ease);
 }
-.news-file:hover { border-color: var(--accent); background: var(--surface); }
+.news-file:hover { border-color: var(--accent-ink, var(--accent)); background: var(--surface); }
 
 .news-file-kind {
   padding: 3px 8px; border-radius: 999px;
@@ -1545,8 +1215,6 @@ html[data-perf="low"] .news-card.fresh::after { animation: none; }
 }
 .news-file-name { max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Office's own colours, so the chip is recognisable at a glance without
-   needing an icon set downloaded from anywhere. */
 .news-file.pdf  .news-file-kind { background: #E2574C; color: #fff; }
 .news-file.doc  .news-file-kind { background: #2B579A; color: #fff; }
 .news-file.xls  .news-file-kind { background: #217346; color: #fff; }
@@ -1563,7 +1231,6 @@ html[data-perf="low"] .news-card.fresh::after { animation: none; }
   .news-file-name { max-width: 150px; }
 }
 
-/* ------------------------------------------------- the pop-out */
 .news-pop { position: fixed; inset: 0; z-index: 900; }
 .news-pop-veil { position: absolute; inset: 0; background: rgba(0,0,0,.35); animation: fadeIn .3s var(--ease); }
 
@@ -1604,15 +1271,8 @@ html[data-perf="low"] .news-pop-card { background: var(--bg2); animation: none; 
 .news-pop-item .d { margin-top: 6px; font-size-adjust: none; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: .8px; }
 
 .news-pop-foot { padding: 11px 16px; border-top: 1px solid var(--line); text-align: center; }
-.news-pop-foot a { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); }
+.news-pop-foot a { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent-ink, var(--accent)); }
 
-/* ==================================================================
-   ADMIN BAR
-   ------------------------------------------------------------------
-   Signing in used to redirect straight into the editor. Now it puts
-   this strip at the top of the real site instead, so the first thing
-   you see after logging in is the thing you are editing.
-   ================================================================== */
 .adminbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 1200;
   display: flex; align-items: center; gap: 10px;
@@ -1642,17 +1302,14 @@ html[data-perf="low"] .adminbar-live { animation: none; }
   font-size: 12px; white-space: nowrap;
   transition: border-color .25s var(--ease), background .25s var(--ease);
 }
-.adminbar-btn:hover { border-color: var(--accent); background: var(--surface); }
-.adminbar-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); font-weight: 600; }
+.adminbar-btn:hover { border-color: var(--accent-ink, var(--accent)); background: var(--surface); }
+.adminbar-btn.primary { background: var(--accent); border-color: var(--accent-ink, var(--accent)); color: var(--on-accent, #fff); font-weight: 600; }
 .adminbar-btn.primary:hover { filter: brightness(1.1); }
 .adminbar-btn.ghost { color: var(--muted); }
 
-/* Everything that was pinned to the top of the viewport moves down by
-   exactly the height of the bar. */
 body.has-adminbar { padding-top: 44px; }
 body.has-adminbar #nav { top: 44px; }
 body.has-adminbar .news-pop-card { top: 110px; }
-/* The mode tabs live inside #nav, so they follow it down on their own. */
 
 @media (max-width: 720px) {
   .adminbar-who { display: none; }
@@ -1660,20 +1317,6 @@ body.has-adminbar .news-pop-card { top: 110px; }
   .adminbar-btn.ghost span, .adminbar-btn.ghost { display: inline-flex; }
 }
 
-
-/* ==================================================================
-   [hidden] MUST WIN
-   ------------------------------------------------------------------
-   `hidden` is only an attribute; the browser implements it as a plain
-   `display: none` rule in its own stylesheet, and *any* author rule
-   that sets display beats it. So every element this site toggles with
-   .hidden = true needs a matching rule here or it never goes away.
-
-   This is not hypothetical. `.adminbar` sets `display: flex`, and
-   without the line below the signed-in toolbar — with its Edit and
-   Sign out buttons — was rendered for every anonymous visitor.
-   scripts/test.js checks for exactly this, and it now reads this file.
-   ================================================================== */
 .adminbar[hidden] { display: none !important; }
 .bell-btn[hidden] { display: none !important; }
 .news-pop[hidden] { display: none !important; }
@@ -1681,25 +1324,6 @@ body.has-adminbar .news-pop-card { top: 110px; }
 .press-index a[hidden] { display: none !important; }
 .nav-links a[hidden] { display: none !important; }
 
-
-/* ------------------------------------------------------------------
-   mid, second pass — measured on the live site
-
-   The first version of the mid tier removed the aurora blur and left
-   every backdrop-filter alone. Counting them in the browser showed 29
-   still live, and the split matters: a handful are *chrome* — the nav,
-   the chat panel, the command palette, this bar — which are few, fixed
-   in place, and where the frosted glass actually reads as a material.
-
-   The rest are *content* cards: .card, .project, .tl-item, .news-card.
-   Those are the ones that multiply. Open the skills section and there
-   are six of them at blur(12px), each the width of the column, each
-   re-blurring whatever scrolls behind it. That is the repeated cost,
-   and it is the one worth spending at the full tier only.
-
-   So mid keeps the chrome frosted and gives the cards an opaque
-   surface derived from the current mode's own palette.
-------------------------------------------------------------------- */
 html[data-perf="mid"] .card,
 html[data-perf="mid"] .project,
 html[data-perf="mid"] .tl-item,
@@ -1718,8 +1342,8 @@ html[data-perf="mid"] .calendar-box {
   background: color-mix(in srgb, var(--bg2) 94%, var(--text) 6%);
 }
 
-/* The grain rule above only named the mid tier. At low the layer is
-   display:none so nothing was ever painted, but leaving a running
-   animation declared on a hidden element is untidy and it made the
-   measurement read as though the grain were still moving. */
 html[data-perf="low"] .grain { animation: none; }
+
+.arc, .arc * { cursor: auto !important; }
+.arc button, .arc .arc-tab, .arc [data-close].arc-x { cursor: pointer !important; }
+.arc-veil { cursor: zoom-out !important; }

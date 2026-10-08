@@ -1,0 +1,512 @@
+{
+  "savedAt": "2026-10-08T21:54:49.275Z",
+  "content": {
+    "profile": {
+      "name": "Read Aloush",
+      "shortName": "Read Aloush",
+      "title": "AI & Robotics Engineer",
+      "roles": [
+        "AI & Robotics Engineer",
+        "Computer Vision Specialist",
+        "Embedded AI Developer",
+        "Autonomous Systems Builder"
+      ],
+      "tagline": "Computer Vision · Embedded AI · Autonomous Systems",
+      "summary": "AI & Robotics Engineer and Computer Engineering Master's student with proven experience in computer vision, embedded AI, and autonomous systems. Demonstrated success in deploying high-accuracy deep learning models (>97%) on edge devices such as the Raspberry Pi, and engineering TÜBİTAK-funded autonomous drone projects. Adept at bridging the gap between advanced software architectures (ROS2, TensorFlow, PyTorch) and industrial automation systems.",
+      "photo": "/assets/uploads/whatsapp-image-2026-09-01-at-16-05-36-b512cf07.jpg",
+      "location": "Konya, Türkiye",
+      "email": "dev@readaloush.com",
+      "phone": "+90 552 676 79 83",
+      "availability": "Open to AI / Robotics roles",
+      "cvUrl": "/assets/uploads/read-alallos-cv-6-622fe724.pdf",
+      "calendarUrl": "https://calendar.app.google/oGEBijhJ1Nf4xxVb8",
+      "calendarNote": "Pick a slot that works for you — the calendar shows my real availability, no forms, no waiting for a reply.",
+      "showAvailability": false
+    },
+    "stats": [
+      {
+        "value": 98.43,
+        "suffix": "%",
+        "decimals": 2,
+        "label": "Peak model accuracy",
+        "detail": "Brain tumor MRI classification"
+      },
+      {
+        "value": 97.69,
+        "suffix": "%",
+        "decimals": 2,
+        "label": "Edge inference accuracy",
+        "detail": "Real-time waste sorting on Raspberry Pi"
+      },
+      {
+        "value": 12000,
+        "suffix": "+",
+        "decimals": 0,
+        "label": "Images trained on",
+        "detail": "Custom CNN datasets"
+      },
+      {
+        "value": 1,
+        "suffix": "",
+        "decimals": 0,
+        "label": "TÜBİTAK 2209-A grant",
+        "detail": "Principal developer"
+      }
+    ],
+    "announcements": [
+      {
+        "id": "a-2026-09-01",
+        "title": "Master's programme has started",
+        "body": "I have begun the Computer Engineering master's programme at Selçuk University. The research direction is edge inference for autonomous systems — the same thread as the drone and the sorting line, but with the compute budget taken seriously.",
+        "date": "2026-08-10",
+        "tag": "Milestone",
+        "link": "",
+        "image": "/assets/uploads/ekran-resmi-2026-09-01-16-12-58-7c84deac.png",
+        "files": [],
+        "pinned": true,
+        "published": true
+      },
+      {
+        "id": "a-2026-09-02",
+        "title": "Computer Programming programme has started",
+        "body": "I have begun the Computer Programming programme at Istanbul University. The focus is on software development and embedded systems — the same thread as the IoT gateways and the automated sorting line, but with core programming principles taken seriously.",
+        "date": "2026-09-02",
+        "tag": "Milestone",
+        "link": "",
+        "image": "/assets/uploads/i-stanbul-u-niversitesi-logo-c97b33c0.png",
+        "files": [],
+        "pinned": false,
+        "published": true
+      },
+      {
+        "id": "a-2026-05-20",
+        "title": "Waste sorting system finished at 97.69%",
+        "body": "The internship project is complete. Five waste streams, classified in real time on a Raspberry Pi, wired into the conveyor through a ROS2 bridge. The write-up is in the projects section.",
+        "date": "2026-05-20",
+        "tag": "Project",
+        "link": "#projects",
+        "image": "",
+        "files": [],
+        "pinned": false,
+        "published": true
+      },
+      {
+        "id": "a-2026-09-02-2",
+        "title": "Mechatronics Engineering programme completed",
+        "body": "I have graduated from the Mechatronics Engineering programme. The focus was on the integration of mechanics, electronics, and software — the same thread as the automated sorting line and the multi-channel IoT gateways, but culminating in a formal engineering foundation.",
+        "date": "2026-05-22",
+        "tag": "",
+        "link": "",
+        "image": "/assets/uploads/ekran-resmi-2026-09-02-10-26-47-d30a3e6d.png",
+        "files": [],
+        "pinned": false,
+        "published": true
+      }
+    ],
+    "socials": [
+      {
+        "label": "GitHub",
+        "icon": "github",
+        "url": "https://github.com/readaloush"
+      },
+      {
+        "label": "LinkedIn",
+        "icon": "linkedin",
+        "url": "https://linkedin.com/in/readaloush"
+      },
+      {
+        "label": "Instagram",
+        "icon": "instagram",
+        "url": "https://instagram.com/readaloush"
+      },
+      {
+        "label": "Facebook",
+        "icon": "facebook",
+        "url": "https://facebook.com/readaloush"
+      },
+      {
+        "label": "TikTok",
+        "icon": "tiktok",
+        "url": "https://tiktok.com/@_.pm"
+      },
+      {
+        "label": "X",
+        "icon": "x",
+        "url": "https://x.com/readaloush"
+      },
+      {
+        "label": "YouTube",
+        "icon": "youtube",
+        "url": "https://youtube.com/@readaloush"
+      },
+      {
+        "label": "Email",
+        "icon": "mail",
+        "url": "mailto:dev@readaloush.com"
+      }
+    ],
+    "skills": [
+      {
+        "category": "Programming",
+        "items": [
+          {
+            "name": "Python",
+            "level": 95
+          },
+          {
+            "name": "C++",
+            "level": 90
+          },
+          {
+            "name": "C",
+            "level": 95
+          },
+          {
+            "name": "C#",
+            "level": 90
+          },
+          {
+            "name": "MATLAB",
+            "level": 90
+          }
+        ]
+      },
+      {
+        "category": "AI & Computer Vision",
+        "items": [
+          {
+            "name": "OpenCV",
+            "level": 93
+          },
+          {
+            "name": "TensorFlow",
+            "level": 90
+          },
+          {
+            "name": "PyTorch",
+            "level": 90
+          },
+          {
+            "name": "Deep Learning",
+            "level": 92
+          },
+          {
+            "name": "Machine Learning",
+            "level": 95
+          }
+        ]
+      },
+      {
+        "category": "Robotics & Automation",
+        "items": [
+          {
+            "name": "ROS2",
+            "level": 87
+          },
+          {
+            "name": "Pixhawk (PX4/ArduPilot)",
+            "level": 80
+          },
+          {
+            "name": "PLC — Siemens TIA Portal",
+            "level": 70
+          },
+          {
+            "name": "Control Systems",
+            "level": 84
+          }
+        ]
+      },
+      {
+        "category": "Tools & Hardware",
+        "items": [
+          {
+            "name": "Git",
+            "level": 88
+          },
+          {
+            "name": "Linux (Ubuntu)",
+            "level": 90
+          },
+          {
+            "name": "Raspberry Pi",
+            "level": 92
+          },
+          {
+            "name": "STM32",
+            "level": 95
+          },
+          {
+            "name": "Industrial Control Panels",
+            "level": 80
+          }
+        ]
+      }
+    ],
+    "languages": [
+      {
+        "name": "Arabic",
+        "level": "Native"
+      },
+      {
+        "name": "Turkish",
+        "level": "Fluent"
+      },
+      {
+        "name": "English",
+        "level": "Advanced"
+      }
+    ],
+    "experience": [
+      {
+        "role": "Embedded Software Engineer ",
+        "company": "IMAX ELEKTRONIC",
+        "period": "Jun 2026 – Present",
+        "tools": "STM32, Python, OpenCV, Flutter",
+        "bullets": [
+          "Develop production firmware in Embedded C for STM32 microcontrollers powering a photoelectric smoke detector\nproduct line, covering sensor drivers, alarm state machines and low-power operation.",
+          "Interface photoelectric smoke sensors and peripheral ICs over I2C and SPI, and implement UART and LoRa layers for\nwireless alarm networking and remote device status reporting.",
+          "Designed and tuned a fuzzy logic alarm decision algorithm that separates genuine fire smoke from nuisance sources\nsuch as cooking smoke, cigarette smoke and steam, materially reducing false alarms.",
+          "Contribute to hardware revisions through schematic design, PCB layout and pre-production circuit simulation in\nProteus, then validate firmware on the resulting boards.",
+          "Co-develop the companion Flutter mobile application for device pairing, live sensor telemetry and alarm\nnotifications, and define the data protocol shared between firmware and app."
+        ],
+        "summary": "Firmware, hardware and app work for a photoelectric smoke detector product line.",
+        "problem": "A smoke detector has to react to real fire immediately, stay quiet for steam and cooking smoke, and run for years on very little power.",
+        "approach": "I write production firmware in Embedded C for STM32 microcontrollers, interface the smoke sensors over I2C and SPI, build UART and LoRa layers for wireless alarm networks, and designed a fuzzy logic alarm decision algorithm. I also contribute to the hardware revisions and co-develop the companion Flutter app.",
+        "results": [
+          "Fuzzy logic alarm decision that materially reduces false alarms",
+          "Wireless alarm networking and remote device status over LoRa",
+          "Firmware validated on new boards after each hardware revision"
+        ]
+      },
+      {
+        "role": "AI & Robotics Intern",
+        "company": "Selçuk University",
+        "period": "Feb 2026 – May 2026",
+        "tools": "Python, OpenCV",
+        "bullets": [
+          "Led the development of an end-to-end computer vision pipeline on Raspberry Pi, classifying waste across 5 distinct categories.",
+          "Optimized and deployed edge AI models, achieving 97.69% real-time classification accuracy.",
+          "Integrated image recognition software with physical conveyor automation systems."
+        ],
+        "summary": "Led the computer vision pipeline behind the automated waste sorting system.",
+        "problem": "The university needed recyclable waste classified automatically, in real time, on inexpensive hardware connected to a real conveyor.",
+        "approach": "I led an end-to-end computer vision pipeline on Raspberry Pi that classifies waste into five categories, optimised the edge AI models for deployment, and integrated the recognition software with the physical conveyor automation.",
+        "results": [
+          "97.69% real-time classification accuracy",
+          "5 waste categories classified on a Raspberry Pi",
+          "Integrated with physical conveyor automation"
+        ]
+      },
+      {
+        "role": "Computer Vision & AI Intern",
+        "company": "Selçuk University",
+        "period": "Jun 2025 – Aug 2025",
+        "tools": "TensorFlow, PyTorch",
+        "bullets": [
+          "Designed and trained CNN architectures for medical image analysis, reaching 98.43% accuracy in tumor classification.",
+          "Curated and preprocessed a dataset of 2,867 high-resolution MRI images with robust augmentation to eliminate overfitting.",
+          "Enhanced clinical image analysis performance by benchmarking precision and recall against standard medical datasets."
+        ],
+        "summary": "Deep learning for medical image analysis — the brain tumour MRI system.",
+        "problem": "Tumour classification on MRI needed to be accurate and robust, from a limited set of clinical images.",
+        "approach": "I designed and trained CNN architectures for medical image analysis, curated and preprocessed 2,867 high-resolution MRI images with robust augmentation, and benchmarked precision and recall against standard medical datasets.",
+        "results": [
+          "98.43% tumour-classification accuracy",
+          "2,867 MRI images curated and preprocessed",
+          "Overfitting prevented through robust augmentation"
+        ]
+      },
+      {
+        "role": "Automation Department Intern",
+        "company": "Mizan Mekatronik",
+        "period": "Jun 2024 – Aug 2024",
+        "tools": "Siemens TIA Portal",
+        "bullets": [
+          "Programmed PLC systems and designed HMI screens using Siemens TIA Portal.",
+          "Assembled and wired industrial control panels and sensor distribution networks.",
+          "Diagnosed and resolved hardware/software faults during system commissioning."
+        ],
+        "summary": "Hands-on industrial automation: PLC programming, HMI design and control panels.",
+        "problem": "Industrial systems must be programmed, wired and commissioned so that they run reliably from day one.",
+        "approach": "I programmed PLC systems and designed HMI screens in Siemens TIA Portal, assembled and wired industrial control panels and sensor distribution networks, and diagnosed hardware and software faults during commissioning.",
+        "results": [
+          "PLC programs and HMI screens built in Siemens TIA Portal",
+          "Control panels and sensor networks assembled and wired",
+          "Faults found and fixed during system commissioning"
+        ]
+      }
+    ],
+    "projects": [
+      {
+        "title": "AI-Powered Automated Waste Sorting System",
+        "period": "Feb 2026 – May 2026",
+        "image": "/assets/img/project-waste.svg",
+        "tags": [
+          "CNN",
+          "Raspberry Pi",
+          "ROS2",
+          "OpenCV"
+        ],
+        "repo": "",
+        "report": "",
+        "link": "",
+        "bullets": [
+          "Engineered an automated recycling system by training custom CNN models on a dataset of 12,000+ images.",
+          "Optimized memory footprint for Raspberry Pi deployment, achieving 97.69% accuracy across 5 waste streams.",
+          "Developed a ROS2 communication bridge to stream real-time inferences directly to conveyor control units."
+        ],
+        "summary": "A vision system beside a conveyor that recognises recyclable waste in real time on a Raspberry Pi and hands every decision to the line over ROS2.",
+        "role": "Lead developer",
+        "status": "Completed",
+        "duration": "4 months",
+        "problem": "Sorting mixed recyclable waste by hand is slow and inconsistent. The goal was a system that recognises each item on a moving conveyor and tells the line where it belongs — on low-cost hardware that can sit right next to the belt.",
+        "approach": "I trained custom CNN models on a dataset of more than 12,000 images covering five waste categories, then optimised them to run on a Raspberry Pi. A ROS2 bridge streams each prediction to the conveyor control units in real time, so the camera and the machine work as one system.",
+        "challenges": [
+          {
+            "problem": "A model accurate enough to sort reliably was too heavy to run in real time on a Raspberry Pi.",
+            "solution": "Optimised the model's memory footprint for edge deployment while keeping 97.69% accuracy across five waste streams."
+          },
+          {
+            "problem": "Each prediction had to reach the conveyor without delay, or the item would already have passed.",
+            "solution": "Built a ROS2 communication bridge that streams every inference directly to the conveyor control units."
+          }
+        ],
+        "results": [
+          "97.69% classification accuracy across 5 waste streams",
+          "Runs in real time on a Raspberry Pi",
+          "Connected to the physical conveyor automation over ROS2"
+        ]
+      },
+      {
+        "title": "Brain Tumor MRI Analysis System",
+        "period": "Jun 2025 – Aug 2025",
+        "image": "/assets/img/project-mri.svg",
+        "tags": [
+          "PyTorch",
+          "Medical Imaging",
+          "Segmentation",
+          "Attention"
+        ],
+        "repo": "",
+        "report": "",
+        "link": "",
+        "bullets": [
+          "Developed an end-to-end deep learning platform for automated tumor classification and lesion segmentation.",
+          "Attained a peak accuracy of 98.43% on 2,867 clinical MRI scans using PyTorch and spatial attention.",
+          "Implemented OpenCV image processing filters to enhance soft-tissue contrast before model training."
+        ],
+        "summary": "A deep learning platform that classifies brain tumours and outlines the lesion on MRI scans.",
+        "role": "Computer vision developer",
+        "status": "Completed",
+        "duration": "3 months",
+        "problem": "Reading MRI scans for tumours is slow, specialised work. The aim was an end-to-end system that classifies tumours automatically and marks the lesion region, accurately enough to serve as a reliable second opinion.",
+        "approach": "I curated and preprocessed 2,867 high-resolution clinical MRI scans, enhanced soft-tissue contrast with OpenCV filters, and trained CNN models in PyTorch with spatial attention for tumour classification and lesion segmentation. Performance was benchmarked on precision and recall against standard medical datasets.",
+        "challenges": [
+          {
+            "problem": "With a few thousand images, a deep model can memorise the training set instead of learning from it.",
+            "solution": "Applied robust data augmentation during training to prevent overfitting."
+          },
+          {
+            "problem": "Soft-tissue boundaries have low contrast in raw MRI scans.",
+            "solution": "Added OpenCV image-processing filters that enhance contrast before training."
+          }
+        ],
+        "results": [
+          "98.43% peak tumour-classification accuracy",
+          "Trained and evaluated on 2,867 clinical MRI scans",
+          "Precision and recall benchmarked against standard medical datasets"
+        ]
+      },
+      {
+        "title": "Foldable-Wing Autonomous Drone",
+        "period": "Aug 2025 – Jan 2026",
+        "image": "/assets/uploads/whatsapp-image-2026-09-02-at-11-25-36-9850b4c9.jpg",
+        "tags": [
+          "UAV",
+          "Pixhawk",
+          "Telemetry ML",
+          "TÜBİTAK 2209-A"
+        ],
+        "repo": "",
+        "report": "",
+        "link": "",
+        "bullets": [
+          "Designed a foldable-wing autonomous UAV with a multi-sensor payload for real-time air quality tracking.",
+          "Applied machine learning algorithms to parse telemetry data and predict local environmental pollution patterns.",
+          "Awarded research funding as principal developer under the TÜBİTAK 2209-A Undergraduate Research Project program."
+        ],
+        "summary": "A foldable-wing autonomous UAV carrying a multi-sensor payload to track air quality — funded by TÜBİTAK 2209-A.",
+        "role": "Principal developer",
+        "status": "Funded · TÜBİTAK 2209-A",
+        "duration": "6 months",
+        "problem": "Fixed ground stations measure air quality at single points, which says little about how pollution spreads across an area. The project set out to measure it from the air, in real time.",
+        "approach": "I designed a foldable-wing autonomous UAV built around a Pixhawk flight controller, carrying a multi-sensor payload for real-time air-quality tracking. Machine learning algorithms parse the telemetry data to predict local environmental pollution patterns.",
+        "results": [
+          "TÜBİTAK 2209-A research funding as principal developer",
+          "Real-time air-quality tracking from a multi-sensor payload",
+          "Machine-learning prediction of local pollution patterns from telemetry"
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "Master's Student in Computer Engineering",
+        "school": "Selçuk University",
+        "period": "2026 – Present",
+        "note": "Relevant coursework: Machine Learning, Biomedical Devices and Artificial Intelligence Applications, Numerical Algorithms, Scientific Research Methods and Publication Ethics."
+      },
+      {
+        "degree": "Bachelor of Mechatronics Engineering",
+        "school": "Selçuk University",
+        "period": "2022 – 2026",
+        "note": "Relevant coursework: Robotics, Artificial Intelligence, Computer Vision, Embedded Systems, Control Systems, Industrial Automation."
+      },
+      {
+        "degree": "Computer Programming programme",
+        "school": "Istanbul University",
+        "period": "2026 – Present",
+        "note": ""
+      }
+    ],
+    "sections": {
+      "newsTitle": "Announcements",
+      "newsKicker": "What is new, straight from me",
+      "aboutTitle": "About",
+      "aboutKicker": "Who is behind the signature",
+      "skillsTitle": "Skills",
+      "skillsKicker": "The stack I build with",
+      "experienceTitle": "Experience",
+      "experienceKicker": "Where I have shipped",
+      "projectsTitle": "Projects",
+      "projectsKicker": "Things I built and measured",
+      "certificatesTitle": "Certificates",
+      "certificatesKicker": "Proof, on paper",
+      "experienceImage": "",
+      "educationTitle": "Education",
+      "educationKicker": "Academic background",
+      "contactTitle": "Let us talk",
+      "contactKicker": "Book a slot, not a contact form"
+    },
+    "meta": {
+      "siteTitle": " Read Aloush — AI & Robotics Engineer",
+      "metaDescription": "Portfolio of Read Aloush, AI & Robotics Engineer specialising in computer vision, embedded AI and autonomous systems.",
+      "footerNote": "Designed, coded and signed by Read Aloush.",
+      "accent": "#00e5ff",
+      "accent2": "#7c5cff",
+      "alternateNames": [
+        "Read ALALLOŞ",
+        "Read Alallos"
+      ]
+    },
+    "certificates": [],
+    "translations": {
+      "tr": {
+        "Master's Student in Computer Engineering": "Bilgisayar Mühendisliği Yüksek Lisans Öğrencisi"
+      },
+      "ar": {
+        "Master's Student in Computer Engineering": "طالب ماجستير في هندسة الحاسوب"
+      }
+    }
+  }
+}

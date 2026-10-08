@@ -1,12 +1,3 @@
-/**
- * SQLite database layer.
- *
- * IMPORTANT SECURITY NOTE
- * -----------------------
- * The admin username and password NEVER appear in any HTML/JS file.
- * Only a scrypt hash lives inside data/portfolio.db, and the browser
- * never receives it. Login is verified server-side only.
- */
 const path = require('path');
 const fs = require('fs');
 const sqlite = require('./sqlite');
@@ -67,8 +58,6 @@ db.exec(`
   );
 `);
 
-/* ---------------------------------------------------------------- settings */
-
 const getSetting = (key) => {
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
   return row ? row.value : null;
@@ -79,7 +68,6 @@ const setSetting = (key, value) =>
     .prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
     .run(key, String(value));
 
-/** Session secret is generated once and persisted so logins survive restarts. */
 function getJwtSecret() {
   if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
   let secret = getSetting('jwt_secret');
@@ -90,28 +78,11 @@ function getJwtSecret() {
   return secret;
 }
 
-/* ---------------------------------------------------------------- content */
-
-/**
- * Fill in keys a new version of the site expects but an old saved copy has
- * never heard of.
- *
- * The content row is one JSON blob written by the admin panel, so the day a
- * feature adds a new key — `announcements`, say — every database saved before
- * that day is missing it, and the new section renders empty forever with no
- * error to explain why.
- *
- * The rule is deliberately narrow: a key is added only when it is *absent*.
- * Anything already saved wins, including an empty array. That matters — if
- * this merged arrays element-wise, deleting the last project in the admin
- * panel would silently restore the three seeded ones on the next read.
- */
 function withDefaults(saved) {
   const out = { ...saved };
   for (const key of Object.keys(defaultContent)) {
     if (out[key] === undefined) out[key] = defaultContent[key];
   }
-  // one level deeper for the two flat label objects, so new headings appear
   for (const key of ['sections', 'meta', 'profile']) {
     if (out[key] && typeof out[key] === 'object' && !Array.isArray(out[key])) {
       out[key] = { ...defaultContent[key], ...out[key] };
@@ -135,18 +106,6 @@ function getContentMeta() {
   return { updatedAt: row ? row.updated_at : null };
 }
 
-/**
- * Pull the durable copy in and make it the local one.
- *
- * Called once at startup, before the server listens. On a host with no
- * disk this is the step that makes the difference between "your edits
- * are still here" and "the site is back to the version I shipped".
- *
- * If it is not configured, or the network is down, or the file is not
- * there yet, nothing happens and SQLite keeps whatever it seeded. That
- * is the right failure: the site comes up with the default content
- * rather than not coming up at all.
- */
 async function hydrate() {
   if (!remote.enabled()) return { hydrated: false, reason: 'not configured' };
   try {
@@ -155,16 +114,10 @@ async function hydrate() {
       return { hydrated: false, reason: 'nothing stored yet' };
     }
 
-    // The real edit time, carried alongside the content, so the panel does
-    // not report the moment the server happened to boot as the moment he
-    // last changed something.
     const when = found.savedAt
       ? new Date(found.savedAt).toISOString().slice(0, 19).replace('T', ' ')
       : null;
 
-    // Written straight to the row: going through saveContent() would push
-    // it back to GitHub, which is a pointless write of the bytes we just
-    // read, and would add a revision on every single restart.
     db.prepare(
       `INSERT INTO content (id, data, updated_at) VALUES (1, ?, COALESCE(?, datetime('now')))
        ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`
@@ -180,7 +133,6 @@ function saveContent(obj) {
   const json = JSON.stringify(obj);
   const existing = db.prepare('SELECT data FROM content WHERE id = 1').get();
   if (existing) {
-    // keep a rolling history of the last 30 versions
     db.prepare('INSERT INTO revisions (data) VALUES (?)').run(existing.data);
     db.prepare(
       'DELETE FROM revisions WHERE id NOT IN (SELECT id FROM revisions ORDER BY id DESC LIMIT 30)'
@@ -191,14 +143,8 @@ function saveContent(obj) {
      ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = datetime('now')`
   ).run(json);
 
-  /* Mirror it somewhere that outlives this container.
-     Deliberately not awaited: the panel should not sit waiting on a call
-     to GitHub before it can say "saved", and the local write above has
-     already succeeded — the edit is live on the site either way. What a
-     failure here costs is durability, not the edit, and the panel reads
-     the outcome from /api/storage rather than guessing. */
   if (remote.enabled()) {
-    remote.writeContent(obj).catch(() => { /* recorded in remote.status() */ });
+    remote.writeContent(obj).catch(() => {  });
   }
 
   return getContentMeta();
@@ -212,8 +158,6 @@ function getRevision(id) {
   const row = db.prepare('SELECT data FROM revisions WHERE id = ?').get(id);
   return row ? JSON.parse(row.data) : null;
 }
-
-/* ------------------------------------------------------------------ users */
 
 const findUser = (username) =>
   db.prepare('SELECT * FROM users WHERE lower(username) = lower(?)').get(String(username || '').trim());
@@ -234,8 +178,6 @@ function updateUsername(id, username) {
   );
 }
 
-/* --------------------------------------------------------- login attempts */
-
 function recordAttempt(ip, username, success) {
   db.prepare('INSERT INTO login_attempts (ip, username, success) VALUES (?, ?, ?)').run(
     ip,
@@ -254,8 +196,6 @@ function recentFailures(ip) {
   return row.c;
 }
 
-/* ------------------------------------------------------------------ media */
-
 function recordMedia({ filename, url, size, mimetype }) {
   db.prepare('INSERT INTO media (filename, url, size, mimetype) VALUES (?, ?, ?, ?)').run(
     filename,
@@ -267,16 +207,12 @@ function recordMedia({ filename, url, size, mimetype }) {
 
 const listMedia = () => db.prepare('SELECT * FROM media ORDER BY id DESC LIMIT 200').all();
 
-/* ------------------------------------------------------------ bootstrap */
-
 function bootstrap() {
-  // 1. seed content from the CV on first run
   if (!db.prepare('SELECT 1 FROM content WHERE id = 1').get()) {
     db.prepare('INSERT INTO content (id, data) VALUES (1, ?)').run(JSON.stringify(defaultContent));
     console.log('  ✔ Portfolio content seeded from CV.');
   }
 
-  // 2. create the admin account if none exists
   const count = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
   if (count === 0) {
     const username = (process.env.ADMIN_USERNAME || 'admin').trim();

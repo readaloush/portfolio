@@ -1,16 +1,7 @@
-/**
- * Password hashing + session tokens, using only Node's built-in crypto.
- *
- * Passwords are hashed with scrypt (memory-hard, the same family of
- * algorithm as bcrypt/argon2 and recommended by OWASP). The plaintext
- * password is never stored anywhere — not in the database, and
- * certainly not in any HTML or JavaScript file.
- */
 const crypto = require('crypto');
 
 const SCRYPT = { N: 16384, r: 8, p: 1, keylen: 64 };
 
-/** -> "scrypt$16384$8$1$<salt-hex>$<hash-hex>" */
 function hashPassword(plain) {
   const salt = crypto.randomBytes(16);
   const key = crypto.scryptSync(String(plain), salt, SCRYPT.keylen, {
@@ -40,11 +31,8 @@ function verifyPassword(plain, stored) {
   }
 }
 
-/* ------------------------------------------------------------- tokens */
-
 const b64u = (buf) => Buffer.from(buf).toString('base64url');
 
-/** Signed, expiring session token (HMAC-SHA256, JWT-compatible layout). */
 function signToken(payload, secret, ttlSeconds = 8 * 60 * 60) {
   const header = b64u(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const body = b64u(

@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-/**
- * Security audit — run this before you publish, and any time you are unsure.
- *
- *   node scripts/audit.js
- *
- * It answers one question: can anybody other than you reach the admin panel,
- * and is your password exposed anywhere?
- */
 const fs = require('fs');
 const path = require('path');
 
@@ -29,7 +21,6 @@ function walk(dir, out = []) {
 
 console.log('\n\x1b[1mADMIN PANEL SECURITY AUDIT\x1b[0m\n');
 
-/* ---------- 1. what actually ships to GitHub / the server ---------- */
 console.log('1. Files that leave your computer\n');
 
 const shipped = walk(ROOT).filter((p) => {
@@ -39,9 +30,6 @@ const shipped = walk(ROOT).filter((p) => {
 
 const clientFiles = shipped.filter((p) => /\.(html|css|js)$/.test(p) && p.includes(path.sep + 'public' + path.sep));
 
-// Real credential VALUES, not the words that describe them. The string
-// "scrypt hash" in a comment is documentation; "scrypt$16384$8$1$<hex>$<hex>"
-// with actual hex payloads is a leaked password.
 const SECRET_SHAPES = [
   { name: 'a real scrypt password hash', re: /scrypt\$\d+\$\d+\$\d+\$[0-9a-f]{16,}\$[0-9a-f]{32,}/ },
   { name: 'a real bcrypt password hash', re: /\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}/ },
@@ -61,25 +49,20 @@ for (const file of shipped) {
 }
 if (!leaks) ok(`no password, hash or secret in any of the ${shipped.length} files that get published`);
 
-// A visitor can read every one of these. None may contain a credential value
-// or send one to the browser.
 let clientLeaks = 0;
 for (const file of clientFiles) {
   const src = fs.readFileSync(file, 'utf8');
   const rel = path.relative(ROOT, file);
   for (const s of SECRET_SHAPES) if (s.re.test(src)) { bad(`${rel} contains ${s.name}`); clientLeaks++; }
-  // reading a hash out of a server response would also be a leak
   if (/\.password_hash|password_hash\s*[:=]/.test(src)) { bad(`${rel} reads a password hash`); clientLeaks++; }
 }
 if (!clientLeaks) ok(`the ${clientFiles.length} files a visitor can download contain no credential of any kind`);
 
-// and no response the server builds may carry the hash
 const responses = [...fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8').matchAll(/res\.json\([^;]*;/g)].map((m) => m[0]);
 responses.some((r) => /password_hash|user\s*\}/.test(r))
   ? bad('a response in server.js could include the password hash')
   : ok(`none of the ${responses.length} server responses can contain the hash`);
 
-/* ---------- 2. the things that must never be uploaded ---------- */
 console.log('\n2. Files that must stay on your computer\n');
 
 const gitignore = fs.existsSync(path.join(ROOT, '.gitignore')) ? fs.readFileSync(path.join(ROOT, '.gitignore'), 'utf8') : '';
@@ -88,7 +71,6 @@ const gitignore = fs.existsSync(path.join(ROOT, '.gitignore')) ? fs.readFileSync
 /^\.env$/m.test(gitignore) ? ok('.gitignore excludes .env — your plain-text password never reaches GitHub')
   : bad('.gitignore does NOT exclude .env');
 
-/* ---------- 3. how the server decides who gets in ---------- */
 console.log('\n3. How the login actually works\n');
 
 const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
@@ -102,8 +84,6 @@ const db = fs.readFileSync(path.join(ROOT, 'src', 'db.js'), 'utf8');
 /HttpOnly/.test(fs.readFileSync(path.join(ROOT, 'src', 'http.js'), 'utf8')) ? ok('the session cookie is HttpOnly — page scripts cannot steal it') : bad('session cookie is readable by scripts');
 /hashPassword\('placeholder/.test(server) ? ok('a wrong username takes the same time as a wrong password — no account guessing') : bad('login timing can reveal whether a username exists');
 
-// every write route must be behind requireAuth
-/* ---------- the real test: attack the running server ---------- */
 async function probe() {
   console.log('\n\x1b[1m6. Trying to break in for real\x1b[0m\n');
 
@@ -125,7 +105,6 @@ async function probe() {
       body: body ? JSON.stringify(body) : undefined
     });
 
-  // every route that changes something, attacked with no session at all
   const attacks = [
     ['PUT', '/api/content', { content: { profile: { name: 'HACKED' } } }],
     ['POST', '/api/upload', { filename: 'x.png', mimetype: 'image/png', data: 'AAAA' }],
@@ -145,13 +124,11 @@ async function probe() {
   }
   if (!broke) ok(`all ${attacks.length} private routes refused an anonymous request (401)`);
 
-  // the site content must be untouched after those attempts
   const after = await (await call('GET', '/api/content')).json();
   after.content.profile.name !== 'HACKED'
     ? ok('the break-in attempts changed nothing on the site')
     : bad('an anonymous request managed to edit the site');
 
-  // guessing the password
   let locked = false;
   for (let i = 0; i < 12; i++) {
     const r = await call('POST', '/api/auth/login', { username: 'read', password: 'guess' + i });
@@ -159,11 +136,9 @@ async function probe() {
   }
   locked ? ok('password guessing is locked out after 8 tries') : bad('password guessing is not rate limited');
 
-  // a forged session cookie
   const forged = await fetch(base + '/api/auth/me', { headers: { cookie: 'rp_session=made.up.token' } });
   forged.status === 401 ? ok('a forged session cookie is rejected') : bad('a forged cookie was accepted');
 
-  // and the real login still works
   const good = await call('POST', '/api/auth/login', { username: 'read', password: 'AuditPassword123' });
   const body = await good.json().catch(() => ({}));
   good.status === 429 || good.status === 200
@@ -174,7 +149,6 @@ async function probe() {
   fs.rmSync(tmp, { recursive: true, force: true });
 }
 
-/* ---------- 4. search engines ---------- */
 console.log('\n4. Can anyone stumble onto it\n');
 
 const robots = path.join(ROOT, 'public', 'robots.txt');
@@ -183,7 +157,6 @@ fs.existsSync(robots) && /Disallow:\s*\/admin/.test(fs.readFileSync(robots, 'utf
 /X-Robots-Tag/.test(server) ? ok('the admin page sends a noindex header as well') : bad('no noindex header on the admin page');
 /noindex/.test(fs.readFileSync(path.join(ROOT, 'public', 'admin.html'), 'utf8')) ? ok('the admin page carries a noindex meta tag') : bad('admin.html has no noindex tag');
 
-/* ---------- 5. where the real password lives ---------- */
 console.log('\n5. Where your password actually is\n');
 
 const dbFile = path.join(ROOT, 'data', 'portfolio.db');

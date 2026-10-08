@@ -1,45 +1,14 @@
-/**
- * WHAT A SEARCH ENGINE SEES
- * =================================================================
- * Every word on this site arrives from /api/content after the page
- * has loaded. That is a fine way to build a site and a poor way to be
- * found: the HTML that leaves the server contains the navigation, the
- * headings, and nothing else. Measured on the live site — 94 words, of
- * which not one was a project, a skill, or a sentence about him.
- *
- * Google does run JavaScript, but it does it on a second pass, days
- * later, and it is the first pass that decides whether a brand new
- * domain is worth coming back to. So the words go into the HTML.
- *
- * This is not a second copy of the front end. It fills the same empty
- * containers app.js fills, from the same database, and app.js then
- * replaces them with the animated version on load. A visitor and a
- * crawler read the same sentences — which matters, because showing a
- * crawler something a visitor cannot see is cloaking, and Google
- * removes sites for it.
- *
- * No template engine, no npm: string replacement into known ids.
- */
 
 const esc = (s) =>
   String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/**
- * Put `inner` inside the (empty) element carrying this id.
- *
- * The containers really are empty in index.html — `<div id="x"></div>` —
- * so this only has to find the opening tag and the closing tag that
- * immediately follows it. Anything more clever would be a parser, and a
- * parser is a dependency.
- */
 function fill(html, id, inner) {
   if (!inner) return html;
   const re = new RegExp(`(<([a-z0-9]+)[^>]*\\sid="${id}"[^>]*>)\\s*(</\\2>)`, 'i');
   return re.test(html) ? html.replace(re, `$1${inner}$3`) : html;
 }
 
-/** Replace the text of an element that already has placeholder text. */
 function setText(html, id, text) {
   if (!text) return html;
   const re = new RegExp(`(<([a-z0-9]+)[^>]*\\sid="${id}"[^>]*>)[^<]*(</\\2>)`, 'i');
@@ -47,8 +16,6 @@ function setText(html, id, text) {
 }
 
 const li = (items) => items.map((t) => `<li>${esc(t)}</li>`).join('');
-
-/* ------------------------------------------------------- the sections */
 
 function aboutHTML(c) {
   const summary = (c.profile && c.profile.summary) || '';
@@ -108,16 +75,6 @@ function newsHTML(c) {
   </article>`).join('');
 }
 
-/* ------------------------------------------------------ structured data
-
-   Tells Google that this page is about a *person*, and which one. Without
-   it the engine has to infer from prose that "Read Aloush" is a name and
-   not a phrase — and "read" is one of the most common words in English,
-   so that inference is genuinely hard. `sameAs` is the important field:
-   it links this page to the GitHub and LinkedIn profiles carrying the
-   same name, which is how a search engine gains confidence that the three
-   are one person.
-*/
 function jsonLd(c, origin) {
   const p = c.profile || {};
   const sameAs = (c.socials || [])
@@ -127,11 +84,18 @@ function jsonLd(c, origin) {
   const knows = [];
   (c.skills || []).forEach((g) => (g.items || []).forEach((i) => i.name && knows.push(i.name)));
 
+  const names = [...new Set([p.shortName, ...(((c.meta || {}).alternateNames) || [])]
+    .map((x) => String(x || '').trim()).filter((x) => x && x !== p.name))];
+  const now = (c.experience || []).find((e) => e && /present|now|günümüz|devam/i.test(String(e.period || '')));
   const data = {
     '@context': 'https://schema.org',
     '@type': 'Person',
+    '@id': origin + '/#person',
     name: p.name || '',
-    alternateName: p.shortName || undefined,
+    alternateName: names.length ? names : undefined,
+    worksFor: now && now.company ? { '@type': 'Organization', name: String(now.company).trim() } : undefined,
+    hasOccupation: p.title ? { '@type': 'Occupation', name: p.title, occupationLocation: p.location ? { '@type': 'City', name: p.location } : undefined, skills: knows.slice(0, 20).join(', ') || undefined } : undefined,
+    knowsLanguage: (c.languages || []).map((l) => l && l.name).filter(Boolean).length ? (c.languages || []).map((l) => l && l.name).filter(Boolean) : undefined,
     url: origin + '/',
     image: p.photo ? origin + p.photo : undefined,
     jobTitle: p.title || undefined,
@@ -146,25 +110,51 @@ function jsonLd(c, origin) {
       : undefined
   };
 
-  // JSON.stringify drops the undefined keys for us.
+  const page = {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    url: origin + '/',
+    name: (c.meta && c.meta.siteTitle) ? String(c.meta.siteTitle).trim() : (p.name || ''),
+    inLanguage: ['en', 'tr', 'ar'],
+    mainEntity: { '@id': origin + '/#person' }
+  };
   return `<script type="application/ld+json">${
-    JSON.stringify(data).replace(/</g, '\\u003c')
+    JSON.stringify([page, data]).replace(/</g, '\\u003c')
   }</script>`;
 }
 
-/* ------------------------------------------------------------- the page */
+function slugify(str) {
+  return String(str || '').toLowerCase()
+    .replace(/[çÇ]/g, 'c').replace(/[ğĞ]/g, 'g').replace(/[ıİ]/g, 'i').replace(/[öÖ]/g, 'o').replace(/[şŞ]/g, 's').replace(/[üÜ]/g, 'u')
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'item';
+}
+function caseFor(content, view) {
+  const [kind, slug] = String(view || '').split('/');
+  if (!slug) return null;
+  const c = content || {};
+  if (kind === 'projects') {
+    const it = (c.projects || []).filter((x) => x && x.title).find((x) => slugify(x.slug || x.title) === slug);
+    return it ? { title: it.title, text: it.summary || (it.bullets || [])[0] || '', image: it.image } : null;
+  }
+  if (kind === 'experience') {
+    const it = (c.experience || []).filter((x) => x && (x.role || x.company))
+      .find((x) => slugify(x.slug || `${x.company || ''} ${String(x.role || '').trim()}`) === slug);
+    return it ? { title: `${String(it.role || '').trim()} — ${it.company || ''}`, text: it.summary || (it.bullets || [])[0] || '', image: it.image } : null;
+  }
+  if (kind === 'education') {
+    const it = (c.education || []).filter((x) => x && x.degree).find((x) => slugify(x.slug || `${x.degree || ''} ${x.school || ''}`) === slug);
+    return it ? { title: `${it.degree} — ${it.school || ''}`, text: it.summary || it.note || '', image: it.image } : null;
+  }
+  return null;
+}
 
-/**
- * Take index.html as it sits on disk and hand back the version a crawler
- * should receive: same markup, but with the database's words in it.
- */
-function render(html, content, origin) {
+function render(html, content, origin, view = '') {
   const c = content || {};
   const p = c.profile || {};
   const s = c.sections || {};
   const m = c.meta || {};
 
-  // headings and hero
   html = setText(html, 'heroName', p.name);
   html = setText(html, 'heroTagline', p.tagline);
   html = setText(html, 'heroSummary', p.summary);
@@ -172,7 +162,6 @@ function render(html, content, origin) {
   html = setText(html, 'photoCaption', p.location);
   html = setText(html, 'footerNote', m.footerNote);
 
-  // section titles, so the words in them are his and not the placeholders
   const titles = {
     newsTitle: s.newsTitle, newsKicker: s.newsKicker,
     aboutTitle: s.aboutTitle, aboutKicker: s.aboutKicker,
@@ -184,7 +173,6 @@ function render(html, content, origin) {
   };
   for (const [id, text] of Object.entries(titles)) html = setText(html, id, text);
 
-  // the substance
   html = fill(html, 'aboutCopy', aboutHTML(c));
   html = fill(html, 'skillGrid', skillsHTML(c));
   html = fill(html, 'projectList', projectsHTML(c));
@@ -194,16 +182,12 @@ function render(html, content, origin) {
   html = fill(html, 'newsGrid', newsHTML(c));
   html = fill(html, 'langList', li((c.languages || []).map((l) => `${l.name} — ${l.level}`)));
 
-
-  // title and description from the database, not the file
   if (m.siteTitle) html = html.replace(/<title>[^<]*<\/title>/i, `<title>${esc(String(m.siteTitle).trim())}</title>`);
   if (m.metaDescription) {
     html = html.replace(/(<meta name="description" id="metaDescription" content=")[^"]*(")/i,
       `$1${esc(m.metaDescription)}$2`);
   }
 
-  // what a shared link shows: the name comes from the database too, so a
-  // rename in the panel reaches WhatsApp and LinkedIn previews
   const who = p.name || '';
   const title = m.siteTitle ? String(m.siteTitle).trim() : (who && p.title ? `${who} — ${p.title}` : '');
   const meta = (attr, key, val) => {
@@ -217,11 +201,26 @@ function render(html, content, origin) {
   if (who) html = html.replace(/(<img id="profilePhoto"[^>]*alt=")[^"]*(")/i, `$1${esc(who)}$2`);
   if (p.photo) html = html.replace(/(<img id="profilePhoto" src=")[^"]*(")/i, `$1${esc(p.photo)}$2`);
 
-  // canonical + structured data, injected just before </head>
-  const canonical = `<link rel="canonical" href="${esc(origin)}/">`;
+  const cs = caseFor(c, view);
+  if (cs) {
+    const t = `${cs.title} — ${who || 'Portfolio'}`;
+    html = html.replace(/<title>[^<]*<\/title>/i, `<title>${esc(t)}</title>`);
+    meta('property', 'og:title', t);
+    meta('name', 'twitter:title', t);
+    if (cs.text) {
+      const d = String(cs.text).replace(/\s+/g, ' ').slice(0, 200);
+      html = html.replace(/(<meta name="description" id="metaDescription" content=")[^"]*(")/i, `$1${esc(d)}$2`);
+      meta('property', 'og:description', d);
+      meta('name', 'twitter:description', d);
+    }
+    if (cs.image && /^\//.test(cs.image) && !/\.svg$/i.test(cs.image)) meta('property', 'og:image', origin + cs.image);
+  }
+
+  const canonical = `<link rel="canonical" href="${esc(origin)}/${esc(view)}">`;
+  if (view) html = html.replace(`<meta property="og:url" content="${origin}/">`, `<meta property="og:url" content="${esc(origin)}/${esc(view)}">`);
   html = html.replace(/<\/head>/i, `${canonical}\n${jsonLd(c, origin)}\n</head>`);
 
   return html;
 }
 
-module.exports = { render, jsonLd, esc };
+module.exports = { render, jsonLd, esc, caseFor, slugify };

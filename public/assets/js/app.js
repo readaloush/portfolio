@@ -1,7 +1,3 @@
-/* ==================================================================
-   Portfolio front-end.
-   All content comes from the SQLite database via /api/content.
-   ================================================================== */
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -9,7 +5,6 @@
     String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ------------------------------------------------------- icons */
   const ICONS = {
     github: '<path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.35 1.09 2.92.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/>',
     linkedin: '<path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9h4v12H3V9Zm7 0h3.8v1.7h.05a4.17 4.17 0 0 1 3.75-2.06c4 0 4.75 2.64 4.75 6.07V21h-4v-5.4c0-1.29-.02-2.95-1.8-2.95-1.8 0-2.08 1.4-2.08 2.85V21h-4V9Z"/>',
@@ -33,314 +28,9 @@
     return 'web';
   };
 
-  /* ================================================== THE TICKER
-     One requestAnimationFrame loop for the whole page.
-
-     There used to be three: the network canvas, the cursor and the
-     parallax each ran their own. Three loops is not three times the
-     work of one — each callback reads and writes layout separately, so
-     the browser is forced to recalculate style three times per frame
-     instead of once. Now everything that wants a frame subscribes here
-     and gets called in a fixed order.
-
-     The loop also stops. If nobody is subscribed, or the tab is in the
-     background, there is no rAF pending at all — not a rAF that runs
-     and does nothing.
-  ================================================================ */
-  const Ticker = (() => {
-    const jobs = new Set();
-    let running = false;
-
-    function frame(now) {
-      running = false;
-      if (jobs.size && !document.hidden) {
-        for (const job of jobs) job(now);
-        start();
-      }
-    }
-    function start() {
-      if (running || !jobs.size || document.hidden) return;
-      running = true;
-      requestAnimationFrame(frame);
-    }
-
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) start(); });
-
-    return {
-      add(job) { jobs.add(job); start(); return () => jobs.delete(job); },
-      remove(job) { jobs.delete(job); }
-    };
-  })();
-
-  /* The tier this machine was put in. perf.js decides; if it somehow
-     failed to load, assume the best and behave exactly as before. */
   const perf = () => (window.PERF ? window.PERF.tier : 'high');
   const atLeast = (t) => (window.PERF ? window.PERF.allows(t) : true);
 
-  /* ================================================ NETWORK CANVAS
-     Nodes connected by lines. The mouse pushes them around and draws
-     extra links to whatever is nearby.
-
-     Three things here were expensive enough to matter.
-
-     getComputedStyle was called twice per frame, once for the line
-     colour and once for the accent. Reading a computed style forces the
-     browser to resolve style for the whole document; doing it 120 times
-     a second is a bill for information that only changes when the theme
-     changes. It is now read on a timer and on theme changes.
-
-     The link pass compared every node with every other node — 130 nodes
-     is 8,385 pairs, every frame. Links only exist under 128px, so all
-     but a handful of those comparisons were guaranteed to fail. The
-     nodes now go into a grid of 128px cells and each one only looks at
-     its own cell and four neighbours.
-
-     And every link was its own beginPath/stroke, which is a separate
-     draw call because the alpha differed. They now go into five paths
-     bucketed by opacity: five stroke calls a frame instead of hundreds.
-  ================================================================ */
-  function initNetwork() {
-    const canvas = $('#netCanvas');
-    if (!canvas || reduced) return;
-    const ctx = canvas.getContext('2d');
-
-    let w, h, dpr, nodes = [], cell, cols, rows, grid = [], cursorLinks = true;
-    const mouse = { x: -9999, y: -9999, active: false };
-
-    // How much of this the machine can afford. Read on resize and on a
-    // tier change, not per frame — the answer cannot change in between,
-    // and building this object sixty times a second is pure garbage.
-    const BUDGET = {
-      high: { dpr: 2,   div: 13000, cap: 130, cursorLinks: true },
-      mid:  { dpr: 1.5, div: 26000, cap: 74,  cursorLinks: true },
-      low:  { dpr: 1,   div: 52000, cap: 34,  cursorLinks: false }
-    };
-
-    function resize() {
-      const b = BUDGET[perf()] || BUDGET.high;
-      cursorLinks = b.cursorLinks;
-      dpr = Math.min(devicePixelRatio || 1, b.dpr);
-      w = canvas.width = Math.round(innerWidth * dpr);
-      h = canvas.height = Math.round(innerHeight * dpr);
-      canvas.style.width = innerWidth + 'px';
-      canvas.style.height = innerHeight + 'px';
-
-      const target = Math.round(Math.min(b.cap, (innerWidth * innerHeight) / b.div));
-      nodes = Array.from({ length: target }, () => ({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.32 * dpr,
-        vy: (Math.random() - 0.5) * 0.32 * dpr,
-        r: (Math.random() * 1.5 + 0.9) * dpr
-      }));
-
-      // The grid is allocated once here and emptied in place each frame,
-      // so the link pass never allocates and never triggers collection.
-      cell = 128 * dpr;
-      cols = Math.max(1, Math.ceil(w / cell));
-      rows = Math.max(1, Math.ceil(h / cell));
-      grid = Array.from({ length: cols * rows }, () => []);
-    }
-
-    let resizeTimer;
-    addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 180); });
-    document.addEventListener('perf:changed', resize);
-
-    addEventListener('pointermove', (e) => {
-      mouse.x = e.clientX * dpr; mouse.y = e.clientY * dpr;
-      mouse.active = true;
-    }, { passive: true });
-    addEventListener('pointerleave', () => { mouse.active = false; mouse.x = mouse.y = -9999; });
-    addEventListener('click', (e) => {
-      // click = shockwave through the network
-      const cx = e.clientX * dpr, cy = e.clientY * dpr;
-      const R = 320 * dpr;
-      for (const n of nodes) {
-        const dx = n.x - cx, dy = n.y - cy, d = Math.hypot(dx, dy) || 1;
-        if (d < R) { n.vx += (dx / d) * 5; n.vy += (dy / d) * 5; }
-      }
-    });
-
-    /* ---- colours, read rarely instead of twice a frame ---- */
-    let LINE = '255,255,255', AC = '#8052ff';
-    function readColours() {
-      const cs = getComputedStyle(document.documentElement);
-      LINE = cs.getPropertyValue('--net-line').trim() || LINE;
-      AC = cs.getPropertyValue('--accent').trim() || AC;
-    }
-    readColours();
-    // The palette only changes when the theme or the mode changes, and
-    // both of those are attributes on <html>.
-    new MutationObserver(readColours).observe(document.documentElement, {
-      attributes: true, attributeFilter: ['data-theme', 'data-mode']
-    });
-
-    /* Five opacity buckets. A link's alpha runs 0 → 0.34; rounding it to
-       one of five values is invisible and turns hundreds of draw calls
-       into five. */
-    const BUCKETS = 5;
-    const paths = Array.from({ length: BUCKETS }, () => new Path2D());
-
-    function frame() {
-      ctx.clearRect(0, 0, w, h);
-      const LINK = cell;
-      const LINK2 = LINK * LINK;
-      const MOUSE_R = 190 * dpr;
-
-      /* ---- move, and file each node into its grid cell ---- */
-      for (const g of grid) g.length = 0;
-
-      for (let i = 0; i < nodes.length; i++) {
-        const n = nodes[i];
-        if (mouse.active) {
-          const dx = n.x - mouse.x, dy = n.y - mouse.y, d = Math.hypot(dx, dy);
-          if (d < MOUSE_R && d > 0.001) {
-            const f = (1 - d / MOUSE_R) * 0.55;
-            n.vx += (dx / d) * f - (dy / d) * f * 0.25;
-            n.vy += (dy / d) * f + (dx / d) * f * 0.25;
-          }
-        }
-        n.x += n.vx; n.y += n.vy;
-        n.vx *= 0.985; n.vy *= 0.985;
-        // a gentle nudge so the field never settles into stillness
-        if (n.vx * n.vx + n.vy * n.vy < 0.0144 * dpr * dpr) {
-          n.vx += (Math.random() - 0.5) * 0.09 * dpr;
-          n.vy += (Math.random() - 0.5) * 0.09 * dpr;
-        }
-        if (n.x < 0) { n.x = 0; n.vx *= -1; } else if (n.x > w) { n.x = w; n.vx *= -1; }
-        if (n.y < 0) { n.y = 0; n.vy *= -1; } else if (n.y > h) { n.y = h; n.vy *= -1; }
-
-        const ci = Math.min(cols - 1, (n.x / cell) | 0);
-        const cj = Math.min(rows - 1, (n.y / cell) | 0);
-        grid[cj * cols + ci].push(i);
-      }
-
-      /* ---- links, via the grid ----
-         Each cell is checked against itself and four neighbours. Those
-         five cover every pair exactly once: going right, down, and both
-         diagonals downward means the cell above-left already handled
-         the pair from its side. */
-      // Path2D has no clear(), so each frame gets fresh ones. Five small
-      // allocations a frame is nothing next to the hundreds of separate
-      // stroke calls this replaced.
-      for (let k = 0; k < BUCKETS; k++) paths[k] = new Path2D();
-
-      const NEIGHBOURS = [[0, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
-      for (let cj = 0; cj < rows; cj++) {
-        for (let ci = 0; ci < cols; ci++) {
-          const here = grid[cj * cols + ci];
-          if (!here.length) continue;
-          for (const [ox, oy] of NEIGHBOURS) {
-            const nx = ci + ox, ny = cj + oy;
-            if (nx < 0 || nx >= cols || ny >= rows) continue;
-            const there = grid[ny * cols + nx];
-            if (!there.length) continue;
-            const same = ox === 0 && oy === 0;
-            for (let ii = 0; ii < here.length; ii++) {
-              const a = nodes[here[ii]];
-              for (let jj = same ? ii + 1 : 0; jj < there.length; jj++) {
-                const b = nodes[there[jj]];
-                const dx = a.x - b.x, dy = a.y - b.y;
-                const d2 = dx * dx + dy * dy;
-                if (d2 >= LINK2) continue;
-                const t = 1 - Math.sqrt(d2) / LINK;          // 0 → 1
-                const bucket = Math.min(BUCKETS - 1, (t * BUCKETS) | 0);
-                const p = paths[bucket];
-                p.moveTo(a.x, a.y); p.lineTo(b.x, b.y);
-              }
-            }
-          }
-        }
-      }
-
-      ctx.lineWidth = dpr;
-      for (let k = 0; k < BUCKETS; k++) {
-        const alpha = ((k + 0.5) / BUCKETS) * 0.34;
-        ctx.strokeStyle = `rgba(${LINE},${alpha.toFixed(3)})`;
-        ctx.stroke(paths[k]);
-      }
-
-      /* ---- links to the cursor, one path, one stroke ---- */
-      if (mouse.active && cursorLinks) {
-        const reach = new Path2D();
-        let any = false;
-        for (const n of nodes) {
-          const dx = n.x - mouse.x, dy = n.y - mouse.y;
-          if (dx * dx + dy * dy < MOUSE_R * MOUSE_R) {
-            reach.moveTo(n.x, n.y); reach.lineTo(mouse.x, mouse.y);
-            any = true;
-          }
-        }
-        if (any) {
-          ctx.strokeStyle = AC;
-          ctx.globalAlpha = 0.28;
-          ctx.stroke(reach);
-          ctx.globalAlpha = 1;
-        }
-      }
-
-      /* ---- the nodes themselves, also one path ---- */
-      const dots = new Path2D();
-      for (const n of nodes) {
-        dots.moveTo(n.x + n.r, n.y);
-        dots.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      }
-      ctx.fillStyle = `rgba(${LINE},.55)`;
-      ctx.fill(dots);
-    }
-
-    resize();
-    Ticker.add(frame);
-  }
-
-  /* ==================================================== CURSOR */
-  function initCursor() {
-    const dot = $('#cursorDot'), ring = $('#cursorRing'), label = $('#cursorLabel');
-    if (!dot || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    // On a slow machine a lagging custom cursor is worse than none: it is
-    // the one element the eye tracks continuously, so every dropped frame
-    // is visible in it. The stylesheet gives the real pointer back at that
-    // tier; this makes sure we are not still computing one nobody sees.
-    if (!atLeast('mid')) return;
-
-    let mx = innerWidth / 2, my = innerHeight / 2, rx = mx, ry = my;
-
-    addEventListener('pointermove', (e) => {
-      mx = e.clientX; my = e.clientY;
-      dot.style.opacity = ring.style.opacity = '1';
-      dot.style.transform = `translate(${mx}px, ${my}px)`;
-    }, { passive: true });
-    addEventListener('pointerdown', () => ring.classList.add('hot'));
-    addEventListener('pointerup', () => {
-      if (!document.querySelector(':hover[data-cursor]')) ring.classList.remove('hot');
-    });
-
-    // The ring eases toward the pointer. Once it has arrived there is
-    // nothing to interpolate, so it stops writing style entirely rather
-    // than assigning the same transform sixty times a second.
-    Ticker.add(() => {
-      const dx = mx - rx, dy = my - ry;
-      if (dx * dx + dy * dy < 0.01) return;
-      rx += dx * 0.16; ry += dy * 0.16;
-      ring.style.transform = `translate(${rx}px, ${ry}px)`;
-    });
-
-    let lastHover = null;
-    document.addEventListener('pointerover', (e) => {
-      const t = e.target.closest('a, button, .tilt, [data-cursor]');
-      if (t) {
-        ring.classList.add('hot');
-        label.textContent = t.dataset.cursor || '';
-        if (t !== lastHover) { lastHover = t; window.SFX?.hover(); }
-      } else {
-        ring.classList.remove('hot');
-        label.textContent = '';
-        lastHover = null;
-      }
-    });
-  }
-
-  /* ======================================================== SOUND */
   function initSound() {
     const btn = $('#soundBtn');
     if (!btn) return;
@@ -357,26 +47,19 @@
       toast(window.SFX?.enabled ? 'Sound on' : 'Sound off', 1600);
     });
 
-    // a click anywhere gets a soft tick (the button handles its own)
     document.addEventListener('pointerdown', (e) => {
       if (e.target.closest('#soundBtn, #themeSwitch, #photoFrame')) return;
       if (e.target.closest('a, button, input, .tilt')) window.SFX?.click();
     });
   }
 
-  /* ============================== 3D TILT + GLARE (mouse reactive) */
   function bindTilt(root = document) {
-    if (reduced || !atLeast('mid')) return;
+    return;
     $$('.tilt', root).forEach((el) => {
       if (el.__tilt) return;
       el.__tilt = true;
       let raf, r = null;
 
-      // getBoundingClientRect used to run on every pointermove. That is a
-      // forced synchronous layout — the browser has to stop and reflow the
-      // page to answer it — several hundred times while the cursor crosses
-      // one card. The card is not moving or resizing while you hover it,
-      // so measure once on the way in.
       el.addEventListener('pointerenter', () => { r = el.getBoundingClientRect(); });
 
       el.addEventListener('pointermove', (e) => {
@@ -401,50 +84,15 @@
     });
   }
 
-  /* ================================= PARALLAX ON MOUSE (whole page) */
   let refreshParallax = () => {};
-  function initParallax() {
-    if (reduced || !atLeast('mid')) return;
 
-    // The old loop ran querySelectorAll('.parallax') on every frame,
-    // forever — a fresh DOM query sixty times a second for a list of two
-    // elements that only changes when the page is re-rendered. Cache it,
-    // and re-read it when render() replaces the markup.
-    let items = [];
-    refreshParallax = () => {
-      items = $$('.parallax').map((el) => ({ el, d: Number(el.dataset.depth || 10) }));
-    };
-    refreshParallax();
-
-    let tx = 0, ty = 0, cx = 0, cy = 0;
-    addEventListener('pointermove', (e) => {
-      tx = (e.clientX / innerWidth - 0.5) * 2;
-      ty = (e.clientY / innerHeight - 0.5) * 2;
-    }, { passive: true });
-
-    Ticker.add(() => {
-      const dx = tx - cx, dy = ty - cy;
-      // Settled. Writing the same transform again would still cost a
-      // style recalculation, so do nothing at all.
-      if (dx * dx + dy * dy < 1e-6) return;
-      cx += dx * 0.06; cy += dy * 0.06;
-      for (const it of items) {
-        it.el.style.transform = `translate3d(${(cx * it.d).toFixed(2)}px, ${(cy * it.d).toFixed(2)}px, 0)`;
-      }
-    });
-  }
-
-  /* ==================================================== REVEALS */
   const io = new IntersectionObserver(
     (entries) => {
       entries.forEach((en) => {
         if (!en.isIntersecting) return;
         en.target.classList.add('in');
-        // stagger children
         $$('[data-stagger]', en.target).forEach((c, i) => setTimeout(() => c.classList.add('in'), i * 90));
-        // animate skill bars
         $$('.bar i', en.target).forEach((b, i) => setTimeout(() => (b.style.width = b.dataset.level + '%'), 120 + i * 80));
-        // count up
         $$('[data-count]', en.target).forEach((el) => countUp(el));
         io.unobserve(en.target);
       });
@@ -467,11 +115,7 @@
     })(t0);
   }
 
-  /* ================================================ TEXT SCRAMBLE */
   function scramble(el, finalText, duration = 1400) {
-    // Browsers suspend requestAnimationFrame in background tabs, which would
-    // leave the name frozen mid-scramble. This timer runs regardless, so the
-    // real text always lands.
     setTimeout(() => { el.textContent = finalText; }, duration + 400);
 
     const chars = '!<>-_\\/[]{}—=+*^?#01';
@@ -490,7 +134,6 @@
     })(t0);
   }
 
-  /* ==================================================== TYPEWRITER */
   function typeLoop(el, list) {
     if (!list.length) return;
     let i = 0, j = 0, deleting = false;
@@ -505,11 +148,10 @@
     })();
   }
 
-  /* ======================================================== TOAST */
   let toastTimer;
   function toast(msg, ms = 3200) {
     const t = $('#toast');
-    $('#toastText').textContent = msg;
+    $('#toastText').textContent = window.I18N ? window.I18N.t(msg) : msg;
     t.hidden = false;
     requestAnimationFrame(() => t.classList.add('show'));
     clearTimeout(toastTimer);
@@ -519,9 +161,6 @@
     }, ms);
   }
 
-  /* ============================================ ELECTRIC SWITCH
-     Flipping it changes the theme. Flip it too often and it complains.
-  ============================================================== */
   function initThemeSwitch() {
     const sw = $('#themeSwitch');
     const blackout = $('#blackout');
@@ -578,10 +217,6 @@
     });
   }
 
-  /* =================================== HIDDEN ADMIN — 5 PHOTO CLICKS
-     There is no password anywhere in this file. The form posts to the
-     server, which compares against a bcrypt hash inside SQLite.
-  ================================================================= */
   function initSecretAdmin() {
     const frame = $('#photoFrame');
     const modal = $('#loginModal');
@@ -601,7 +236,7 @@
       window.SFX?.unlockAudio();
       frame.classList.remove('knock'); void frame.offsetWidth; frame.classList.add('knock');
       clearTimeout(timer);
-      timer = setTimeout(() => (count = 0), 5000);   // generous window
+      timer = setTimeout(() => (count = 0), 5000);
 
       if (count === 2) toast('.');
       if (count === 3) toast('..');
@@ -610,7 +245,6 @@
       else window.SFX?.knock(count);
     });
 
-    // keyboard shortcut as a backup: Ctrl/Cmd + Shift + A
     addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') { e.preventDefault(); openModal(); }
       if (e.key === 'Escape' && !modal.hidden) closeModal();
@@ -631,12 +265,8 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Login failed.');
-        // hand the session to the admin page in case cookies are blocked
-        try { if (data.token) sessionStorage.setItem('rp_token', data.token); } catch { /* ignore */ }
+        try { if (data.token) sessionStorage.setItem('rp_token', data.token); } catch {  }
 
-        // Signing in no longer means "take me to the editor". You come
-        // back to your own site, look at it, and open the panel from the
-        // bar at the top when there is actually something to change.
         closeModal();
         window.SFX?.chime();
         showAdminBar(data.username);
@@ -650,16 +280,10 @@
     });
   }
 
-  /* ========================================================= NAV */
   function initNav() {
     const nav = $('#nav'), links = $('#navLinks'), burger = $('#navBurger');
     const progressBar = $('#scrollBar');
 
-    // Scroll fires far more often than the screen refreshes — on a
-    // trackpad, dozens of times between two frames. This handler read
-    // layout (getBoundingClientRect) and then wrote style, which forces
-    // a reflow *per event*. Collapsing it to one run per frame is the
-    // single cheapest scroll fix there is.
     let queued = false;
     const onScroll = () => {
       queued = false;
@@ -668,7 +292,6 @@
       const span = d.scrollHeight - innerHeight;
       if (progressBar) progressBar.style.width = (span > 0 ? (scrollY / span) * 100 : 0) + '%';
 
-      // timeline fill follows the scroll
       const tl = $('#timeline'), fill = $('#timelineFill');
       if (tl && fill) {
         const r = tl.getBoundingClientRect();
@@ -702,9 +325,8 @@
     sections.forEach((s) => spy.observe(s));
   }
 
-  /* ======================================== MAGNETIC BUTTONS */
   function bindMagnetic() {
-    if (reduced) return;
+    return;
     $$('.magnetic').forEach((el) => {
       if (el.__mag) return;
       el.__mag = true;
@@ -716,18 +338,6 @@
     });
   }
 
-  /* ================================================ ANNOUNCEMENTS
-     Written in the admin panel, stored in the database with the rest of
-     the content, shown in two places: a section on the page and a short
-     list behind the bell in the nav.
-
-     "Unread" is a fact about one browser, not about a person, so it is
-     kept in localStorage and never sent anywhere. Nobody is counted.
-
-     An announcement is identified by its `id`, which is why editing the
-     wording of one does not re-notify everybody who already read it —
-     and why giving it a new id deliberately is how you do.
-  ================================================================= */
   const NEWS_SEEN = 'rp_news_seen';
 
   const seenIds = () => {
@@ -736,10 +346,9 @@
   };
   const saveSeen = (set) => {
     try { localStorage.setItem(NEWS_SEEN, JSON.stringify(Array.from(set).slice(-200))); }
-    catch { /* private browsing; the badge simply comes back */ }
+    catch {  }
   };
 
-  /** Published, newest first, pinned above everything. */
   function liveNews(list) {
     return (list || [])
       .filter((a) => a && a.published !== false && (a.title || a.body))
@@ -750,9 +359,6 @@
       });
   }
 
-  /* Attachments. The label on the chip comes from the extension, because
-     the alternative is asking him to type "PDF" into a box every time and
-     then rendering whatever he typed, including the times he did not. */
   const FILE_KIND = {
     pdf:  { label: 'PDF',        cls: 'pdf' },
     doc:  { label: 'Word',       cls: 'doc' },
@@ -777,7 +383,6 @@
     const clean = String(url).split(/[?#]/)[0];
     const ext = (clean.split('.').pop() || '').toLowerCase();
     if (FILE_KIND[ext]) return FILE_KIND[ext];
-    // No extension and an http address: it is a link, not a file.
     return /^https?:/i.test(url) ? { label: 'Link', cls: 'link' } : { label: 'File', cls: 'txt' };
   };
 
@@ -787,7 +392,6 @@
     return `<ul class="news-files">${list.map((f) => {
       const kind = fileKind(f.url);
       const external = /^https?:/i.test(f.url);
-      // download only makes sense same-origin; a cross-site link is a visit
       const dl = external ? '' : ' download';
       return `<li><a class="news-file ${kind.cls}" href="${esc(f.url)}"${external ? ' target="_blank" rel="noopener"' : dl} data-cursor="open">
         <span class="news-file-kind">${esc(kind.label)}</span>
@@ -799,7 +403,7 @@
   const niceDate = (raw) => {
     const d = new Date(raw);
     if (!raw || isNaN(d)) return String(raw || '');
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return d.toLocaleDateString((window.I18N && window.I18N.locale) || 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   let NEWS = [];
@@ -813,7 +417,6 @@
     badge.hidden = unread === 0;
     bell.classList.toggle('unread', unread > 0);
     bell.setAttribute('aria-label', unread ? `Announcements, ${unread} unread` : 'Announcements');
-    // Nothing to announce at all: the bell would be a dead control.
     bell.hidden = NEWS.length === 0;
   }
 
@@ -830,9 +433,6 @@
     const grid = $('#newsGrid');
     if (!grid || !section) return;
 
-    // An empty announcements section is worse than no section: it reads
-    // as an unfinished site. If there is nothing published, it is gone —
-    // and so is its entry in the nav and in the other modes' contents.
     const empty = NEWS.length === 0;
     section.hidden = empty;
     $$('#navLinks a[href="#news"]').forEach((a) => (a.hidden = empty));
@@ -888,8 +488,6 @@
       bell.classList.add('on');
       window.SFX?.click();
 
-      // Marked read a beat after opening, so the dots are still visible
-      // when the panel appears — otherwise you never see what was new.
       setTimeout(markAllSeen, 1000);
     };
 
@@ -897,8 +495,6 @@
     pop.addEventListener('click', (e) => { if (e.target.closest('[data-news-close]')) close(); });
     addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) close(); });
 
-    // Reading the section itself counts. A short dwell, not a glance:
-    // scrolling past at speed should not clear the badge.
     const sec = $('#news');
     if (sec) {
       let dwell;
@@ -911,14 +507,6 @@
     }
   }
 
-  /* ===================================================== ADMIN BAR
-     Signing in used to send you straight to /admin. It now leaves you on
-     the site with this strip at the top, because the thing you almost
-     always want to do after logging in is *look at the site* — and the
-     editor is one click away when you actually want it.
-  ================================================================= */
-  /** Show the bar. Called from two places — the session check on load,
-      and the moment the login form succeeds — so it lives on its own. */
   function showAdminBar(username) {
     const bar = $('#adminBar');
     if (!bar) return;
@@ -932,16 +520,13 @@
     const bar = $('#adminBar');
     if (!bar) return;
 
-    // Bound once, whether or not anyone is signed in yet. Binding these
-    // only after a successful session check would leave the buttons dead
-    // for the one case that matters most: the click straight after login.
     $('#adminBarNews')?.addEventListener('click', () => { location.href = '/admin#news'; });
 
     $('#adminBarOut')?.addEventListener('click', async () => {
       try {
         await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
         sessionStorage.removeItem('rp_token');
-      } catch { /* ignore */ }
+      } catch {  }
       bar.hidden = true;
       document.body.classList.remove('has-adminbar');
       toast('Signed out.');
@@ -949,28 +534,20 @@
   }
 
   async function checkSession() {
-    // The session lives in an HttpOnly cookie, with a header fallback for
-    // browsers that refuse cookies. Either way the answer comes from the
-    // server: this page cannot decide for itself that it is signed in,
-    // and showing the bar would not grant anything if it lied — every
-    // write endpoint checks the token again.
     let token = null;
-    try { token = sessionStorage.getItem('rp_token'); } catch { /* ignore */ }
+    try { token = sessionStorage.getItem('rp_token'); } catch {  }
 
     try {
       const res = await fetch('/api/auth/me', {
         credentials: 'same-origin',
         headers: token ? { Authorization: 'Bearer ' + token } : {}
       });
-      if (!res.ok) return;                 // anonymous: no bar, no trace
+      if (!res.ok) return;
       const me = await res.json();
       showAdminBar(me.username);
-    } catch { /* offline; stay a visitor */ }
+    } catch {  }
   }
 
-  /* ============================================ PERFORMANCE CONTROL
-     The automatic tier is right most of the time and wrong sometimes.
-     This is the escape hatch, and it is honest about what it does. */
   function initPerfTab() {
     if (!window.PERF) return;
     const actions = $('.nav-actions');
@@ -989,12 +566,6 @@
       low: 'No blur, no grain, small network. Built for a tired laptop.'
     };
 
-    /* Four positions, not three. Automatic has to be one of them.
-       The first version cycled Full → Balanced → Fast and wrote a
-       permanent choice every time, which meant one curious click pinned
-       the machine to a manual setting on every future visit with nothing
-       anywhere to undo it. Auto is now both the starting state and a
-       place the cycle comes back round to. */
     const paint = () => {
       const t = window.PERF.tier;
       const auto = !window.PERF.pinned;
@@ -1009,7 +580,6 @@
     btn.addEventListener('click', () => {
       const order = ['high', 'mid', 'low'];
       if (!window.PERF.pinned) {
-        // leaving automatic: start from whatever it had settled on
         const start = order.indexOf(window.PERF.tier);
         window.PERF.set(order[start < 0 ? 0 : start]);
         paint();
@@ -1030,22 +600,46 @@
     actions.insertBefore(btn, actions.firstChild);
   }
 
-  /* ================================================== RENDERING */
+  function paintHeroName(name) {
+    const h = $('#heroName');
+    if (!h) return;
+    const words = String(name).trim().split(/\s+/).filter(Boolean);
+    h.setAttribute('aria-label', name);
+    let n = 0;
+    h.innerHTML = words.map((w) =>
+      `<span class="ph-line" aria-hidden="true">${[...w].map((ch) => `<span class="ph-l" style="--i:${n++}">${esc(ch)}</span>`).join('')}</span>`
+    ).join('');
+    if (document.body.classList.contains('is-ready')) {
+      requestAnimationFrame(() => requestAnimationFrame(() => $('#phStage')?.classList.add('in')));
+    }
+  }
+  function paintBlurWords(el, text) {
+    if (!el) return;
+    el.setAttribute('aria-label', text);
+    el.innerHTML = String(text).split(/\s+/).filter(Boolean)
+      .map((w, i) => `<span class="ph-w" aria-hidden="true" style="--i:${i}">${esc(w)}</span>`).join(' ');
+  }
+
   function render(c) {
     const p = c.profile || {};
     const s = c.sections || {};
     const m = c.meta || {};
 
-    if (m.siteTitle) document.title = String(m.siteTitle).trim();
+    if (m.siteTitle) {
+      const base = String(m.siteTitle).trim();
+      document.documentElement.dataset.baseTitle = base;
+      const v = window.PRESS?.current?.();
+      const t = v && document.querySelector(v + ' .section-title')?.textContent?.trim();
+      document.title = t ? `${t} — ${base}` : base;
+    }
     if (m.metaDescription) $('#metaDescription').setAttribute('content', m.metaDescription);
 
-    /* hero */
     $('#heroAvailability').textContent = p.availability || 'Available';
-    $('#heroName').textContent = p.name || '';
-    $('#heroName').dataset.realName = p.name || '';   // the animation's source of truth
-    $('#heroTagline').textContent = p.tagline || '';
+    $('#heroAvailabilityChip').hidden = !(p.showAvailability === true && p.availability);
+    paintHeroName(p.name || '');
+    paintBlurWords($('#heroTagline'), p.tagline || '');
     $('#heroSummary').textContent = p.summary || '';
-    $('#photoCaption').textContent = p.location || '';
+    if ($('#photoCaption')) $('#photoCaption').textContent = p.location || '';
     if (p.photo) $('#profilePhoto').src = p.photo;
     $('#profilePhoto').alt = p.name || 'Profile photo';
 
@@ -1054,7 +648,6 @@
 
     typeLoop($('#typedRole'), (p.roles && p.roles.length ? p.roles : [p.title || 'Engineer']));
 
-    /* socials (rendered twice: hero + contact) */
     const socialHTML = (c.socials || [])
       .filter((x) => x && x.url)
       .map(
@@ -1067,7 +660,6 @@
     $('#socialList').innerHTML = socialHTML;
     $('#socialList2').innerHTML = socialHTML;
 
-    /* stats */
     $('#statList').innerHTML = (c.stats || [])
       .map(
         (st) =>
@@ -1077,12 +669,10 @@
       )
       .join('');
 
-    /* announcements */
     $('#newsKicker').textContent = s.newsKicker || '';
     $('#newsTitle').textContent = s.newsTitle || 'Announcements';
     renderNews(c.announcements);
 
-    /* about */
     $('#aboutKicker').textContent = s.aboutKicker || '';
     $('#aboutTitle').textContent = s.aboutTitle || 'About';
     $('#aboutCopy').innerHTML = String(p.summary || '')
@@ -1105,7 +695,6 @@
     $('#contactQuick').innerHTML = contactHTML;
     $('#contactBig').innerHTML = contactHTML;
 
-    /* skills */
     $('#skillsKicker').textContent = s.skillsKicker || '';
     $('#skillsTitle').textContent = s.skillsTitle || 'Skills';
     $('#skillGrid').innerHTML = (c.skills || [])
@@ -1124,17 +713,12 @@
       )
       .join('');
 
-    /* experience */
     $('#experienceKicker').textContent = s.experienceKicker || '';
     $('#experienceTitle').textContent = s.experienceTitle || 'Experience';
-    // the timeline itself is built by showcase.js
 
-    /* projects */
     $('#projectsKicker').textContent = s.projectsKicker || '';
     $('#projectsTitle').textContent = s.projectsTitle || 'Projects';
-    // the spreading stack and the write-ups are built by showcase.js
 
-    /* education */
     $('#educationKicker').textContent = s.educationKicker || '';
     $('#educationTitle').textContent = s.educationTitle || 'Education';
     $('#eduGrid').innerHTML = (c.education || [])
@@ -1148,7 +732,6 @@
       )
       .join('');
 
-    /* contact + google schedule */
     $('#contactKicker').textContent = s.contactKicker || '';
     $('#contactTitle').textContent = s.contactTitle || "Let's talk";
     $('#calendarNote').textContent = p.calendarNote || '';
@@ -1156,15 +739,10 @@
     const box = $('#calendarBox');
     const url = (p.calendarUrl || '').trim();
 
-    // Works with any booking provider: Google appointment schedules,
-    // Calendly, Cal.com, TidyCal, SavvyCal …
     const isGoogleLong = /calendar\.google\.com\/calendar\/appointments\/schedules\//.test(url);
     const isGoogleShort = /(^|\/\/)calendar\.app\.google\//.test(url);
     const isWrongGoogleLink = /calendar\.google\.com/.test(url) && !isGoogleLong;
 
-    // Only these can legally be shown inside another page. Google's short
-    // links (calendar.app.google) send X-Frame-Options and refuse, so for
-    // those we show a proper booking card instead of a broken frame.
     const embeddable = isGoogleLong || /calendly\.com|cal\.com|tidycal\.com|savvycal\.com|zcal\.co/.test(url);
 
     if (url && embeddable) {
@@ -1200,11 +778,9 @@
       </div>`;
     }
 
-    /* footer */
     $('#footerNote').textContent = m.footerNote || '';
     $('#year').textContent = new Date().getFullYear();
 
-    /* re-bind everything that was just injected */
     bindTilt();
     bindMagnetic();
     refreshParallax();
@@ -1212,11 +788,7 @@
     document.dispatchEvent(new CustomEvent('content:rendered', { detail: c }));
   }
 
-  /* ======================================================== BOOT */
   async function boot() {
-    // the network background has been replaced by the rain (showcase.js)
-    initCursor();
-    initParallax();
     initNav();
     initSound();
     initThemeSwitch();
@@ -1224,39 +796,30 @@
     initBell();
     initPerfTab();
     bindAdminBar();
-    checkSession();          // async on purpose: never blocks the page
+    checkSession();
 
-    // signature as logo, under the photo and in the footer — always drawing
-    $('#navSignature').appendChild(window.buildSignature({ strokeWidth: 9, duration: 4200, delay: 1200 }));
-    $('#photoSignature').appendChild(window.buildSignature({ strokeWidth: 7, duration: 5200, delay: 1400 }));
-    $('#footerSignature').appendChild(window.buildSignature({ strokeWidth: 10, duration: 6000, delay: 2000, glow: false }));
+    $('#navSignature').appendChild(window.buildSignature({ strokeWidth: 9, duration: 2200, delay: 1200 }));
+    $('#photoSignature')?.appendChild(window.buildSignature({ strokeWidth: 7, duration: 2400, delay: 1400 }));
+    $('#footerSignature').appendChild(window.buildSignature({ strokeWidth: 10, duration: 2800, delay: 2000, glow: false }));
 
     try {
       const res = await fetch('/api/content');
       const data = await res.json();
-      render(data.content);
+      render(window.I18N ? window.I18N.content(data.content) : data.content);
     } catch (e) {
       console.error('Could not load content from the database.', e);
       toast('Could not reach the database. Is the server running?', 6000);
     }
 
-    // The name animation must never take its target from the screen: if it
-    // ran twice, the second run would treat the first run's scrambled
-    // characters as the real name and freeze them there. Keep the true
-    // name aside and only ever animate once.
     let nameSettled = false;
     document.addEventListener('loader:done', () => {
-      const name = $('#heroName');
-      if (name && !reduced && !nameSettled) {
+      if (!nameSettled) {
         nameSettled = true;
-        const realName = name.dataset.realName || name.textContent;
-        // no scramble: the random glyphs it flashed read as a glitch
-        name.textContent = realName;
+        $('#phStage')?.classList.add('in');
       }
-      window.SFX?.chime();   // the system comes online
+      window.SFX?.chime();
       observe();
     });
-    // if the loader already finished (cached fast load)
     if (document.body.classList.contains('is-ready')) observe();
   }
 

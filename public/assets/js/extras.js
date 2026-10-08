@@ -1,10 +1,4 @@
 (() => {
-  // The palette belongs to CSS now, not to the content.
-  //
-  // render() in app.js writes meta.accent onto <html> as an inline style,
-  // and an inline style beats every stylesheet. The database still carries
-  // the old cyan, so the paper palette was being overridden the moment the
-  // content loaded. Strip those two properties whenever they reappear.
   const strip = () => {
     const s = document.documentElement.style;
     if (s.getPropertyValue('--accent') || s.getPropertyValue('--accent2')) {
@@ -19,31 +13,17 @@
 })();
 
 (() => {
-  // Dark (the void) is the default now. Only fall back to it when the visitor has
-  // not chosen a side themselves.
   try {
     if (!localStorage.getItem('theme')) document.documentElement.dataset.theme = 'dark';
   } catch (e) { document.documentElement.dataset.theme = 'dark'; }
 })();
 
-/* ==================================================================
-   Side-entry reveals and keyboard navigation.
-
-   Kept as its own block so it runs after the main script has rendered
-   the page, and so it can be reasoned about on its own.
-   ================================================================== */
 (() => {
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ------------------------------- arrive from outside the page ------
-     A card parked off-screen never intersects the viewport, so an
-     IntersectionObserver would never fire for it. The trigger therefore
-     uses the element's LAYOUT position (offsetTop ignores transforms).  */
-
   const pending = [];
 
-  /** Distance from the top of the document, unaffected by any transform. */
   function layoutTop(el) {
     let y = 0;
     let n = el;
@@ -55,7 +35,7 @@
   function checkPending() {
     ticking = false;
     if (!pending.length) return;
-    const line = scrollY + innerHeight * 0.86;   // trigger a little before centre
+    const line = scrollY + innerHeight * 0.86;
     for (let i = pending.length - 1; i >= 0; i--) {
       const el = pending[i];
       if (layoutTop(el) < line) {
@@ -68,7 +48,6 @@
   addEventListener('scroll', queueCheck, { passive: true });
   addEventListener('resize', queueCheck);
 
-  /** Alternate the direction so the page zig-zags as you scroll. */
   function applySideReveals() {
     if (reduced) return;
     const groups = [
@@ -88,13 +67,10 @@
         el.style.setProperty('--from', vw + 'vw');
         el.style.setProperty('--rot', (vw > 0 ? -rot : rot) + 'deg');
 
-        // this element is ours now: drop the old fade-up system so the two
-        // cannot fight over the same transform
         el.classList.remove('reveal', 'in');
         el.classList.add('reveal-x');
 
         if (layoutTop(el) < scrollY + innerHeight * 0.86) {
-          // already in view — play it on the next frame rather than snapping
           requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('in')));
         } else {
           pending.push(el);
@@ -104,9 +80,6 @@
     queueCheck();
   }
 
-  // The content arrives from the database after this file runs, so watch
-  // for it rather than assuming it is already on the page. Without these
-  // calls applySideReveals is defined and never invoked.
   const contentWatcher = new MutationObserver(() => applySideReveals());
   ['#projectGrid', '#timeline', '#skillGrid', '#eduGrid', '#statList'].forEach((sel) => {
     const node = document.querySelector(sel);
@@ -116,7 +89,6 @@
   setTimeout(applySideReveals, 1200);
   setTimeout(applySideReveals, 3000);
 
-  /* ------------------------------------------- keyboard navigation */
   const SECTIONS = ['#top', '#news', '#about', '#skills', '#experience', '#projects', '#education', '#contact'];
 
   const currentIndex = () => {
@@ -138,8 +110,6 @@
   function goTo(i) {
     const clamped = Math.max(0, Math.min(SECTIONS.length - 1, i));
     const sel = SECTIONS[clamped];
-    // one section is on screen at a time, so an arrow key turns to the
-    // next one rather than scrolling towards it
     if (window.PRESS) { window.PRESS.show(sel === '#top' ? '' : sel); return; }
     const el = document.querySelector(sel);
     if (!el) return;
@@ -147,7 +117,6 @@
     window.SFX?.hover();
   }
 
-  /** Typing somewhere? Then the arrows belong to that field, not the page. */
   const isTyping = () => {
     const a = document.activeElement;
     return !!a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);
@@ -181,7 +150,6 @@
     hideHint();
   });
 
-  /* ------------------------------------------------------ the hint */
   const hint = document.createElement('div');
   hint.className = 'kbd-hint';
   hint.innerHTML = '<kbd>←</kbd><kbd>→</kbd> move between sections <kbd>/</kbd> ask a question';
@@ -190,32 +158,29 @@
   let hintTimer;
   function showHint() {
     if (matchMedia('(hover: none), (pointer: coarse)').matches) return;
-    try { if (localStorage.getItem('rp_kbd_hint') === 'seen') return; } catch { /* ignore */ }
+    try { if (localStorage.getItem('rp_kbd_hint') === 'seen') return; } catch {  }
     hint.classList.add('show');
     hintTimer = setTimeout(hideHint, 7000);
   }
   function hideHint() {
     clearTimeout(hintTimer);
     hint.classList.remove('show');
-    try { localStorage.setItem('rp_kbd_hint', 'seen'); } catch { /* ignore */ }
+    try { localStorage.setItem('rp_kbd_hint', 'seen'); } catch {  }
   }
   document.addEventListener('loader:done', () => setTimeout(showHint, 2200));
 })();
 
-
-/* ==================================================================
-   MODES
-   Not a colour scheme — a different presentation of the same content.
-   "modern" is the site as built; "paper" turns it into a ruled
-   engineer's notebook whose pages turn as you move down it.
-
-   The light/dark switch is deliberately left alone: it still works
-   inside each mode, so there are four states, not two.
-   ================================================================== */
 (() => {
   const KEY = 'rp_mode';
-  const MODES = ['modern', 'press', 'shell'];
-  const LABEL = { modern: 'Modern', press: 'Press', shell: 'Terminal' };
+  const MODES = ['modern', 'index', 'keys', 'press', 'shell'];
+  const LABEL = { modern: 'Modern', index: 'Index', keys: 'Keys', press: 'Press', shell: 'Terminal' };
+  const ICON = {
+    modern: '<path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 21h8M12 17v4"/>',
+    press: '<path d="M4 22h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/>',
+    shell: '<path d="m4 17 6-6-6-6M12 19h8"/>',
+    index: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    keys: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M10 13h4M7 16h10"/>'
+  };
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const read = () => {
@@ -225,9 +190,6 @@
 
   let mode = read();
 
-  /* ---------------------------------------------- the handwriting
-     Two script faces, fetched only when paper is actually asked for,
-     so a visitor who never leaves modern mode never pays for them. */
   const FONTS = {
     paper: 'https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Kalam:wght@300;400;700&display=swap',
     press: 'https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,700;1,6..96,400&display=swap'
@@ -242,7 +204,6 @@
     document.head.appendChild(l);
   }
 
-  /* --------------------------------------------------- the selector */
   const tabs = document.createElement('div');
   tabs.className = 'mode-tabs';
   tabs.id = 'modeTabs';
@@ -250,7 +211,9 @@
   tabs.setAttribute('aria-label', 'Site mode');
   tabs.innerHTML =
     '<span class="mode-thumb" aria-hidden="true"></span>' +
-    MODES.map((m) => `<button type="button" class="mode-tab" role="tab" data-mode="${m}" data-cursor="mode">${LABEL[m]}</button>`).join('');
+    MODES.map((m) => `<button type="button" class="mode-tab" role="tab" data-mode="${m}" data-cursor="mode" aria-label="${LABEL[m]} mode" title="${LABEL[m]}">` +
+      `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[m]}</svg>` +
+      `<span class="mt-label">${LABEL[m]}</span></button>`).join('');
 
   const thumb = tabs.querySelector('.mode-thumb');
   const buttons = Array.from(tabs.querySelectorAll('.mode-tab'));
@@ -262,12 +225,6 @@
     thumb.style.width = on.offsetWidth + 'px';
   }
 
-  /* Where the selector lives depends on how much room there is.
-     On a phone the header already carries a logo, a sound button, a
-     wall switch, a CV button and a burger; adding two more pills
-     pushes the row off the screen. Below the burger breakpoint the
-     same element moves into the opened menu instead — moved, not
-     duplicated, so there is only ever one of it to keep in sync. */
   const actions = document.querySelector('.nav-actions');
   const menu = document.querySelector('.nav-links');
   const wide = matchMedia('(min-width: 981px)');
@@ -283,7 +240,6 @@
   placeTabs();
   wide.addEventListener('change', placeTabs);
 
-  /* ------------------------------------------------------ the stage */
   const stage = document.createElement('div');
   stage.className = 'flip-stage';
   stage.id = 'flipStage';
@@ -294,16 +250,15 @@
   let flipping = false;
   let lastFlip = 0;
 
-  /** Turn one page. `back` runs the same sheet the other way. */
   function flip(back = false) {
     if (reduced || mode !== 'paper' || flipping) return;
     const t = performance.now();
-    if (t - lastFlip < 620) return;          // a fast scroll is one turn, not ten
+    if (t - lastFlip < 620) return;
     lastFlip = t;
     flipping = true;
 
     stage.classList.remove('fwd', 'bwd');
-    void stage.offsetWidth;                   // restart the animation
+    void stage.offsetWidth;
     stage.classList.add('on', back ? 'bwd' : 'fwd');
     rustle();
 
@@ -313,10 +268,6 @@
     }, 800);
   }
 
-  /* ---------------------------------------------------- paper sound
-     Its own tiny context so it does not have to reach inside the
-     interaction sound engine, but it obeys the same on/off switch:
-     if the visitor has muted the site, paper stays quiet too. */
   let actx = null;
   function rustle() {
     if (window.SFX && window.SFX.enabled === false) return;
@@ -328,21 +279,18 @@
       const t0 = actx.currentTime;
       const dur = 0.42;
 
-      // a short burst of noise, shaped so it swells and dies like a sheet
       const len = Math.floor(actx.sampleRate * dur);
       const buf = actx.createBuffer(1, len, actx.sampleRate);
       const d = buf.getChannelData(0);
       for (let i = 0; i < len; i++) {
         const x = i / len;
-        const env = Math.sin(Math.PI * Math.pow(x, 0.7));      // slow in, quick out
+        const env = Math.sin(Math.PI * Math.pow(x, 0.7));
         d[i] = (Math.random() * 2 - 1) * env * (0.5 + 0.5 * Math.sin(x * 34));
       }
 
       const src = actx.createBufferSource();
       src.buffer = buf;
 
-      // paper is mid-high and dry; sweeping the band is what makes it
-      // read as movement rather than as static
       const bp = actx.createBiquadFilter();
       bp.type = 'bandpass';
       bp.Q.value = 0.8;
@@ -362,16 +310,9 @@
       src.connect(bp).connect(hp).connect(g).connect(actx.destination);
       src.start(t0);
       src.stop(t0 + dur + 0.05);
-    } catch { /* sound is decoration; never let it break the page */ }
+    } catch {  }
   }
 
-  /* ---------------------------------------------------- press mode
-     A quarterly, not a website: a masthead across the top and a
-     numbered index of what is in this issue. Both are built once and
-     left in the document — CSS decides whether they are visible — so
-     switching modes never has to rebuild anything, and the index can
-     be kept in step with the page by one observer rather than by a
-     rebuild on every switch. */
   const SECTION_NOTES = {
     news: 'what has happened lately.',
     about: 'who is behind the signature.',
@@ -383,23 +324,24 @@
     contact: 'all the ways you can reach him.'
   };
 
-  /* An issue is read a page at a time.
-
-     The command line only earns its keep if there is somewhere to go.
-     With every section stacked on one scroll there was nowhere: ⌘K
-     could only scroll, which the wheel already does. In press mode the
-     sections become views — one on screen at a time, the index as the
-     cover — and the palette, the menu and the browser's own back button
-     all move between them. The other three modes stay a single scroll,
-     because a notebook and a walking robot both want continuity. */
   const VIEWS = ['#news', '#about', '#skills', '#experience', '#projects', '#certificates', '#education', '#contact'];
   let pressReady = false;
+
+  const PATHS = !/\.html?$/i.test(location.pathname) && location.protocol !== 'file:';
+  const BASE_TITLE = document.title;
+  const viewName = (v) => {
+    const t = document.querySelector(v + ' .section-title')?.textContent?.trim();
+    return t || v.slice(1).charAt(0).toUpperCase() + v.slice(2);
+  };
+  const urlFor = (v) => (PATHS ? (v ? '/' + v.slice(1) : '/') : (v || location.pathname)) + location.search;
+  function viewFromLocation() {
+    const m = location.pathname.match(/^\/([a-z]+)(?:\/[a-z0-9-]+)?\/?$/i);
+    if (m && VIEWS.includes('#' + m[1].toLowerCase())) return '#' + m[1].toLowerCase();
+    const h = location.hash.split('/')[0];
+    return VIEWS.includes(h) ? h : '';
+  }
   let pressView = '';
 
-  /* Moving between views plays the constellation: the triangles gather,
-     the page is swapped behind them, and they scatter. The notebook keeps
-     its page-turn instead, and the very first view on arrival is shown
-     without ceremony. */
   function pressShow(sel, push) {
     const next = VIEWS.includes(sel) ? sel : '';
     const paper = document.documentElement.dataset.mode === 'paper';
@@ -410,25 +352,14 @@
   function pressApply(sel, push) {
     let wanted = VIEWS.includes(sel) ? sel : '';
 
-    /* A section can take itself off the page. Announcements does exactly
-       that when nothing is published, and app.js sets `hidden` on it. A
-       view that renders nothing is a dead end you cannot see your way
-       out of, so asking for one lands on the cover instead. */
     if (wanted && document.querySelector(wanted)?.hidden) wanted = '';
 
     pressView = wanted;
 
-    /* On the cover, every section is put away — the cover is the
-       masthead and the index, nothing else. The first version only
-       hid the *other* sections, which meant that with no view chosen
-       nothing was hidden at all and the whole magazine sat stacked
-       under its own table of contents. Measured on the live page: six
-       of six sections visible on the cover. */
     document.querySelectorAll('main .section').forEach((sec) => {
       sec.classList.toggle('press-off', wanted ? ('#' + sec.id) !== wanted : true);
     });
     document.querySelector('#hero')?.classList.toggle('press-off', !!wanted);
-    document.querySelector('#intro')?.classList.toggle('press-off', !!wanted);
     document.getElementById('pressIndex')?.classList.toggle('press-off', !!wanted);
     document.getElementById('pressBack')?.classList.toggle('press-off', !wanted);
 
@@ -437,22 +368,20 @@
     });
 
     if (push) {
-      try { history.pushState({ view: wanted }, '', wanted || location.pathname); } catch { /* ignore */ }
+      try { history.pushState({ view: wanted }, '', urlFor(wanted)); } catch {  }
     }
+    const base = document.documentElement.dataset.baseTitle || BASE_TITLE;
+    document.title = wanted ? `${viewName(wanted)} — ${base}` : base;
     scrollTo(0, 0);
 
-    // A notebook turns a page when you turn to a page. The flip used to
-    // fire on crossing a scroll boundary, which no longer happens now
-    // that a view is the whole page.
     if (document.documentElement.dataset.mode === 'paper') flip(false);
     else window.SFX?.hover?.();
 
     document.dispatchEvent(new CustomEvent('view:changed', { detail: { view: wanted } }));
   }
 
-  addEventListener('popstate', () => pressShow(location.hash, false));
+  addEventListener('popstate', () => pressShow(viewFromLocation(), false));
 
-  // capture, so this beats the page's own smooth-scroll handler
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a[href^="#"]');
     if (!a) return;
@@ -512,19 +441,14 @@
     document.querySelector('main')?.insertBefore(back, document.querySelector('main').firstChild);
 
     syncIndex();
-    // arriving on a deep link should open that view, not the cover
-    pressShow(location.hash, false);
+    const first = viewFromLocation();
+    pressShow(first, false);
+    if (first && PATHS && location.hash) {
+      try { history.replaceState({ view: first }, '', urlFor(first)); } catch {  }
+    }
     pressReady = true;
   }
 
-  /* The index is built once, before the database has answered, so its
-     titles and its numbering both have to be corrected afterwards.
-
-     The numbering is not decoration here: a contents page that lists
-     01, 03, 04 is a contents page with a missing item, and the section
-     that goes missing is Announcements whenever nothing is published.
-     So the numbers are assigned to what is actually there, in order,
-     every time the content changes. */
   function syncIndex() {
     const index = document.getElementById('pressIndex');
     if (!index) return;
@@ -546,12 +470,9 @@
 
   document.addEventListener('content:rendered', syncIndex);
 
-  /* ------------------------------------------------------- applying */
   const TILT_PAPER = { '.project': '1.2', '.tl-item': '1.6', '.card': '2' };
 
   function calmTilt(on) {
-    // A sheet of paper does not pitch in three dimensions. Rather than
-    // tear the tilt handler out, reduce what it is allowed to do.
     document.querySelectorAll('.tilt').forEach((el) => {
       if (el.__origTilt === undefined) el.__origTilt = el.dataset.tilt || '';
       if (on) {
@@ -576,18 +497,15 @@
     });
     placeThumb();
     calmTilt(mode === 'paper');
-    try { localStorage.setItem(KEY, mode); } catch { /* ignore */ }
-    buildPress();     // the contents page belongs to every mode now
+    try { localStorage.setItem(KEY, mode); } catch {  }
+    buildPress();
 
-    /* The shell replaces the page rather than restyling it, so it is
-       fetched on demand and mounted, then taken down on the way out.
-       Everything it prints comes from the same database as the rest. */
     if (mode === 'shell') {
       if (window.TERMINAL) window.TERMINAL.mount();
       else if (!document.getElementById('shellScript')) {
         const sc = document.createElement('script');
         sc.id = 'shellScript';
-        sc.src = '/assets/js/terminal.js';
+        sc.src = '/assets/js/terminal.js?v=2';
         sc.addEventListener('load', () => {
           if (document.documentElement.dataset.mode === 'shell') window.TERMINAL?.mount();
         });
@@ -595,6 +513,36 @@
       }
     } else {
       window.TERMINAL?.unmount();
+    }
+
+    if (mode === 'index') {
+      if (window.INDEXMODE) window.INDEXMODE.mount();
+      else if (!document.getElementById('indexScript')) {
+        const sc = document.createElement('script');
+        sc.id = 'indexScript';
+        sc.src = '/assets/js/index-mode.js?v=3';
+        sc.addEventListener('load', () => {
+          if (document.documentElement.dataset.mode === 'index') window.INDEXMODE?.mount();
+        });
+        document.head.appendChild(sc);
+      }
+    } else {
+      window.INDEXMODE?.unmount();
+    }
+
+    if (mode === 'keys') {
+      if (window.KEYSMODE) window.KEYSMODE.mount();
+      else if (!document.getElementById('keysScript')) {
+        const sc = document.createElement('script');
+        sc.id = 'keysScript';
+        sc.src = '/assets/js/keys-mode.js?v=3';
+        sc.addEventListener('load', () => {
+          if (document.documentElement.dataset.mode === 'keys') window.KEYSMODE?.mount();
+        });
+        document.head.appendChild(sc);
+      }
+    } else {
+      window.KEYSMODE?.unmount();
     }
 
     if (announce && mode === 'paper') flip(false);
@@ -605,6 +553,8 @@
     const b = e.target.closest('.mode-tab');
     if (!b || b.dataset.mode === mode) return;
     apply(b.dataset.mode, true);
+    document.getElementById('navLinks')?.classList.remove('open');
+    document.getElementById('navBurger')?.classList.remove('on');
     if (b.dataset.mode === 'modern') window.SFX?.flip?.();
   });
 
@@ -612,13 +562,9 @@
   addEventListener('resize', placeThumb);
   addEventListener('load', placeThumb);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeThumb).catch(() => {});
-  // the content arrives after this runs, so the new cards need calming too
   document.addEventListener('loader:done', () => setTimeout(() => calmTilt(mode === 'paper'), 200));
   setTimeout(() => calmTilt(mode === 'paper'), 1500);
 
-  /* ------------------------------------- turn the page when you move
-     Scrolling is kept. What changes is that crossing from one section
-     into the next is treated as a page boundary.                     */
   const PAGES = ['#top', '#news', '#about', '#skills', '#experience', '#projects', '#education', '#contact'];
 
   function pageIndex() {
@@ -649,13 +595,6 @@
   }, { passive: true });
 })();
 
-
-/* ==================================================================
-   A way in for the keyboard.
-   The nav is long and the first thing after it is the hero, so a
-   keyboard or screen-reader visitor had to tab through every link
-   before reaching any content. One link, visible only when focused.
-   ================================================================== */
 (() => {
   const a = document.createElement('a');
   a.className = 'skip-link';
@@ -668,11 +607,6 @@
   document.body.insertBefore(a, document.body.firstChild);
 })();
 
-
-/* ==================================================================
-   The command line loads on every visit, in every mode: it is a way
-   around the site, not a decoration on one presentation of it.
-   ================================================================== */
 (() => {
   if (document.getElementById('cmdkScript')) return;
   const s = document.createElement('script');
@@ -682,10 +616,6 @@
   document.head.appendChild(s);
 })();
 
-/* ==================================================================
-   The arcade is fetched the first time somebody asks for it, and not
-   before: three games are no reason to slow down a CV.
-   ================================================================== */
 (() => {
   let asked = false;
   window.openArcade = (name) => {
@@ -694,7 +624,7 @@
     asked = true;
     const s = document.createElement('script');
     s.id = 'arcadeScript';
-    s.src = '/assets/js/arcade.js';
+    s.src = '/assets/js/arcade.js?v=2';
     s.addEventListener('load', () => window.ARCADE?.show(name));
     document.head.appendChild(s);
   };

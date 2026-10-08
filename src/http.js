@@ -1,7 +1,3 @@
-/**
- * A very small HTTP helper: routing, JSON bodies, cookies and static files.
- * Built on node:http so the project needs no npm packages at all.
- */
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -23,9 +19,6 @@ const MIME = {
   '.pdf': 'application/pdf',
   '.woff2': 'font/woff2',
   '.txt': 'text/plain; charset=utf-8',
-  // Attachments on announcements and projects. Without these the browser
-  // gets application/octet-stream and saves "download" with no extension,
-  // instead of a spreadsheet that opens in Excel.
   '.doc': 'application/msword',
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   '.xls': 'application/vnd.ms-excel',
@@ -78,10 +71,6 @@ function createApp(options = {}) {
     del: (p, h) => add('DELETE', p, h),
     staticDir: null,
     notFound: null,
-    /* A hook the app can set to intercept an HTML page before it is sent
-       from disk. Returns true if it handled the response. Used to rewrite
-       the sharing tags so they name whatever domain the visitor actually
-       typed. Default: not interested, send the file as it is. */
     sendPage: () => false
   };
 
@@ -106,8 +95,6 @@ function createApp(options = {}) {
         return res.end('Not found');
       }
       const ext = path.extname(filePath).toLowerCase();
-      // Never let the browser cache the app itself — otherwise an edit to the
-      // HTML/JS/CSS silently does nothing until the user clears their cache.
       const noCache = ['.html', '.js', '.mjs', '.css', '.json'].includes(ext);
       res.writeHead(200, {
         'Content-Type': MIME[ext] || 'application/octet-stream',
@@ -136,15 +123,12 @@ function createApp(options = {}) {
       const prev = res.getHeader('Set-Cookie');
       res.setHeader('Set-Cookie', prev ? [].concat(prev, bits.join('; ')) : bits.join('; '));
     };
-    // sendFile takes extra headers; this wrapper used to swallow them, so a
-    // caller passing a Content-Security-Policy got no error and no policy.
     res.sendFile = (p, extraHeaders) => sendFile(res, p, extraHeaders);
 
     req.query = Object.fromEntries(url.searchParams);
     req.cookies = parseCookies(req.headers.cookie || '');
     req.ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
 
-    // security headers
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
@@ -163,7 +147,6 @@ function createApp(options = {}) {
         return await route.handler(req, res);
       }
 
-      // static files
       if ((req.method === 'GET' || req.method === 'HEAD') && app.staticDir) {
         const safe = path.normalize(pathname).replace(/^(\.\.[/\\])+/, '');
         let filePath = path.join(app.staticDir, safe);

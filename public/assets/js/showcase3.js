@@ -1,21 +1,6 @@
-/* ==================================================================
-   SHOWCASE, PART THREE
-     4. The bento board — skill cards you can drag into a new order
-     5. The glass lens  — education cards seen through a liquid lens
-   and the wiring that builds every part-two and part-three piece.
-   ================================================================== */
 (() => {
   const { $, $$, esc, reduced, clamp, lerp, low } = window.__sc2;
 
-  /* ==================================================================
-     4. THE BENTO BOARD
-     A grid of widgets that can be rearranged by dragging. The layout is
-     a sequence plus a size per widget; an exact tiler turns the sequence
-     into a gap-free rectangle at any column count, and every change is
-     animated from where things were to where they are (FLIP).
-     Mouse drags at once; touch needs a long press so the page still
-     scrolls; the keyboard uses Alt + arrows.
-     ================================================================== */
   const SPANS = { sm: { col: 1, row: 1 }, wide: { col: 2, row: 1 }, tall: { col: 1, row: 2 }, lg: { col: 2, row: 2 } };
   const overlaps = (a, b) => a.col < b.col + b.w && b.col < a.col + a.w && a.row < b.row + b.h && b.row < a.row + a.h;
   const contains = (o, i) => i.col >= o.col && i.row >= o.row && i.col + i.w <= o.col + o.w && i.row + i.h <= o.row + o.h;
@@ -205,7 +190,6 @@
       tops.forEach((t, i) => widgets.push({ id: 't' + i, kind: 'top', size: 'sm', data: t, rank: i + 1, label: t.name + ' ' + t.level + '%' }));
       if (langs.length) widgets.push({ id: 'lang', kind: 'lang', size: 'sm', data: langs, label: 'Languages' });
 
-      // a pleasing first arrangement: groups and small cards interleaved
       const g = widgets.filter((w) => w.kind === 'group'), s = widgets.filter((w) => w.kind !== 'group');
       let order = [];
       if (g[0]) order.push(g[0]); order.push(...s.slice(0, 2));
@@ -213,13 +197,12 @@
       order.push(...s.slice(2)); order.push(...g.slice(3));
       order = order.filter(Boolean);
 
-      // the order this visitor left it in last time, if the set still matches
       try {
         const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
         if (Array.isArray(saved) && saved.length === order.length && saved.every((id) => order.some((w) => w.id === id))) {
           order = saved.map((id) => order.find((w) => w.id === id));
         }
-      } catch { /* ignore */ }
+      } catch {  }
       items = order;
 
       grid.classList.add('bento');
@@ -248,7 +231,6 @@
           : '<span class="scroll-cue-inline">Drag the cards to rearrange them · Alt + arrows with a keyboard</span>';
       }
       measure(true);
-      // the bars fill once the board is on screen
       new IntersectionObserver((es, o) => {
         es.forEach((e) => { if (e.isIntersecting) { grid.classList.add('in'); o.disconnect(); } });
       }, { threshold: 0.15 }).observe(grid);
@@ -269,7 +251,6 @@
       apply(false);
     }
 
-    /** Put every widget in its cell; animate the ones that moved. */
     function apply(animate, skip) {
       const before = new Map();
       if (animate) els.forEach((n, id) => { if (id !== skip) before.set(id, n.getBoundingClientRect()); });
@@ -304,12 +285,11 @@
       items = next;
       apply(true, skip);
     }
-    function save() { try { localStorage.setItem(KEY, JSON.stringify(items.map((w) => w.id))); } catch { /* ignore */ } }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(items.map((w) => w.id))); } catch {  } }
 
     function follow() {
       if (!drag) return;
       const n = drag.el;
-      // where the widget's cell is, without any transform on it
       const gr = grid.getBoundingClientRect();
       const bx = gr.left + n.offsetLeft, by = gr.top + n.offsetTop;
       const x = drag.px - drag.gx - bx, y = drag.py - drag.gy - by;
@@ -338,7 +318,7 @@
         drag = { id, el: n, px: e.clientX, py: e.clientY, gx: e.clientX - r.left, gy: e.clientY - r.top, w: r.width, h: r.height, pid: e.pointerId, before: items };
         n.classList.add('lifted');
         grid.classList.add('dragging');
-        try { n.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+        try { n.setPointerCapture(e.pointerId); } catch {  }
         follow();
       };
       n.addEventListener('pointerdown', (e) => {
@@ -370,7 +350,6 @@
       };
       n.addEventListener('pointerup', end);
       n.addEventListener('pointercancel', end);
-      // while a finger is carrying a card, the page must not scroll under it
       n.addEventListener('touchmove', (e) => { if (drag && drag.el === n) e.preventDefault(); }, { passive: false });
       n.addEventListener('contextmenu', (e) => { if (drag || press) e.preventDefault(); });
       n.addEventListener('keydown', (e) => {
@@ -394,13 +373,6 @@
     return { build, measure: () => measure(true) };
   })();
 
-  /* ==================================================================
-     5. THE GLASS LENS
-     Education as a row of cards that never ends, seen through a liquid
-     glass lens in the middle of the screen. The row is painted on a 2D
-     canvas and handed to one WebGL fragment shader that bends it. Drag,
-     swipe or scroll sideways; click the card in the lens to open it.
-     ================================================================== */
   const LENS_FRAG = `
 precision highp float;
 #define PI 3.14159265
@@ -483,14 +455,14 @@ void main(){
       const c = document.createElement('canvas');
       c.width = cw; c.height = ch;
       const x = c.getContext('2d');
-      const hues = ['#8052ff', '#ffb829', '#15846e', '#e05cff', '#4f8bff'];
+      const hues = ['#C3E41D', '#ffb829', '#15846e', '#e05cff', '#4f8bff'];
       const a = hues[i % hues.length];
       x.fillStyle = '#0b0a10'; x.fillRect(0, 0, cw, ch);
       let g = x.createRadialGradient(cw * 0.85, ch * 0.1, 10, cw * 0.85, ch * 0.1, cw * 0.9);
       g.addColorStop(0, a + '66'); g.addColorStop(1, a + '00');
       x.fillStyle = g; x.fillRect(0, 0, cw, ch);
       g = x.createRadialGradient(0, ch, 10, 0, ch, cw);
-      g.addColorStop(0, 'rgba(128,82,255,.30)'); g.addColorStop(1, 'rgba(128,82,255,0)');
+      g.addColorStop(0, 'rgba(195,228,29,.30)'); g.addColorStop(1, 'rgba(195,228,29,0)');
       x.fillStyle = g; x.fillRect(0, 0, cw, ch);
       x.strokeStyle = 'rgba(255,255,255,.14)'; x.lineWidth = 2;
       x.strokeRect(22, 22, cw - 44, ch - 44);
@@ -502,26 +474,32 @@ void main(){
         x.drawImage(img, cw / 2 - iw / 2, 88, iw, ih);
       } else {
         x.fillStyle = a;
-        x.font = "400 300px 'Italianno', 'Caveat', cursive";
+        x.font = document.documentElement.lang === 'ar' ? "700 230px 'Amiri', serif" : "400 300px 'Italianno', 'Caveat', cursive";
         x.textAlign = 'center';
-        x.fillText(String(e.school || e.degree || '?').trim().charAt(0).toUpperCase(), cw / 2, 290);
+        const nm = String(e.school || e.degree || '?').trim();
+        const glyph = document.documentElement.lang === 'ar' && /^جامعة\s/.test(nm) ? nm.split(/\s+/).pop().charAt(0) : nm.charAt(0).toUpperCase();
+        x.fillText(glyph, cw / 2, 290);
       }
-      x.textAlign = 'left';
+      const AR = document.documentElement.lang === 'ar';
+      const edge = AR ? cw - 56 : 56;
+      if (AR) x.direction = 'rtl';
+      x.textAlign = AR ? 'right' : 'left';
       x.fillStyle = a;
-      x.font = "500 22px 'JetBrains Mono', monospace";
-      x.fillText(String(e.period || '').toUpperCase(), 56, 440);
+      x.font = AR ? "500 22px 'JetBrains Mono', 'Noto Kufi Arabic', monospace" : "500 22px 'JetBrains Mono', monospace";
+      x.fillText(String(e.period || '').toUpperCase(), edge, 440);
       x.fillStyle = '#ffffff';
-      x.font = "400 96px 'Italianno', 'Caveat', cursive";
+      x.font = AR ? "700 62px 'Amiri', serif" : "400 96px 'Italianno', 'Caveat', cursive";
       const words = String(e.degree || '').split(/\s+/);
       const lines = [''];
       words.forEach((w) => {
         const t = (lines[lines.length - 1] + ' ' + w).trim();
         if (x.measureText(t).width > cw - 112 && lines[lines.length - 1]) lines.push(w); else lines[lines.length - 1] = t;
       });
-      lines.slice(0, 4).forEach((l, k) => x.fillText(l, 56, 516 + k * 70));
+      const step = AR ? 92 : 70;
+      lines.slice(0, AR ? 3 : 4).forEach((l, k) => x.fillText(l, edge, (AR ? 530 : 516) + k * step));
       x.fillStyle = '#bdbdbd';
-      x.font = "400 28px 'Bodoni Moda', Georgia, serif";
-      x.fillText(String(e.school || ''), 56, ch - 70);
+      x.font = AR ? "400 30px 'Amiri', serif" : "400 28px 'Bodoni Moda', Georgia, serif";
+      x.fillText(String(e.school || ''), edge, ch - 70);
       return c;
     }
 
@@ -615,7 +593,10 @@ void main(){
       host.classList.toggle('no-gl', !glCanvas);
       $('#eduGrid')?.classList.add('lg-hidden');
 
-      try { await document.fonts?.load("400 96px 'Italianno'"); } catch { /* ignore */ }
+      try { await document.fonts?.load("400 96px 'Italianno'"); } catch {  }
+      if (document.documentElement.lang === 'ar') {
+        try { await Promise.all([document.fonts.load("700 64px 'Amiri'"), document.fonts.load("400 28px 'Amiri'"), document.fonts.load("500 22px 'Noto Kufi Arabic'")]); } catch {  }
+      }
       const imgs = await Promise.all(items.map((e) => new Promise((res) => {
         if (!e.image) return res(null);
         const im = new Image();
@@ -624,7 +605,9 @@ void main(){
       })));
       cards = items.map((e, i) => drawCard(e, i, imgs[i]));
       bindInput();
-      new ResizeObserver(size).observe(stage);
+      ['pointerdown', 'pointermove', 'wheel', 'keydown', 'click', 'touchstart'].forEach((ev) =>
+        stage.addEventListener(ev, kickLens, { passive: true }));
+      new ResizeObserver(() => { size(); kickLens(); }).observe(stage);
       new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible && !raf) raf = requestAnimationFrame(tick); }).observe(stage);
       size();
       scroll = target = 0;
@@ -639,7 +622,6 @@ void main(){
     }
 
     function panelAt(x, y) {
-      // x, y relative to the stage; only the panels in the middle row count
       const sw = slotW(), n = items.length;
       const first = Math.floor((scroll - W / 2) / sw) - 1, last = Math.ceil((scroll + W / 2) / sw) + 1;
       for (let k = first; k <= last; k++) {
@@ -684,7 +666,7 @@ void main(){
         if (focus.on || e.target.closest('.lg-detail')) return;
         if (e.button !== 0 && e.pointerType === 'mouse') return;
         dragging = { id: e.pointerId, x: e.clientX, dist: 0, vel: 0, t: performance.now(), type: e.pointerType };
-        try { stage.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+        try { stage.setPointerCapture(e.pointerId); } catch {  }
         vel = 0; snapped = false; suppress = false;
       });
       stage.addEventListener('pointermove', (e) => {
@@ -785,29 +767,24 @@ void main(){
         gl.uniform1f(U.uFx, focus.fx);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
-      raf = requestAnimationFrame(tick);
+      const still = !dragging && vel === 0 && Math.abs(target - scroll) < 0.05 && energy < 0.002 &&
+        Math.abs(focus.amt - (focus.on ? 1 : 0)) < 0.002 && Math.abs(focus.fx - (focus.on ? 0 : 1)) < 0.002;
+      if (!still) raf = requestAnimationFrame(tick);
     }
+    const kickLens = () => { if (!raf && visible) raf = requestAnimationFrame(tick); };
 
     return {
       build,
       wake() { if (stage) { size(); if (!raf) raf = requestAnimationFrame(tick); } },
-      /** Close an opened card; true when there was one to close. */
-      back() { if (focus.on) { closeFocus(); return true; } return false; }
+      back() { if (focus.on) { closeFocus(); kickLens(); return true; } return false; }
     };
   })();
 
-  /* ==================================================================
-     6. THE BACK BUTTON
-     Every view gets a plain way out. It closes whatever is open inside
-     the view first (a card in the glass lens, say) and otherwise takes
-     you back to the page you came from — or to the cover. Escape does
-     the same, and so does the browser's own back button.
-     ================================================================== */
   const back = (() => {
     const handlers = [() => glass.back()];
-    let trail = [];                    // views visited in this visit, oldest first
+    let trail = [];
     function run() {
-      for (const h of handlers) { try { if (h()) return; } catch { /* ignore */ } }
+      for (const h of handlers) { try { if (h()) return; } catch {  } }
       const here = window.PRESS?.current?.() || '';
       if (!here) return;
       trail = trail.filter((v) => v !== here);
@@ -821,7 +798,6 @@ void main(){
       const b = document.getElementById('pressBack');
       if (b) b.innerHTML = '<span aria-hidden="true">←</span> Back';
     });
-    // capture on window runs before the page's own link handler
     window.addEventListener('click', (e) => {
       const b = e.target.closest && e.target.closest('#pressBack');
       if (!b) return;
@@ -837,19 +813,11 @@ void main(){
     return { run };
   })();
 
-  /* ==================================================================
-     7. THE ANNOUNCEMENTS BAND
-     A row of white cards at the foot of every page — just above the
-     footer — the way a university site lists its partners: the
-     announcement's image sits in each card, grey at rest and in colour
-     under the mouse. The row drifts on its own and slows down when the
-     pointer is on it; the arrows nudge it; a click opens the news.
-     ================================================================== */
   const ticker = (() => {
     let band, raf = 0;
     const fmt = (d) => {
       const t = Date.parse(d);
-      return Number.isFinite(t) ? new Date(t).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+      return Number.isFinite(t) ? new Date(t).toLocaleDateString((window.I18N && window.I18N.locale) || 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
     };
     function build(c) {
       const list = (c.announcements || [])
@@ -862,11 +830,10 @@ void main(){
 
       const card = (a) => `<a class="lb-card${a.image ? ' has-img' : ''}" href="#news" data-id="${esc(a.id || '')}" title="${esc(a.title || '')}">
           ${a.image
-            ? `<img src="${esc(a.image)}" alt="${esc(a.title || '')}" loading="lazy" draggable="false">`
+            ? `<img src="${esc(a.image)}" alt="${esc(a.title || '')}" decoding="async" draggable="false">`
             : `<span class="lb-text">${a.tag ? `<b>${esc(a.tag)}</b>` : ''}<span>${esc(a.title || '')}</span></span>`}
           <span class="lb-cap"><span>${esc(a.title || '')}</span>${a.date ? `<time>${esc(fmt(a.date))}</time>` : ''}</span>
         </a>`;
-      // enough copies that one run is always wider than the screen
       let items = list.slice();
       while (items.length < 8) items = items.concat(list);
       const run = items.map(card).join('');
@@ -880,6 +847,9 @@ void main(){
           <p class="lb-kicker"><i aria-hidden="true"></i>Announcements</p>
           <div class="lb-nav">
             <button type="button" class="lb-btn" data-dir="-1" aria-label="Previous">‹</button>
+            <button type="button" class="lb-btn lb-pause" aria-label="Pause the announcements" aria-pressed="false">
+              <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path class="pz" d="M3.5 2v8M8.5 2v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="pl" d="M3 1.8 10 6 3 10.2Z" fill="currentColor"/></svg>
+            </button>
             <button type="button" class="lb-btn" data-dir="1" aria-label="Next">›</button>
           </div>
         </div>
@@ -888,46 +858,78 @@ void main(){
         </div></div>`;
       const footer = document.getElementById('footer');
       if (footer) footer.parentNode.insertBefore(band, footer); else document.body.appendChild(band);
-      $$('.lb-run[aria-hidden] a', band).forEach((a) => { a.tabIndex = -1; });
-
       const track = $('.lb-track', band);
       const win = $('.lb-window', band);
-      const SPEED = 38, SLOW = 8;
+      let period = 0;
+      const fill = () => {
+        const first = $('.lb-run', track);
+        period = first ? first.getBoundingClientRect().width : 0;
+        if (!period) return;
+        const need = Math.max(2, Math.ceil(win.clientWidth / period) + 1);
+        let runs = $$('.lb-run', track);
+        while (runs.length < need) { track.appendChild(first.cloneNode(true)).setAttribute('aria-hidden', 'true'); runs = $$('.lb-run', track); }
+        while (runs.length > need) { runs.pop().remove(); }
+        $$('.lb-run[aria-hidden] a', track).forEach((a) => { a.tabIndex = -1; });
+      };
+      fill();
+      const ro = new ResizeObserver(fill);
+      ro.observe(win);
+      ro.observe($('.lb-run', track));
+      const SPEED = 38, SLOW = 14;
       let x = 0, v = SPEED, want = SPEED, lastT = 0, kick = 0;
       const wrap = () => {
-        const half = track.scrollWidth / 2;
-        if (!half) return;
-        while (x <= -half) x += half;
-        while (x > 0) x -= half;
+        if (!period) return;
+        while (x <= -period) x += period;
+        while (x > 0) x -= period;
       };
+      let onScreen = false;
       const loop = (t) => {
+        raf = 0;
+        if (document.hidden || !band || !band.isConnected || !onScreen) { lastT = 0; return; }
         raf = requestAnimationFrame(loop);
         const dt = Math.min(0.05, (t - (lastT || t)) / 1000); lastT = t;
-        if (document.hidden || !band || !band.isConnected) return;
         v += (want - v) * Math.min(1, dt * 5);
         const step = kick * Math.min(1, dt * 9);
         kick -= step;
-        x -= v * dt + step;                // drifts to the left
+        x -= v * dt + step;
         wrap();
         track.style.transform = `translate3d(${x.toFixed(2)}px,0,0)`;
       };
       if (reduced()) want = v = 0;
-      raf = requestAnimationFrame(loop);
-      win.addEventListener('pointerenter', () => { if (!reduced()) want = SLOW; });
-      win.addEventListener('pointerleave', () => { if (!reduced()) want = SPEED; });
-      win.addEventListener('focusin', () => { want = 0; });
-      win.addEventListener('focusout', () => { if (!reduced()) want = SPEED; });
+      new IntersectionObserver((es) => {
+        onScreen = es.some((e) => e.isIntersecting);
+        if (onScreen && !raf) raf = requestAnimationFrame(loop);
+      }).observe(band);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden && onScreen && !raf) raf = requestAnimationFrame(loop); });
+      let paused = reduced();
+      const pauseBtn = $('.lb-pause', band);
+      const showPause = () => {
+        pauseBtn.setAttribute('aria-pressed', String(paused));
+        pauseBtn.setAttribute('aria-label', paused ? 'Play the announcements' : 'Pause the announcements');
+        pauseBtn.classList.toggle('is-paused', paused);
+      };
+      showPause();
+      const cruise = () => (paused ? 0 : SPEED);
+      win.addEventListener('pointerenter', () => { if (!paused) want = SLOW; });
+      win.addEventListener('pointerleave', () => { want = cruise(); });
+      win.addEventListener('focusin', (e) => { if (e.target.matches && e.target.matches(':focus-visible')) want = 0; });
+      win.addEventListener('focusout', () => { want = cruise(); });
+      pauseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        paused = !paused; want = cruise(); showPause();
+        if (!raf && onScreen) raf = requestAnimationFrame(loop);
+      });
       band.addEventListener('click', (e) => {
         const btn = e.target.closest('.lb-btn');
         if (btn) { kick += Number(btn.dataset.dir) * 200; return; }
         const a = e.target.closest('.lb-card');
         if (!a) return;
         e.preventDefault(); e.stopPropagation();
+        a.blur(); want = cruise();
         openNews(a.dataset.id);
       });
     }
 
-    /* Open the news and point at the announcement that was clicked. */
     function openNews(id) {
       const go = () => {
         const target = id && document.querySelector(`#newsGrid .news-card[data-id="${CSS.escape(id)}"]`);
@@ -948,12 +950,6 @@ void main(){
     return { build };
   })();
 
-  /* ==================================================================
-     8. THE NEWS ENTRANCE
-     Opening the News page plays a short headline sequence: a violet
-     "breaking" bar wipes across under the title, then the cards drop
-     into place one after another like fresh wire copy.
-     ================================================================== */
   const newsIntro = (() => {
     let last = 0;
     function play() {
@@ -975,17 +971,37 @@ void main(){
     return { play };
   })();
 
-  /* ------------------------------------------------------ wiring */
-  const { tear, planet } = window.SHOWCASE2;
+  (() => {
+    if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    const glow = document.createElement('div');
+    glow.id = 'cursorGlow';
+    glow.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(glow);
+    let tx = innerWidth / 2, ty = innerHeight / 2, x = tx, y = ty, raf = 0;
+    const step = () => {
+      const k = reduced() ? 1 : 0.18;
+      x += (tx - x) * k; y += (ty - y) * k;
+      glow.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+      raf = Math.abs(tx - x) + Math.abs(ty - y) > 0.5 ? requestAnimationFrame(step) : 0;
+    };
+    addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      tx = e.clientX; ty = e.clientY;
+      glow.classList.add('on');
+      if (!raf) raf = requestAnimationFrame(step);
+    }, { passive: true });
+    document.documentElement.addEventListener('pointerleave', () => glow.classList.remove('on'));
+  })();
+
+  const { planet } = window.SHOWCASE2;
   document.addEventListener('content:rendered', (e) => {
     const c = e.detail || {};
-    try { tear.render(c); } catch (err) { console.error(err); }
     try { planet.render(c); } catch (err) { console.error(err); }
     try { bento.build(c); } catch (err) { console.error(err); }
     glass.build(c).catch((err) => console.error(err));
     try { ticker.build(c); } catch (err) { console.error(err); }
   });
   document.addEventListener('view:changed', () => requestAnimationFrame(() => {
-    tear.wake(); planet.wake(); bento.measure(); glass.wake();
+    planet.wake(); bento.measure(); glass.wake();
   }));
 })();

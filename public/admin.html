@@ -7,11 +7,10 @@
 <title>Control room</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔒</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/admin.css?v=3">
+<link rel="stylesheet" href="/assets/css/admin.css?v=5">
 </head>
 <body>
 
-<!-- ── gate ─────────────────────────────────────────────── -->
 <div id="gate" class="gate">
   <form id="gateForm" class="gate-card" autocomplete="off">
     <div class="gate-lock"><span></span></div>
@@ -25,7 +24,6 @@
   </form>
 </div>
 
-<!-- ── app ──────────────────────────────────────────────── -->
 <div id="app" hidden>
   <header class="bar">
     <div class="bar-l">
@@ -33,9 +31,6 @@
       <strong id="whoami"></strong>
     </div>
     <div class="bar-r">
-      <!-- Whether the edits survive a restart. The host throws the disk
-           away, so this is not a detail: it is the difference between
-           writing an announcement and writing one that disappears. -->
       <span class="store" id="storeState" title="Checking where your edits are stored…">
         <i></i><span id="storeText">checking…</span>
       </span>
@@ -61,6 +56,7 @@
         <button data-tab="certificates">Certificates</button>
         <button data-tab="education">Education</button>
         <button data-tab="sections">Section titles</button>
+        <button data-tab="translations">Translations</button>
         <button data-tab="meta">Theme &amp; SEO</button>
         <button data-tab="media">Media library</button>
         <button data-tab="security">Security</button>
@@ -73,13 +69,13 @@
 </div>
 
 <div class="toast" id="toast" hidden><span id="toastText"></span></div>
-<!-- The picker greys out anything not listed here, so this has to match
-     the server's allow-list or a legitimate .xlsx cannot even be chosen.
-     Extensions as well as MIME types: Windows in particular reports an
-     empty type for some Office files, and then only the extension matches. -->
 <input type="file" id="hiddenFile" hidden
        accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.rtf,.csv,.txt,.zip">
 
-<script src="/assets/js/admin.js?v=5"></script>
+<script>window.I18N_CORE_ONLY = true;</script>
+<script src="/assets/js/i18n.js?v=7"></script>
+<script src="/assets/i18n/tr.js?v=4"></script>
+<script src="/assets/i18n/ar.js?v=4"></script>
+<script src="/assets/js/admin.js?v=11"></script>
 </body>
 </html>

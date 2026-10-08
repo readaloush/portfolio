@@ -1,31 +1,8 @@
-/* ==================================================================
-   THE ARCADE
-   ------------------------------------------------------------------
-   Three small games, written from scratch on one canvas: snake,
-   tetris, breakout. No engine, no sprites, no download — a robotics
-   engineer's site should be able to draw its own rectangles.
-
-   One harness runs all three. A game is an object with update(dt) and
-   draw(ctx); the harness owns the loop, the clock, the pause, the
-   score, the best-ever, and the keyboard. That means a fourth game is
-   forty lines, not four hundred, and none of the three can drift out
-   of step with the others on the things that are not about play.
-
-   Two details that matter more than they look:
-
-   - The loop is fixed-step. Bound the update to real time and a slow
-     frame makes the snake teleport through its own tail; step at a
-     fixed rate and it cannot.
-   - The keys are captured. The site itself listens for arrow keys to
-     turn pages, so while a game is open its keys are taken before the
-     page can see them, or every turn would also flip the section.
-   ================================================================== */
 (() => {
   'use strict';
 
   const BEST_KEY = 'rp_arcade_best';
 
-  /* ------------------------------------------------------- storage */
   const bests = (() => {
     try { return JSON.parse(localStorage.getItem(BEST_KEY) || '{}'); }
     catch { return {}; }
@@ -33,11 +10,10 @@
   const saveBest = (game, score) => {
     if (score <= (bests[game] || 0)) return false;
     bests[game] = score;
-    try { localStorage.setItem(BEST_KEY, JSON.stringify(bests)); } catch { /* ignore */ }
+    try { localStorage.setItem(BEST_KEY, JSON.stringify(bests)); } catch {  }
     return true;
   };
 
-  /* --------------------------------------------------------- sound */
   let actx = null;
   function beep(freq = 660, dur = 0.05, gain = 0.05, type = 'square') {
     if (window.SFX && window.SFX.enabled === false) return;
@@ -56,12 +32,9 @@
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       o.connect(g).connect(actx.destination);
       o.start(t); o.stop(t + dur + 0.02);
-    } catch { /* decoration */ }
+    } catch {  }
   }
 
-  /* -------------------------------------------------------- colours
-     Read from the stylesheet, so the games belong to whichever mode
-     and theme the visitor is looking at. */
   let C = {};
   function readColours() {
     const s = getComputedStyle(document.documentElement);
@@ -75,7 +48,6 @@
     };
   }
 
-  /* ----------------------------------------------------- the shell */
   const shell = document.createElement('div');
   shell.className = 'arc';
   shell.hidden = true;
@@ -97,7 +69,7 @@
           <p class="arc-ready-name" id="arcReadyName">Snake</p>
           <p class="arc-ready-how" id="arcReadyHow"></p>
           <button class="arc-btn big" id="arcStart">▶ Start</button>
-          <p class="arc-ready-hint">or press Space · pick another game above</p>
+          <p class="arc-ready-hint">or press Space · switch games above or with 1 2 3</p>
         </div>
       </div>
       <div class="arc-pad" id="arcPad" aria-label="On-screen controls"></div>
@@ -122,8 +94,6 @@
   const elReady = shell.querySelector('#arcReady');
   const elPad = shell.querySelector('#arcPad');
   const elPause = shell.querySelector('#arcPause');
-  /* A game waits on its start screen until it is asked to begin, so
-     switching games with the mouse never throws you into a running one. */
   let waiting = true;
   const HOW = {
     snake: 'Eat the dots, do not bite yourself. Arrow keys, swipes, or the buttons below.',
@@ -148,7 +118,6 @@
   }
   shell.querySelector('#arcStart').addEventListener('click', begin);
   elPause.addEventListener('click', () => { if (!waiting && !dead) setPaused(!paused); });
-  // on-screen buttons: a press is a key-down, holding keeps the key held
   elPad.addEventListener('pointerdown', (e) => {
     const b = e.target.closest('[data-key]');
     if (!b) return;
@@ -165,21 +134,21 @@
     if (current && current.id === 'breakout') current.press?.(' ');
   });
 
-  /* ------------------------------------------------------ the keys */
   const keys = new Set();
   let current = null;
   let open = false;
 
   const onKey = (e) => {
     if (!open) return;
-    // The page turns sections on the arrow keys. While a game is up,
-    // the game gets them first and the page never hears about it.
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Spacebar'].includes(e.key)) {
       e.preventDefault();
       e.stopPropagation();
     }
     if (e.type === 'keydown') {
       if (e.key === 'Escape') { close(); return; }
+      if (/^[1-9]$/.test(e.key) && ORDER[Number(e.key) - 1] && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault(); start(ORDER[Number(e.key) - 1]); return;
+      }
       if (waiting) {
         if (e.key === ' ' || e.key === 'Enter') begin();
         return;
@@ -194,7 +163,6 @@
   addEventListener('keydown', onKey, true);
   addEventListener('keyup', onKey, true);
 
-  /* touch: a swipe is a direction, a tap is the action button */
   let tStart = null;
   canvas.addEventListener('touchstart', (e) => {
     const t = e.changedTouches[0];
@@ -212,14 +180,13 @@
     tStart = null;
   }, { passive: true });
 
-  /* ------------------------------------------------------ the loop */
   let raf = 0;
   let acc = 0;
   let last = 0;
   let paused = false;
   let score = 0;
   let dead = false;
-  const STEP = 1 / 120;              // fixed simulation step
+  const STEP = 1 / 120;
 
   function setScore(n) {
     score = n;
@@ -272,9 +239,8 @@
     }
   }
 
-  /* ================================================== 1 — SNAKE */
   function Snake() {
-    const N = 20;               // cells per side
+    const N = 20;
     const CELL = 24;
     const g = {
       id: 'snake', name: 'Snake', w: N * CELL, h: N * CELL,
@@ -301,8 +267,6 @@
       g.food = p;
     };
 
-    // A turn is stored, not applied. Applying it at once lets two
-    // quick presses reverse the snake into its own neck.
     g.press = (k) => {
       const d = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
                   w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0] }[k];
@@ -353,7 +317,6 @@
     return g;
   }
 
-  /* ================================================== 2 — TETRIS */
   function Tetris() {
     const COLS = 10;
     const ROWS = 20;
@@ -414,7 +377,6 @@
       }
       if (cleared) {
         g.lines += cleared;
-        // the usual curve: four at once is worth far more than four in a row
         api.setScore(api.score() + [0, 40, 100, 300, 1200][cleared]);
         g.fall = Math.max(0.09, 0.55 - Math.floor(g.lines / 8) * 0.05);
         api.beep(cleared === 4 ? 1200 : 720, 0.09, 0.05);
@@ -438,14 +400,12 @@
       else if (k === 'ArrowRight' || k === 'd') { if (!hits(p.shape, p.x + 1, p.y)) p.x++; }
       else if (k === 'ArrowUp' || k === 'w') {
         const r = rotate(p.shape);
-        // try the spot, then one either side, then two: a piece against
-        // a wall should still be able to turn
         for (const dx of [0, -1, 1, -2, 2]) {
           if (!hits(r, p.x + dx, p.y)) { p.shape = r; p.x += dx; beep(520, 0.03, 0.03); break; }
         }
       } else if (k === ' ' || k === 'Spacebar') {
         while (!hits(p.shape, p.x, p.y + 1)) p.y++;
-        g.t = 1e9;                     // land it on the next tick
+        g.t = 1e9;
         beep(300, 0.06, 0.05);
       }
     };
@@ -480,7 +440,6 @@
       g.grid.forEach((row, y) => row.forEach((v, x) => { if (v) block(x, y, true); }));
 
       if (g.piece) {
-        // the shadow of where it will land, which is most of the game
         let gy = g.piece.y;
         while (!hits(g.piece.shape, g.piece.x, gy + 1)) gy++;
         c.globalAlpha = 0.18;
@@ -512,7 +471,6 @@
     return g;
   }
 
-  /* ================================================ 3 — BREAKOUT */
   function Breakout() {
     const W = 480;
     const H = 380;
@@ -571,8 +529,6 @@
       if (b.x > W - b.r) { b.x = W - b.r; b.vx *= -1; }
       if (b.y < b.r) { b.y = b.r; b.vy *= -1; }
 
-      // the paddle returns the ball at an angle set by where it hit,
-      // which is the only reason the game has any steering in it
       if (b.vy > 0 && b.y + b.r >= H - 20 && b.y < H - 10 &&
           b.x > g.pad.x && b.x < g.pad.x + g.pad.w) {
         const rel = (b.x - (g.pad.x + g.pad.w / 2)) / (g.pad.w / 2);
@@ -630,12 +586,11 @@
     return g;
   }
 
-  /* ------------------------------------------------ the switchboard */
   const MAKE = { snake: Snake, tetris: Tetris, breakout: Breakout };
   const ORDER = ['snake', 'tetris', 'breakout'];
 
   elTabs.innerHTML = ORDER
-    .map((k) => `<button class="arc-tab" data-game="${k}">${k}</button>`)
+    .map((k, i) => `<button class="arc-tab" data-game="${k}" title="${k} (${i + 1})">${k}</button>`)
     .join('');
   elTabs.addEventListener('click', (e) => {
     const b = e.target.closest('.arc-tab');

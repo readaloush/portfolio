@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-/**
- * End-to-end check. Boots the server on a temporary database and exercises
- * every endpoint, then asserts that no credentials leak into the HTML.
- *
- *   npm test
- */
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -37,7 +31,6 @@ async function call(method, url, body) {
   base = 'http://127.0.0.1:' + app.server.address().port;
   console.log('\nTesting ' + base + '  (driver: ' + store.db.__driver + ')\n');
 
-  /* ---------- public content ---------- */
   let r = await call('GET', '/api/content');
   assert.strictEqual(r.status, 200);
   assert.strictEqual(r.body.content.profile.name, 'Read Aloush');
@@ -46,13 +39,12 @@ async function call(method, url, body) {
   assert.strictEqual(r.body.content.skills.length, 4);
   ok('GET /api/content serves the CV data from SQLite');
 
-  /* ---------- static pages ---------- */
   r = await call('GET', '/');
   assert.strictEqual(r.status, 200);
   assert.ok(r.body.includes('site-loader'), 'signature loader present');
-  assert.ok(r.body.includes('photoSignature'), 'signature under the photo present');
+  assert.ok(r.body.includes('navSignature') && r.body.includes('footerSignature'), 'signature in the header and footer');
   assert.ok(r.body.includes('themeSwitch'), 'electric switch present');
-  assert.ok(r.body.includes('netCanvas'), 'network background present');
+  assert.ok(!r.body.includes('netCanvas'), 'no animated background canvas (kept light)');
   ok('GET / serves the portfolio with loader, switch and network canvas');
 
   r = await call('GET', '/admin');
@@ -66,7 +58,6 @@ async function call(method, url, body) {
   }
   ok('CSS, JS, images and the CV PDF are all served');
 
-  /* ---------- no credentials in any client file ---------- */
   const clientFiles = [];
   (function walk(dir) {
     for (const f of fs.readdirSync(dir)) {
@@ -84,21 +75,11 @@ async function call(method, url, body) {
   }
   ok('No password or hash appears in any HTML/CSS/JS file (' + clientFiles.length + ' checked)');
 
-  /* ---------- [hidden] must actually hide ----------
-     A class rule like `.gate { display: grid }` silently overrides the
-     browser's built-in `[hidden] { display: none }`. That once made the
-     admin panel look like it never opened, so it is now checked. */
   {
-    /* refine.css was missing from this list, and it is now the largest
-       stylesheet on the site — the five modes, the tiers and everything
-       added since live in it. A guard that does not read the file where
-       the rules are is not a guard; it passed for months by not looking.
-       It caught .adminbar the moment it was added. */
-    const css = ['style.css', 'refine.css', 'admin.css']
+    const css = ['style.css', 'refine.css', 'showcase.css', 'admin.css']
       .map((f) => fs.readFileSync(path.join(__dirname, '..', 'public', 'assets', 'css', f), 'utf8'))
       .join('\n');
 
-    // every id -> the classes on that element, so #gate also implies .gate
     const classesOfId = new Map();
     const htmlFiles = ['index.html', 'admin.html'].map((f) =>
       fs.readFileSync(path.join(__dirname, '..', 'public', f), 'utf8')
@@ -118,7 +99,6 @@ async function call(method, url, body) {
     };
 
     for (const html of htmlFiles) {
-      // real `hidden` attribute only — not `aria-hidden`, not `data-hidden`
       for (const tag of html.matchAll(/<[a-z]+[^>]*\s(?<![-\w])hidden(?=[\s>])[^>]*>/gi)) {
         const id = /\bid=["']([^"']+)["']/.exec(tag[0]);
         const cls = /\bclass=["']([^"']+)["']/.exec(tag[0]);
@@ -126,7 +106,6 @@ async function call(method, url, body) {
         if (cls) cls[1].split(/\s+/).filter(Boolean).forEach((c) => toggled.add('.' + c));
       }
     }
-    // also anything JS flips via .hidden = true / false
     for (const file of ['app.js', 'admin.js', 'sound.js']) {
       const js = fs.readFileSync(path.join(__dirname, '..', 'public', 'assets', 'js', file), 'utf8');
       for (const m of js.matchAll(/\$\(['"](#[\w-]+)['"]\)\.hidden\s*=/g)) addTarget(m[1]);
@@ -147,7 +126,6 @@ async function call(method, url, body) {
     ok(`Every element toggled with [hidden] really disappears (${toggled.size} checked)`);
   }
 
-  /* ---------- auth is required ---------- */
   r = await call('PUT', '/api/content', { content: { hacked: true } });
   assert.strictEqual(r.status, 401);
   r = await call('GET', '/api/media');
@@ -156,14 +134,12 @@ async function call(method, url, body) {
   assert.strictEqual(r.status, 401);
   ok('Writing, uploading and the media list all require a session');
 
-  /* ---------- bad login ---------- */
   r = await call('POST', '/api/auth/login', { username: 'read', password: 'wrong' });
   assert.strictEqual(r.status, 401);
   r = await call('POST', '/api/auth/login', { username: 'nobody', password: 'whatever' });
   assert.strictEqual(r.status, 401);
   ok('Wrong credentials are rejected');
 
-  /* ---------- good login ---------- */
   r = await call('POST', '/api/auth/login', { username: 'read', password: 'SuperSecret123' });
   assert.strictEqual(r.status, 200);
   assert.ok(cookie.startsWith('rp_session='), 'session cookie set');
@@ -178,7 +154,6 @@ async function call(method, url, body) {
   assert.ok(!('password_hash' in r.body), 'hash must never be sent to the browser');
   ok('Session identifies the user without exposing the hash');
 
-  /* ---------- editing everything ---------- */
   const { content } = (await call('GET', '/api/content')).body;
   content.profile.name = 'READ ALOUSH';
   content.profile.calendarUrl = 'https://calendar.google.com/calendar/appointments/schedules/TEST';
@@ -207,7 +182,6 @@ async function call(method, url, body) {
   assert.ok(r.body.revisions.length >= 1);
   ok('Previous versions are kept as revisions');
 
-  /* ---------- upload ---------- */
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
     'base64'
@@ -227,7 +201,6 @@ async function call(method, url, body) {
   assert.strictEqual(r.body.media.length, 1);
   ok('Media library lists uploads');
 
-  /* ---------- path traversal (raw sockets, so the path is not normalised) ---------- */
   const net = require('net');
   const rawGet = (rawPath) =>
     new Promise((resolve) => {
@@ -248,7 +221,6 @@ async function call(method, url, body) {
   }
   ok('Path traversal cannot reach the source, the database or system files');
 
-  /* ---------- change credentials ---------- */
   r = await call('POST', '/api/auth/credentials', { currentPassword: 'nope', newPassword: 'Whatever123' });
   assert.strictEqual(r.status, 403);
   r = await call('POST', '/api/auth/credentials', { currentPassword: 'SuperSecret123', newUsername: 'readx', newPassword: 'BrandNewPass1' });
@@ -258,13 +230,11 @@ async function call(method, url, body) {
   assert.strictEqual(r.status, 200);
   ok('Username and password can be changed from the panel');
 
-  /* ---------- logout ---------- */
   await call('POST', '/api/auth/logout');
   r = await call('GET', '/api/auth/me');
   assert.strictEqual(r.status, 401);
   ok('Logout clears the session');
 
-  /* ---------- brute force ---------- */
   for (let i = 0; i < 10; i++) await call('POST', '/api/auth/login', { username: 'readx', password: 'bad' + i });
   r = await call('POST', '/api/auth/login', { username: 'readx', password: 'BrandNewPass1' });
   assert.strictEqual(r.status, 429, 'should be rate limited');

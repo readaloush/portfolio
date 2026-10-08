@@ -1,7 +1,3 @@
-/* ==================================================================
-   Admin panel — edits every piece of content in the SQLite database.
-   Nothing here contains credentials; the session is an httpOnly cookie.
-   ================================================================== */
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -11,8 +7,8 @@
   let state = null;
   let tab = 'profile';
   let dirty = false;
+  let trLang = 'tr', trItems = [], trQuery = '', trMissing = false;
 
-  /* --------------------------------------------------------- utils */
   const get = (path) => path.split('.').reduce((o, k) => (o == null ? o : o[/^\d+$/.test(k) ? Number(k) : k]), state);
   function set(path, value) {
     const keys = path.split('.');
@@ -46,14 +42,12 @@
 
   const markDirty = () => { $('#savedAt').textContent = dirty ? 'unsaved changes' : ''; };
 
-  /* Session token: the HttpOnly cookie is the primary mechanism; this is the
-     fallback for browsers that refuse cookies on localhost. */
   const TOKEN_KEY = 'rp_token';
   const getToken = () => {
     try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; }
   };
   const setToken = (t) => {
-    try { t ? sessionStorage.setItem(TOKEN_KEY, t) : sessionStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
+    try { t ? sessionStorage.setItem(TOKEN_KEY, t) : sessionStorage.removeItem(TOKEN_KEY); } catch {  }
   };
 
   const api = async (url, opts = {}) => {
@@ -68,7 +62,6 @@
     return data;
   };
 
-  /* ------------------------------------------------------- fields */
   const text = (label, path, ph = '') =>
     `<label>${esc(label)}<input type="text" data-path="${path}" value="${esc(get(path) ?? '')}" placeholder="${esc(ph)}"></label>`;
 
@@ -81,9 +74,6 @@
   const date = (label, path) =>
     `<label>${esc(label)}<input type="date" data-path="${path}" value="${esc(String(get(path) || '').slice(0, 10))}"></label>`;
 
-  /** A real checkbox. The input handler reads .checked for these, not
-      .value — a checkbox's value is the string "on" whether it is ticked
-      or not, which would have saved `published: "on"` forever. */
   const bool = (label, path, hint = '') =>
     `<label class="check"><input type="checkbox" data-path="${path}" data-bool="1"${get(path) ? ' checked' : ''}>
       <span>${esc(label)}${hint ? `<em>${esc(hint)}</em>` : ''}</span></label>`;
@@ -103,7 +93,6 @@
   const addBtn = (arrPath, label, tpl) =>
     `<div class="row-actions"><button class="btn ghost tiny" data-add="${arrPath}" data-tpl="${esc(tpl)}">+ ${esc(label)}</button></div>`;
 
-  /** editable list of plain strings (bullets, roles) */
   const lines = (label, arrPath) => {
     const arr = get(arrPath) || [];
     return `<label>${esc(label)}</label><div class="lines">
@@ -118,7 +107,33 @@
       </div>${addBtn(arrPath, 'Add line', 'string')}`;
   };
 
-  /** image picker with upload */
+  const caseFields = (base, kind) => {
+    const ch = get(`${base}.challenges`) || [];
+    return `<details class="case-fields"${get(`${base}.problem`) || ch.length ? ' open' : ''}>
+      <summary>Detail page — opens when the ${kind} is clicked</summary>
+      ${text('Slug — the address (optional)', `${base}.slug`, kind === 'project' ? 'waste-sorting  →  /projects/waste-sorting' : 'imax  →  /experience/imax')}
+      ${text('One-line summary', `${base}.summary`, 'What it is, in one sentence')}
+      <div class="grid two">
+        ${text('Status', `${base}.status`, 'Shipped · Ongoing · Research')}
+        ${text('My role', `${base}.role`, kind === 'project' ? 'Solo · Lead developer' : '')}
+        ${text('Duration', `${base}.duration`, '3 months')}
+        ${text('Team', `${base}.team`, 'Solo · 4 people')}
+      </div>
+      ${text('Pull quote (optional)', `${base}.quote`, 'The one line you would want remembered')}
+      ${area('The problem', `${base}.problem`, 4)}
+      ${area('The approach', `${base}.approach`, 4)}
+      <label>Challenges &amp; solutions</label>
+      <div class="lines">${ch.map((c, j) => `<div class="item sub">
+          ${head(j, 'CHALLENGE', `${base}.challenges`)}
+          ${area('Challenge', `${base}.challenges.${j}.problem`, 2)}
+          ${area('How I solved it', `${base}.challenges.${j}.solution`, 2)}
+        </div>`).join('')}</div>
+      ${addBtn(`${base}.challenges`, 'Add challenge', 'challenge')}
+      ${lines('Results (one per line)', `${base}.results`)}
+      ${area('Reflection — what I would do differently', `${base}.reflection`, 3)}
+    </details>`;
+  };
+
   const image = (label, path) => {
     const v = get(path) || '';
     return `<div class="thumb-row">
@@ -132,7 +147,6 @@
     </div>`;
   };
 
-  /** Like the image row, but for a document: no thumbnail, a link instead. */
   const file = (label, path) => {
     const v = get(path) || '';
     return `<div class="thumb-row">
@@ -147,7 +161,6 @@
     </div>`;
   };
 
-  /** A list of attachments: any number of files, each with its own label. */
   const attachments = (arrPath) => {
     const arr = get(arrPath) || [];
     return `<label>Attachments — reports, spreadsheets, slides, links</label>
@@ -163,7 +176,6 @@
       ${addBtn(arrPath, 'Attach a file or link', 'attachment')}`;
   };
 
-  /* --------------------------------------------------------- tabs */
   const TABS = {
     cv: () => {
       const v = get('profile.cvUrl') || '';
@@ -223,6 +235,9 @@
           ${text('Location', 'profile.location')}
           ${text('Email', 'profile.email')}
           ${text('Phone', 'profile.phone')}
+        </div>
+        <div style="margin-top:12px">
+          ${bool('Show the availability chip on the site', 'profile.showAvailability', 'off = the chip above your title is hidden')}
         </div>
         <div class="grid" style="margin-top:14px">
           ${text('Tagline under the title', 'profile.tagline')}
@@ -403,6 +418,9 @@
                 ${text('Tools used', `experience.${i}.tools`)}
               </div>
               ${lines('Bullet points', `experience.${i}.bullets`)}
+              ${text('Company website (optional)', `experience.${i}.link`, 'https://...')}
+              ${image('Picture for the detail page (optional)', `experience.${i}.image`)}
+              ${caseFields(`experience.${i}`, 'role')}
             </div>`
           )
           .join('')}
@@ -429,6 +447,7 @@
               </div>
               ${file('Report — PDF', `projects.${i}.report`)}
               ${lines('Bullet points', `projects.${i}.bullets`)}
+              ${caseFields(`projects.${i}`, 'project')}
             </div>`
           )
           .join('')}
@@ -490,7 +509,56 @@
         <div class="grid" style="margin-top:14px">
           ${area('Meta description', 'meta.metaDescription', 3)}
         </div>
+        <div class="grid" style="margin-top:14px">
+          <label>Other spellings of your name — comma separated
+            <input type="text" data-path="meta.alternateNames" data-csv="1" value="${esc((get('meta.alternateNames') || []).join(', '))}" placeholder="Read ALALLOŞ, Read Alallos">
+          </label>
+          <p class="desc">Search engines and AI assistants (ChatGPT, Claude, Perplexity) use these to know that a thesis signed "Read ALALLOŞ" and this site are the same person. The site also publishes a plain summary for them at <a href="/llms.txt" target="_blank" rel="noopener">/llms.txt</a>.</p>
+        </div>
       </section>`,
+
+    translations: () => {
+      const L = trLang;
+      const core = window.I18N_CORE;
+      const seed = (window.I18N_DICTS || {})[L] || {};
+      trItems = core ? core.translatableStrings(state) : [];
+      const inContent = new Set(trItems.map((x) => x.text));
+      Object.keys(seed).sort((a, b) => a.localeCompare(b)).forEach((k) => {
+        if (!inContent.has(k)) trItems.push({ text: k, where: 'site interface' });
+      });
+      const mine = (state.translations && state.translations[L]) || {};
+      const needs = (t) => /(^|\s)[a-zçğıöşü]{3,}/.test(t) || t.length > 30;
+      const has = (x) => mine[x.text] || seed[x.text];
+      const done = trItems.filter((x) => has(x) || !needs(x.text)).length;
+      const q = trQuery.toLowerCase();
+      const rows = trItems.map((x, i) => ({ x, i })).filter(({ x }) =>
+        (!trMissing || (!has(x) && needs(x.text))) && (!q || x.text.toLowerCase().includes(q) || String(mine[x.text] || seed[x.text] || '').toLowerCase().includes(q)));
+      return `<section class="panel">
+        <h2>Translations</h2>
+        <p class="desc">The site speaks English, Türkçe and العربية. Each line below is a piece of the site in English — your content first, then the menus and buttons — with its translation beside it.
+          A grey translation is the one the site came with — type over it to change it. An empty box means the English is shown.</p>
+        <div class="tr-bar">
+          <div class="tr-langs" role="group" aria-label="Language">
+            <button class="btn tiny ${L === 'tr' ? 'primary' : 'ghost'}" data-trlang="tr">Türkçe</button>
+            <button class="btn tiny ${L === 'ar' ? 'primary' : 'ghost'}" data-trlang="ar">العربية</button>
+          </div>
+          <input type="search" id="trSearch" placeholder="Search…" value="${esc(trQuery)}">
+          <label class="tr-missing"><input type="checkbox" id="trMissing"${trMissing ? ' checked' : ''}> Only missing</label>
+          <span class="tr-count">${done} / ${trItems.length} translated</span>
+        </div>
+        <div class="tr-list">
+          ${rows.map(({ x, i }) => {
+            const own = mine[x.text] || '';
+            const base = seed[x.text] || '';
+            return `<div class="tr-row${own || base || !needs(x.text) ? '' : ' missing'}">
+              <div class="tr-src"><span>${esc(x.text)}</span><small>${esc(x.where)}</small></div>
+              <textarea rows="${x.text.length > 120 ? 4 : x.text.length > 50 ? 2 : 1}" data-tr="${i}" dir="${L === 'ar' ? 'rtl' : 'ltr'}" lang="${L}"
+                placeholder="${esc(base || (needs(x.text) ? 'Not translated — the English is shown' : 'Same as English (a name) — type only if it should change'))}">${esc(own)}</textarea>
+            </div>`;
+          }).join('') || '<p class="desc">Nothing matches.</p>'}
+        </div>
+      </section>`;
+    },
 
     media: () => `
       <section class="panel">
@@ -521,10 +589,7 @@
 
   const TEMPLATES = {
     string: () => '',
-    /* Dated today and given an id derived from today, because the two
-       fields people forget to fill in are the two that decide the order
-       and the unread dot. A new one starts published — you opened this
-       panel to say something, not to file a draft. */
+    challenge: () => ({ problem: '', solution: '' }),
     announcement: () => {
       const today = new Date().toISOString().slice(0, 10);
       const existing = new Set((state.announcements || []).map((a) => a.id));
@@ -551,15 +616,25 @@
     if (tab === 'security') bindCredForm();
   }
 
-  /* ------------------------------------------------------ binding */
   $('#pane').addEventListener('input', (e) => {
     const el = e.target;
+    if (el.dataset.tr != null) {
+      const it = trItems[Number(el.dataset.tr)];
+      if (!it) return;
+      state.translations = state.translations || {};
+      const m = (state.translations[trLang] = state.translations[trLang] || {});
+      if (el.value.trim()) m[it.text] = el.value; else delete m[it.text];
+      dirty = true; markDirty();
+      return;
+    }
+    if (el.id === 'trSearch') {
+      trQuery = el.value;
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { renderTab(); const s = $('#trSearch'); if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); } }, 250);
+      return;
+    }
     const path = el.dataset.path;
     if (!path) return;
-    // Checkboxes fire input *and* change. This handler would read .value,
-    // which for a checkbox is the string "on" no matter what state it is
-    // in, so `published` would be saved as "on" and could never be turned
-    // off. They are handled in the change listener below instead.
     if (el.dataset.bool) return;
     let v = el.value;
     if (el.dataset.num) v = v === '' ? 0 : Number(v);
@@ -573,12 +648,10 @@
 
   $('#pane').addEventListener('change', (e) => {
     const el = e.target;
+    if (el.id === 'trMissing') { trMissing = el.checked; renderTab(); return; }
     if (!el.dataset.path) return;
     if (el.tagName === 'SELECT') return set(el.dataset.path, el.value);
 
-    // A checkbox reports value "on" whether or not it is ticked, so it has
-    // to be read from .checked. Ticking Published is also the one edit
-    // that changes how the row *looks*, so redraw the tab for it.
     if (el.dataset.bool) {
       set(el.dataset.path, el.checked);
       if (el.dataset.path.endsWith('.published')) renderTab();
@@ -586,6 +659,8 @@
   });
 
   $('#pane').addEventListener('click', (e) => {
+    const tl = e.target.closest('[data-trlang]');
+    if (tl) { e.preventDefault(); trLang = tl.dataset.trlang; renderTab(); return; }
     const add = e.target.closest('[data-add]');
     const del = e.target.closest('[data-del]');
     const move = e.target.closest('[data-move]');
@@ -621,7 +696,6 @@
     }
   });
 
-  /* -------------------------------------------------------- upload */
   let uploadTarget = null;
   let uploadAutosave = false;
   function pickFile(path, autosave = false) {
@@ -639,16 +713,28 @@
       fr.readAsDataURL(file);
     });
 
-  /* The browser is the one that decides `file.type`, and it is not always
-     right or even present. Windows reports an empty string for Office
-     files when the registry entry is missing, and .csv is regularly
-     announced as application/vnd.ms-excel. The server judges by MIME, so
-     an empty or surprising type means a rejection the person cannot act
-     on — "that file type is not allowed" about a perfectly normal .docx.
+  const MAX_SIDE = 1800;
+  async function optimizeImage(file, mime) {
+    if (!/^image\/(jpeg|png|webp)$/.test(mime)) return null;
+    let bmp;
+    try { bmp = await createImageBitmap(file); } catch { return null; }
+    const long = Math.max(bmp.width, bmp.height);
+    if (long <= MAX_SIDE && file.size < 350 * 1024) { bmp.close?.(); return null; }
+    const k = Math.min(1, MAX_SIDE / long);
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(bmp, 0, 0, c.width, c.height);
+    bmp.close?.();
+    const keepPng = mime === 'image/png' && file.size < 600 * 1024;
+    const outType = keepPng ? 'image/png' : 'image/webp';
+    const blob = await new Promise((r) => c.toBlob(r, outType, 0.86));
+    if (!blob || blob.size >= file.size) return null;
+    const name = file.name.replace(/\.[a-z0-9]+$/i, '') + (outType === 'image/webp' ? '.webp' : '.png');
+    return { file: new File([blob], name, { type: outType }), mime: outType };
+  }
 
-     The extension is the thing the person can actually see, so it is what
-     we fall back to. The server still decides; this only stops us sending
-     it a blank. */
   const BY_EXTENSION = {
     pdf: 'application/pdf',
     doc: 'application/msword',
@@ -667,22 +753,24 @@
 
   const mimeOf = (file) => {
     const ext = (file.name.split('.').pop() || '').toLowerCase();
-    // The extension wins whenever we recognise it: a .csv announced as
-    // vnd.ms-excel would be saved with an .xls extension and then refuse
-    // to open in Excel, which is a worse outcome than trusting the name.
     return BY_EXTENSION[ext] || file.type || '';
   };
 
   $('#hiddenFile').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
+    let file = e.target.files[0];
     if (!file) return;
     try {
-      toast('Uploading…');
+      let mime = mimeOf(file);
+      const slim = await optimizeImage(file, mime).catch(() => null);
+      if (slim) {
+        toast(`Optimised: ${Math.round(file.size / 1024)} KB → ${Math.round(slim.file.size / 1024)} KB. Uploading…`);
+        file = slim.file; mime = slim.mime;
+      } else toast('Uploading…');
       const data = await api('/api/upload', {
         method: 'POST',
         body: JSON.stringify({
           filename: file.name,
-          mimetype: mimeOf(file),
+          mimetype: mime,
           data: await toBase64(file)
         })
       });
@@ -704,9 +792,6 @@
     }
   });
 
-  /* The media grid used to test for exactly one non-image type, PDF, and
-     put an <img> tag on everything else. A spreadsheet rendered as a
-     broken image icon. The extension is the honest label. */
   const docLabel = (m) => {
     const ext = (String(m.filename || m.url).split('.').pop() || '').toUpperCase();
     return ext.length <= 5 ? ext : 'FILE';
@@ -736,7 +821,6 @@
     }
   }
 
-  /* --------------------------------------------------------- save */
   async function save() {
     try {
       const data = await api('/api/content', { method: 'PUT', body: JSON.stringify({ content: state }) });
@@ -749,8 +833,6 @@
     }
   }
 
-  // After a save the durability answer can change — a push can fail — so
-  // the indicator is re-read rather than left showing what was true before.
   $('#saveBtn').addEventListener('click', async () => { await save(); setTimeout(paintStorage, 600); });
   addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
@@ -760,7 +842,7 @@
   });
 
   $('#logoutBtn').addEventListener('click', async () => {
-    try { await api('/api/auth/logout', { method: 'POST' }); } catch { /* ignore */ }
+    try { await api('/api/auth/logout', { method: 'POST' }); } catch {  }
     setToken('');
     location.href = '/';
   });
@@ -791,7 +873,6 @@
     });
   }
 
-  /* --------------------------------------------------------- gate */
   $('#gateForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = e.target;
@@ -803,7 +884,7 @@
         body: JSON.stringify({ username: f.username.value, password: f.password.value })
       });
       if (out.token) setToken(out.token);
-      await start();          // awaited, so any later failure is actually reported
+      await start();
     } catch (err) {
       errorEl.textContent = err.message;
       errorEl.hidden = false;
@@ -820,8 +901,6 @@
     $('#gate').hidden = true;
     $('#app').hidden = false;
 
-    // /admin#news opens straight on that tab. The admin bar on the site
-    // links here, so "Announcement" is one click from anywhere.
     const wanted = location.hash.replace('#', '');
     if (wanted && TABS[wanted]) tab = wanted;
 
@@ -829,16 +908,6 @@
     paintStorage();
   }
 
-  /**
-   * Say where the edits are going.
-   *
-   * The host gives this site a filesystem that is destroyed every time
-   * the container restarts, which on the free plan is after fifteen idle
-   * minutes. Without a durable store behind it, everything typed into
-   * this panel has a half-life measured in minutes — and there is no way
-   * to tell by looking. So the answer is on screen, always, and it is
-   * read from the server rather than assumed.
-   */
   async function paintStorage() {
     const el = $('#storeState');
     const text = $('#storeText');

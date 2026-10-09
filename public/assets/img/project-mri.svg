@@ -20,5 +20,4 @@
   <circle cx="466" cy="196" r="46" fill="url(#lesion)"/>
   <circle cx="466" cy="196" r="30" fill="none" stroke="#ff5cae" stroke-width="2.5" stroke-dasharray="6 5"/>
   <text x="512" y="152" font-family="ui-monospace, Menlo, monospace" font-size="17" fill="#ff8fc8">GLIOMA · 98.43%</text>
-  <text x="400" y="452" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="15" letter-spacing="4" fill="#6b5a94">REPLACE THIS IMAGE FROM THE ADMIN PANEL</text>
 </svg>

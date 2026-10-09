@@ -22,15 +22,18 @@
       Jan: 'يناير', Feb: 'فبراير', Mar: 'مارس', Apr: 'أبريل', Jun: 'يونيو', Jul: 'يوليو', Aug: 'أغسطس', Sep: 'سبتمبر', Sept: 'سبتمبر', Oct: 'أكتوبر', Nov: 'نوفمبر', Dec: 'ديسمبر',
       Present: 'الآن', present: 'الآن', Now: 'الآن', NOW: 'الآن', now: 'الآن', months: 'أشهر', month: 'شهر', years: 'سنوات', year: 'سنة', weeks: 'أسابيع', week: 'أسبوع', people: 'أشخاص', person: 'شخص' }
   };
-  const DATE_WORD = /\b(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec|Present|present|Now|NOW|now|months?|years?|weeks?|people|person)\b\.?/g;
-  const LOOKS_DATE = /^[\s\d.,·–—\-/:]*(?:(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec|Present|present|Now|NOW|now|months?|years?|weeks?|people|person)\.?[\s\d.,·–—\-/:]*)+$/;
+  const DATE_WORD = /\b(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec|Present|present|Now|NOW|now|months?|years?|weeks?|people|person)\b\.?/gi;
+  const LOOKS_DATE = /^[\s\d.,·–—\-/:]*(?:(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec|Present|present|Now|NOW|now|months?|years?|weeks?|people|person)\.?[\s\d.,·–—\-/:]*)+$/i;
 
   function localDate(s, lang) {
     const m = MONTHS[lang];
     if (!m) return s;
     return String(s).replace(DATE_WORD, (w) => {
       const k = w.replace(/\.$/, '');
-      return m[k] != null ? m[k] : w;
+      if (m[k] != null) return m[k];
+      const cap = k.charAt(0).toUpperCase() + k.slice(1).toLowerCase();
+      if (m[cap] == null) return w;
+      return k === k.toUpperCase() ? m[cap].toLocaleUpperCase(lang) : m[cap];
     });
   }
 

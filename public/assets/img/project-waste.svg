@@ -27,5 +27,4 @@
     <path d="M400 74v92M354 120h92M368 88l64 64M432 88l-64 64"/>
   </g>
   <text x="400" y="196" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="16" fill="#5fd6ef" letter-spacing="3">CNN · EDGE INFERENCE · RASPBERRY PI</text>
-  <text x="400" y="452" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="15" letter-spacing="4" fill="#3d6b7d">REPLACE THIS IMAGE FROM THE ADMIN PANEL</text>
 </svg>

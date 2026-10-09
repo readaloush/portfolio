@@ -1586,3 +1586,5 @@ html[dir="rtl"] .jt, html[dir="rtl"] .ss, html[dir="rtl"] .ww, html[dir="rtl"] .
   .nav-links.open { visibility: visible; transition: transform .6s var(--ease), visibility 0s; }
   html[data-mode="press"] .nav-links:not(.open) { transform: translateY(calc(-100% - var(--press-head-h, 44px) - 20px)); }
 }
+html.case-on[data-mode="press"] .press-head { z-index: 8600; }
+html[data-mode="press"] .case { top: var(--press-head-h, 44px); }

@@ -1588,3 +1588,4 @@ html[dir="rtl"] .jt, html[dir="rtl"] .ss, html[dir="rtl"] .ww, html[dir="rtl"] .
 }
 html.case-on[data-mode="press"] .press-head { z-index: 8600; }
 html[data-mode="press"] .case { top: var(--press-head-h, 44px); }
+html.case-on #nav { background: var(--bg) !important; backdrop-filter: none !important; }

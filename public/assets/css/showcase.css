@@ -1629,6 +1629,42 @@ html[data-palette="desert"][data-theme="dark"] { --accent: #C8792C; --label: #F4
 html[data-palette="desert"][data-theme="light"]:not([data-mode="paper"]) { --bg: #F4D9A0; --bg2: #F8E7C2; --text: #5B4632; --muted: #7F6A52; --surface: rgba(91,70,50,.05); --surface-2: rgba(91,70,50,.09); --line: rgba(91,70,50,.22); }
 html[data-palette="desert"][data-theme="dark"]:not([data-mode="paper"]) { --bg: #241B12; --bg2: #2E2318; --text: #F4D9A0; --muted: #BFA57E; --line: rgba(244,217,160,.16); }
 
+html[data-palette="classic"] { --spark: #046A38; --accent: #E34222; --accent2: #046A38; --accent-rgb: 227,66,34; --accent-deep: #7a1f0c; --on-accent: #FFFFFF !important; }
+html[data-palette="classic"][data-theme="light"] { --accent: #E34222; --accent-ink: #C2341A; --label: #046A38; }
+html[data-palette="classic"][data-theme="dark"] { --accent: #E34222; --label: #F9EBD7; }
+html[data-palette="classic"][data-theme="light"]:not([data-mode="paper"]) { --bg: #F9EBD7; --bg2: #FCF4E8; --text: #046A38; --muted: #4E7A62; --surface: rgba(4,106,56,.04); --surface-2: rgba(4,106,56,.08); --line: rgba(4,106,56,.18); }
+html[data-palette="classic"][data-theme="dark"]:not([data-mode="paper"]) { --bg: #0F1F17; --bg2: #14291F; --text: #F9EBD7; --muted: #A9B8A8; --line: rgba(249,235,215,.14); }
+
+html[data-palette="forest"] { --spark: #CBB3E8; }
+html[data-palette="forest"][data-theme="light"] { --accent: #1F3B2E; --accent2: #CBB3E8; --accent-rgb: 31,59,46; --accent-deep: #0c1812; --accent-ink: #1F3B2E; --label: #6B4E99; --on-accent: #F1E8D8 !important; --accent-lit: #CBB3E8; --on-accent-lit: #1F3B2E; }
+html[data-palette="forest"][data-theme="dark"] { --accent: #CBB3E8; --accent2: #E8DCC6; --accent-rgb: 203,179,232; --accent-deep: #6b4e99; --label: #CBB3E8; --on-accent: #1F3B2E !important; }
+html[data-palette="forest"][data-theme="light"]:not([data-mode="paper"]) { --bg: #E8DCC6; --bg2: #F1E8D8; --text: #1F3B2E; --muted: #55695C; --surface: rgba(31,59,46,.05); --surface-2: rgba(31,59,46,.09); --line: rgba(31,59,46,.18); }
+html[data-palette="forest"][data-theme="dark"]:not([data-mode="paper"]) { --bg: #13241C; --bg2: #1F3B2E; --text: #E8DCC6; --muted: #A9A08C; --line: rgba(232,220,198,.14); }
+
+html[data-palette="lavender"] { --spark: #D4FF3F; --accent: #E34234; --accent-rgb: 227,66,52; --accent-deep: #7a1a12; --on-accent: #FFFFFF !important; }
+html[data-palette="lavender"][data-theme="light"] { --accent: #E34234; --accent2: #D4FF3F; --accent-ink: #B42A1E; --label: #2A1B3D; }
+html[data-palette="lavender"][data-theme="dark"] { --accent: #E34234; --accent2: #D4FF3F; --label: #D4FF3F; }
+html[data-palette="lavender"][data-theme="light"]:not([data-mode="paper"]) { --bg: #CBB3E8; --bg2: #D8C5EE; --text: #2A1B3D; --muted: #5B4A70; --surface: rgba(42,27,61,.05); --surface-2: rgba(42,27,61,.09); --line: rgba(42,27,61,.18); }
+html[data-palette="lavender"][data-theme="dark"]:not([data-mode="paper"]) { --bg: #1B1226; --bg2: #251A33; --text: #EDE4F7; --muted: #A898BD; --line: rgba(203,179,232,.18); }
+
+html[data-palette="pop"] { --spark: #D4FF3F; --accent: #FF2DA8; --accent-rgb: 255,45,168; --accent-deep: #7a0f50; --on-accent: #0B0B0B !important; }
+html[data-palette="pop"][data-theme="dark"] { --accent: #FF2DA8; --accent2: #D4FF3F; --label: #D4FF3F; }
+html[data-palette="pop"][data-theme="light"] { --accent: #FF2DA8; --accent2: #6E8A00; --accent-ink: #C2007A; --label: #6E8A00; }
+html[data-palette="pop"][data-theme="dark"]:not([data-mode="paper"]) { --bg: #0B0B0B; --bg2: #141414; --text: #F4F4F4; --muted: #9A9A9A; --line: rgba(255,45,168,.22); }
+html[data-palette="pop"][data-theme="light"]:not([data-mode="paper"]) { --bg: #F7F5F2; --bg2: #FFFFFF; --text: #0B0B0B; --muted: #5E5A57; --line: rgba(11,11,11,.14); }
+
+html[data-palette="retro"] { --spark: #BFE23A; --accent: #E10600; --accent-rgb: 225,6,0; --accent-deep: #6e0300; --on-accent: #FFFFFF !important; }
+html[data-palette="retro"][data-theme="light"] { --accent: #E10600; --accent2: #BFE23A; --accent-ink: #E10600; --label: #7A9410; }
+html[data-palette="retro"][data-theme="dark"] { --accent: #E10600; --accent2: #BFE23A; --label: #BFE23A; --accent-lit: #FF3B30; }
+html[data-palette="retro"][data-theme="light"]:not([data-mode="paper"]) { --bg: #F9EAD7; --bg2: #FCF4E8; --text: #1E1A14; --muted: #6A6052; --surface: rgba(30,26,20,.04); --surface-2: rgba(30,26,20,.08); --line: rgba(30,26,20,.15); }
+html[data-palette="retro"][data-theme="dark"]:not([data-mode="paper"]) { --bg: #17140F; --bg2: #211C15; --text: #F9EAD7; --muted: #A89C8A; --line: rgba(249,234,215,.14); }
+
+html[data-palette="rose"] { --spark: #C75A3A; }
+html[data-palette="rose"][data-theme="light"] { --accent: #C75A3A; --accent2: #3A0F34; --accent-rgb: 199,90,58; --accent-deep: #6b2a17; --accent-ink: #3A0F34; --label: #3A0F34; --on-accent: #FFFFFF !important; }
+html[data-palette="rose"][data-theme="dark"] { --accent: #C9A0A7; --accent2: #C75A3A; --accent-rgb: 201,160,167; --accent-deep: #6e4a51; --label: #C75A3A; --on-accent: #3A0F34 !important; }
+html[data-palette="rose"][data-theme="light"]:not([data-mode="paper"]) { --bg: #C9A0A7; --bg2: #D6B4B9; --text: #3A0F34; --muted: #5E3A54; --surface: rgba(58,15,52,.05); --surface-2: rgba(58,15,52,.09); --line: rgba(58,15,52,.18); }
+html[data-palette="rose"][data-theme="dark"]:not([data-mode="paper"]) { --bg: #1E0A1B; --bg2: #2C1028; --text: #E9D3D6; --muted: #B79AA4; --line: rgba(201,160,167,.18); }
+
 .pal-sw { position: relative; }
 .pal-btn {
   display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0;
@@ -1681,3 +1717,8 @@ body.sh-on .pal-row, body.ix-on .pal-row { display: none; }
   .nav-actions { gap: 5px; }
   html[lang="ar"] .nav-links a { font-size: 14px; padding: 8px 3px; }
 }
+html[data-palette="crimson"][data-theme="dark"] #cursorGlow { background: radial-gradient(circle, rgba(217,64,60,.32) 0%, rgba(217,64,60,.12) 35%, rgba(217,64,60,0) 70%); }
+html[data-theme="light"][data-palette] #cursorGlow.on { opacity: .55; }
+html[data-palette="forest"][data-theme="light"] #cursorGlow { background: radial-gradient(circle, rgba(203,179,232,.7) 0%, rgba(203,179,232,.26) 32%, rgba(203,179,232,0) 68%); }
+html[data-palette="forest"][data-theme="light"] #cursorGlow.on { opacity: 1; }
+.pal-menu { grid-template-columns: 1fr 1fr; min-width: 330px; max-height: calc(100vh - 90px); overflow-y: auto; overscroll-behavior: contain; }

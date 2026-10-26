@@ -139,7 +139,7 @@
   if (lang !== 'en' && !root.I18N_DICTS[lang]) {
     const me = doc.currentScript && doc.currentScript.src;
     const base = me ? me.replace(/js\/i18n\.js.*$/, 'i18n/') : '/assets/i18n/';
-    doc.write(`<script src="${base}${lang}.js?v=8"><\/script>`);
+    doc.write(`<script src="${base}${lang}.js?v=10"><\/script>`);
   }
   if (lang === 'ar') {
     doc.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Kufi+Arabic:wght@400..800&display=swap">');

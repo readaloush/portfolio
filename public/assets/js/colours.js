@@ -7,7 +7,13 @@
     mocha: { name: 'Mocha', chips: ['#E5E4E2', '#6F4E37', '#E6E0F0'], theme: 'light' },
     crimson: { name: 'Crimson', chips: ['#171717', '#06110c', '#A31C1B'], theme: 'dark' },
     electric: { name: 'Electric', chips: ['#FFF21A', '#171717', '#A66BFF'], theme: 'dark' },
-    desert: { name: 'Desert', chips: ['#5B4632', '#F4D9A0', '#C8792C'], theme: 'light' }
+    desert: { name: 'Desert', chips: ['#5B4632', '#F4D9A0', '#C8792C'], theme: 'light' },
+    classic: { name: 'Classic', chips: ['#F9EBD7', '#046A38', '#E34222'], theme: 'light' },
+    forest: { name: 'Forest', chips: ['#E8DCC6', '#1F3B2E', '#CBB3E8'], theme: 'light' },
+    lavender: { name: 'Lavender', chips: ['#CBB3E8', '#D4FF3F', '#E34234'], theme: 'light' },
+    pop: { name: 'Pop', chips: ['#0B0B0B', '#FF2DA8', '#D4FF3F'], theme: 'dark' },
+    retro: { name: 'Retro', chips: ['#F9EAD7', '#BFE23A', '#E10600'], theme: 'light' },
+    rose: { name: 'Rose', chips: ['#C9A0A7', '#3A0F34', '#C75A3A'], theme: 'light' }
   };
   const ORDER = Object.keys(PALETTES);
   const KEY = 'rp_palette';

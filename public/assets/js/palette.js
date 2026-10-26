@@ -41,7 +41,7 @@
 
       { g: 'set', label: ':theme', hint: 'flip the light switch', keys: 'tema isik dark light koyu acik', run: () => press('#themeSwitch') },
       { g: 'set', label: ':sound', hint: 'sound on or off', keys: 'ses sessiz mute audio', run: () => press('#soundBtn') },
-      { g: 'set', label: ':colours', hint: 'try the next colour theme', keys: 'renk renkler palet color colour colors neon aubergine mocha lime crimson electric desert', run: () => { const P = window.RP_PALETTE; if (P) P.choose(P.list[(P.list.indexOf(P.get()) + 1) % P.list.length]); } },
+      { g: 'set', label: ':colours', hint: 'try the next colour theme', keys: 'renk renkler palet color colour colors neon aubergine mocha lime crimson electric desert classic forest lavender pop retro rose', run: () => { const P = window.RP_PALETTE; if (P) P.choose(P.list[(P.list.indexOf(P.get()) + 1) % P.list.length]); } },
 
       { g: 'do', label: ':cv', hint: 'open the CV in a new tab', keys: 'ozgecmis resume pdf', run: () => press('#cvButton') },
       { g: 'do', label: ':book', hint: 'pick a slot in the calendar', keys: 'randevu takvim meeting calendar', run: () => { const a = $('#calendarBox a'); if (a) a.click(); else goTo('#contact'); } },

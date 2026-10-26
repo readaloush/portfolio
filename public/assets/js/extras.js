@@ -611,7 +611,7 @@
   if (document.getElementById('cmdkScript')) return;
   const s = document.createElement('script');
   s.id = 'cmdkScript';
-  s.src = '/assets/js/palette.js?v=3';
+  s.src = '/assets/js/palette.js?v=5';
   s.defer = true;
   document.head.appendChild(s);
 })();

@@ -45,6 +45,8 @@
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', String(on));
     });
+    const nm = doc.querySelector('#palRow .pal-row-name');
+    if (nm) nm.textContent = PALETTES[current].name;
     const dots = doc.querySelector('#palSwitch .pal-dots');
     if (dots) dots.innerHTML = PALETTES[current].chips.map((c) => `<i style="background:${c}"></i>`).join('');
   }
@@ -66,6 +68,22 @@
 
   function build() {
     refresh();
+    const nav = doc.getElementById('nav');
+    if (nav) {
+      const setTop = () => { const b = Math.round(nav.getBoundingClientRect().bottom); if (b > 0) nav.style.setProperty('--menu-top', b + 'px'); };
+      setTop();
+      if (window.ResizeObserver) new ResizeObserver(setTop).observe(nav);
+      window.addEventListener('resize', setTop);
+      new MutationObserver(() => requestAnimationFrame(setTop)).observe(root, { attributes: true, attributeFilter: ['data-mode'] });
+      doc.getElementById('navBurger')?.addEventListener('click', () => requestAnimationFrame(setTop));
+      const links = doc.getElementById('navLinks'), burger = doc.getElementById('navBurger');
+      if (links && burger) {
+        const syncBurger = () => { const open = links.classList.contains('open'); if (burger.classList.contains('on') !== open) burger.classList.toggle('on', open); burger.setAttribute('aria-expanded', String(open)); };
+        new MutationObserver(syncBurger).observe(links, { attributes: true, attributeFilter: ['class'] });
+        new MutationObserver(syncBurger).observe(burger, { attributes: true, attributeFilter: ['class'] });
+        syncBurger();
+      }
+    }
     new MutationObserver(refresh).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-palette', 'data-mode'] });
 
     const actions = doc.querySelector('#nav .nav-actions');
@@ -99,8 +117,8 @@
       row.id = 'palRow';
       row.setAttribute('role', 'group');
       row.setAttribute('aria-label', 'Colour theme');
-      row.innerHTML = ORDER.map((id) =>
-        `<button type="button" data-pal="${id}" aria-pressed="false">${chipsHTML(PALETTES[id])}<span>${PALETTES[id].name}</span></button>`).join('');
+      row.innerHTML = `<p class="pal-row-h"><span>Colour theme</span><b class="pal-row-name">${PALETTES[current].name}</b></p><div class="pal-grid">` + ORDER.map((id) =>
+        `<button type="button" data-pal="${id}" aria-pressed="false" aria-label="${PALETTES[id].name}" title="${PALETTES[id].name}" style="--c1:${PALETTES[id].chips[0]};--c2:${PALETTES[id].chips[1]};--c3:${PALETTES[id].chips[2]}"></button>`).join('') + '</div>';
       row.addEventListener('click', (e) => { const b = e.target.closest('[data-pal]'); if (b) choose(b.dataset.pal); });
       links.appendChild(row);
     }

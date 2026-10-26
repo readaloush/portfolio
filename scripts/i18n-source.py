@@ -26,6 +26,8 @@ ROWS = [
 ("Pop", "Pop", "بوب"),
 ("Retro", "Retro", "ريترو"),
 ("Rose", "Gül", "وردي"),
+("Press and hold a card, then drag to rearrange", "Bir karta basılı tut, sonra sürükleyerek yerini değiştir", "اضغط مطولًا على بطاقة ثم اسحبها لتغيير ترتيبها"),
+("Swipe sideways · tap the middle card", "Yana kaydır · ortadaki karta dokun", "اسحب جانبًا · المس البطاقة الوسطى"),
 ("try the next colour theme", "sıradaki renk temasını dene", "جرّب ألوان الموقع التالية"),
 ("Home", "Ana sayfa", "الرئيسية"),
 ("Menu", "Menü", "القائمة"),

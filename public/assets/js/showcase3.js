@@ -488,15 +488,21 @@ void main(){
       x.font = AR ? "500 22px 'JetBrains Mono', 'Noto Kufi Arabic', monospace" : "500 22px 'JetBrains Mono', monospace";
       x.fillText(String(e.period || '').toUpperCase(), edge, 440);
       x.fillStyle = '#ffffff';
-      x.font = AR ? "700 62px 'Amiri', serif" : "400 96px 'Italianno', 'Caveat', cursive";
       const words = String(e.degree || '').split(/\s+/);
-      const lines = [''];
-      words.forEach((w) => {
-        const t = (lines[lines.length - 1] + ' ' + w).trim();
-        if (x.measureText(t).width > cw - 112 && lines[lines.length - 1]) lines.push(w); else lines[lines.length - 1] = t;
-      });
-      const step = AR ? 92 : 70;
-      lines.slice(0, AR ? 3 : 4).forEach((l, k) => x.fillText(l, edge, (AR ? 530 : 516) + k * step));
+      const top = AR ? 530 : 516, floor = ch - 120;
+      let size = AR ? 62 : 96, lines, step;
+      for (;;) {
+        x.font = AR ? `700 ${size}px 'Amiri', serif` : `400 ${size}px 'Italianno', 'Caveat', cursive`;
+        lines = [''];
+        words.forEach((w) => {
+          const t = (lines[lines.length - 1] + ' ' + w).trim();
+          if (x.measureText(t).width > cw - 112 && lines[lines.length - 1]) lines.push(w); else lines[lines.length - 1] = t;
+        });
+        step = Math.round(size * (AR ? 1.48 : 0.74));
+        if (top + (lines.length - 1) * step <= floor || size <= (AR ? 36 : 44)) break;
+        size -= 4;
+      }
+      lines.forEach((l, k) => { if (top + k * step <= floor + 10) x.fillText(l, edge, top + k * step); });
       x.fillStyle = '#bdbdbd';
       x.font = AR ? "400 30px 'Amiri', serif" : "400 28px 'Bodoni Moda', Georgia, serif";
       x.fillText(String(e.school || ''), edge, ch - 70);

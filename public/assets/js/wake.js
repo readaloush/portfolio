@@ -23,8 +23,8 @@
     });
     const dot = notice.querySelector('.wake-dot');
     Object.assign(dot.style, {
-      width: '7px', height: '7px', borderRadius: '50%', background: '#C3E41D',
-      boxShadow: '0 0 10px #C3E41D', animation: 'wakePulse 1.1s ease-in-out infinite'
+      width: '7px', height: '7px', borderRadius: '50%', background: 'var(--accent, #C3E41D)',
+      boxShadow: '0 0 10px var(--accent, #C3E41D)', animation: 'wakePulse 1.1s ease-in-out infinite'
     });
     const style = document.createElement('style');
     style.textContent = '@keyframes wakePulse{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.25)}}';

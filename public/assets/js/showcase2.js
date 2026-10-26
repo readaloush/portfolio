@@ -258,9 +258,15 @@
       }
       ctx.globalAlpha = 1;
 
+      const A = window.RP_ACC || { accent: '#C3E41D', rgb: '195,228,29', deep: '#4d5c0a' };
+      if (COL.land !== A.accent) {
+        COL.land = A.accent; COL.joint = A.accent;
+        const mix = (h, w, t) => { const n = parseInt(h.replace('#', ''), 16); const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v + (w - v) * t)); return `rgb(${c.join(',')})`; };
+        COL.land2 = mix(A.accent, 0, 0.18); COL.rim = mix(A.accent, 255, 0.3);
+      }
       const halo = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.55);
-      halo.addColorStop(0, 'rgba(195,228,29,.35)');
-      halo.addColorStop(1, 'rgba(195,228,29,0)');
+      halo.addColorStop(0, `rgba(${A.rgb},.35)`);
+      halo.addColorStop(1, `rgba(${A.rgb},0)`);
       ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(cx, cy, R * 1.6, 0, Math.PI * 2); ctx.fill();
 
       ctx.save();

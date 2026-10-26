@@ -953,7 +953,7 @@ main .section { animation: viewIn .45s var(--ease) both; }
 @media (max-width: 620px) { .arc-keys { display: none; } .arc-head b { font-size: 10px; } }
 @media print { .arc { display: none !important; } }
 
-html[data-mode="shell"] { --bg: #000000; --bg2: #07060b; --text: #e9e6f5; --muted: #8b86a0; --accent: #C3E41D; --label: #ffb829; --line: rgba(195,228,29,.18); }
+html[data-mode="shell"] { --bg: #000000; --bg2: #07060b; --text: #e9e6f5; --muted: #8b86a0; --accent: #C3E41D; --label: #ffb829; --line: rgba(var(--accent-rgb),.18); }
 html[data-mode="shell"][data-theme="light"] { --bg: #f6f5f9; --bg2: #FFFFFF; --text: #0c0a14; --muted: #5e5b6a; --accent: #C3E41D; --accent-ink: #0c0a14; --label: #8a5600; --line: rgba(16,12,32,.16); }
 
 body.sh-on main,

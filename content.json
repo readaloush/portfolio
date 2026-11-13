@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-10-08T21:54:49.275Z",
+  "savedAt": "2026-11-13T15:05:47.140Z",
   "content": {
     "profile": {
       "name": "Read Aloush",
@@ -446,6 +446,136 @@
           "TÜBİTAK 2209-A research funding as principal developer",
           "Real-time air-quality tracking from a multi-sensor payload",
           "Machine-learning prediction of local pollution patterns from telemetry"
+        ]
+      },
+      {
+        "title": "Bahth: Photo Search in Arabic, Turkish and English",
+        "period": "Nov 2026",
+        "image": "/assets/uploads/bahth-1-demo-english-dd865000.jpg",
+        "tags": [
+          "PyTorch",
+          "CLIP",
+          "ONNX Runtime",
+          "FastAPI",
+          "Docker"
+        ],
+        "repo": "https://github.com/readaloush/bahth",
+        "link": "https://readaloush.github.io/bahth/",
+        "report": "",
+        "bullets": [
+          "Fine-tuned a multilingual CLIP text encoder on Arabic, Turkish and English captions, with per-language Recall@K evaluation on seen and unseen photos.",
+          "Exported the model to ONNX with int8 quantisation and built a FastAPI search service over 24,997 photos, packaged with Docker.",
+          "Built a browser demo that runs the same model with ONNX Runtime Web, including a JavaScript tokenizer checked against the Python one."
+        ],
+        "slug": "bahth",
+        "summary": "A multilingual image search engine: a fine-tuned CLIP text encoder that finds photos from a query typed in Arabic, Turkish or English, served by an API and running live in the browser.",
+        "status": "Live demo · Open source",
+        "role": "Solo project",
+        "problem": "Image search models are trained mostly on English. A compact multilingual CLIP puts the right photo first for about half of English queries, but only for a quarter of Arabic and Turkish ones.",
+        "approach": "I kept the CLIP image model frozen, so photo embeddings never change, and fine-tuned only the multilingual text encoder. Three training recipes were compared from the same starting point: contrastive learning on captions in three languages, distillation from the English text encoder, and both together. Every result is reported twice: on photos like the training data, and on photos the model never saw.",
+        "reflection": "I would train each recipe with several random seeds to put error bars on the comparison, and add Turkish sentence pairs to the distillation data, since distillation barely helped Turkish.",
+        "results": [
+          "First-result accuracy (Recall@1) on Flickr8k test: Arabic 24.8% → 46.5%, Turkish 25.8% → 49.5%, English 48.9% → 60.6%",
+          "On unseen photos (XTD): Arabic 23.2% → 35.4%, Turkish 33.3% → 44.6%. About half the in-domain gain; Arabic stays the weakest language",
+          "Int8 model: 541 MB → 136 MB and about twice as fast, for 1 to 3.5 points of Recall@1",
+          "A query is answered in under 20 ms on a CPU across 24,997 photos",
+          "One training run per recipe, so differences of about a point are within noise"
+        ],
+        "challenges": [
+          {
+            "problem": "Storing the photo embeddings as int8 changed the top results, because a few CLIP dimensions are ten times larger than the rest.",
+            "solution": "I compared it with the exact ranking, found that only 80 to 88% of the top 12 results survived, and kept the embeddings in float16 instead."
+          },
+          {
+            "problem": "The text encoder was too large for a browser: 136 MB even after quantisation.",
+            "solution": "I cut its vocabulary to Latin- and Arabic-script tokens, which saves 36 MB and gives identical vectors for queries in those scripts, and I load it only when a visitor types their own query."
+          }
+        ]
+      },
+      {
+        "title": "Lawha: Arabic Licence Plate Recognition",
+        "period": "Nov 2026",
+        "image": "/assets/uploads/lawha-2-examples-6b58698b.webp",
+        "tags": [
+          "PyTorch",
+          "YOLO11",
+          "CRNN + CTC",
+          "ONNX Runtime"
+        ],
+        "repo": "https://github.com/readaloush/lawha",
+        "link": "https://readaloush.github.io/lawha/",
+        "report": "",
+        "bullets": [
+          "Fine-tuned a YOLO11n plate detector and trained a 1.3 M-parameter CRNN with CTC loss to read 17 Arabic letters and 10 digits.",
+          "Evaluated the whole pipeline end to end on 313 held-out vehicle photos, and audited every reading error against the image.",
+          "Built a browser demo where both models run on the visitor's device, so the photo is never uploaded."
+        ],
+        "slug": "lawha",
+        "summary": "A two-stage reader for Egyptian plates: a detector finds the plate in a vehicle photo and a second network reads its Arabic letters and digits. Both run in the browser.",
+        "status": "Live demo · Open source",
+        "role": "Solo project",
+        "problem": "Most open plate recognition work targets Latin plates. Arabic plates mix letters and Eastern Arabic digits, and public datasets are small and noisily labelled.",
+        "approach": "Two models trained on the EALPR dataset. A YOLO nano detector is fine-tuned to find plates. A small CRNN trained from scratch with CTC loss reads the cropped plate. The system is scored end to end: a plate counts only if it was found and every character is right.",
+        "reflection": "I would relabel the test set before reporting, and collect plates from more than one country: the model has only seen Egyptian plates.",
+        "results": [
+          "Detector: 99.4% recall, 97.6% precision",
+          "Reader: 93.6% of plates read with every character right, 1.9% character error rate",
+          "End to end: 92.3% of plates found and read correctly (276 of 299)",
+          "Of the reader's 19 errors, 12 are labelling errors in the dataset by my reading of the images; the labels were not corrected and the reported number was not changed",
+          "Real plate numbers are pixelated in all published figures"
+        ],
+        "challenges": [
+          {
+            "problem": "A plate crop and the photo it came from could end up on different sides of a random train/test split, which would inflate the score.",
+            "solution": "I split the data by vehicle id, 70/15/15, and used the same split for both models."
+          },
+          {
+            "problem": "Some dataset labels are incomplete, for example a plate with four digits and three letters labelled with the digits only.",
+            "solution": "I checked each of the 19 reading errors by eye and reported how many were label errors, without rescoring in my own favour."
+          }
+        ]
+      },
+      {
+        "title": "Harf: Handwritten Letter Recognition in Arabic, Turkish and English",
+        "period": "Nov 2026",
+        "image": "/assets/uploads/harf-1-demo-f68b8a77.png",
+        "tags": [
+          "PyTorch",
+          "CNN",
+          "ONNX",
+          "ONNX Runtime Web"
+        ],
+        "repo": "https://github.com/readaloush/harf",
+        "link": "https://readaloush.github.io/harf/",
+        "report": "",
+        "bullets": [
+          "Designed HarfNet, a 680k-parameter residual CNN (2.7 MB as ONNX), and trained it for Arabic and for Turkish and English letters.",
+          "Wrote a generator for the six Turkish letter classes that no public handwriting dataset covers.",
+          "Built a drawing demo in English, Turkish and Arabic that runs both models in the browser."
+        ],
+        "slug": "harf",
+        "summary": "Draw a letter and a small neural network names it. Two compact CNNs, one for Arabic and one for Turkish and English, running entirely in the browser.",
+        "status": "Live demo · Open source",
+        "role": "Solo project",
+        "problem": "Handwriting datasets exist for Arabic and for English letters, but none covers the Turkish letters ç, ğ, İ, ö, ş and ü.",
+        "approach": "One residual CNN architecture, trained twice. The Arabic model learns from the AHCD dataset. The Latin model learns from EMNIST Letters plus Turkish letters that I synthesised by drawing randomised cedillas, breves and dots on real handwritten letters. Both are exported to ONNX and run in the page.",
+        "reflection": "I would collect a few hundred real handwritten Turkish letters, even from a handful of people, to test the synthetic classes honestly.",
+        "results": [
+          "Arabic: 97.80% test accuracy on 3,360 images (the dataset's authors report 94.9%)",
+          "Turkish and English: 95.22% on 20,763 real handwritten letters",
+          "The synthetic Turkish letters score 99.4%, but on synthetic test images, not real Turkish handwriting",
+          "Known weakness: a dotless ı looks like a lowercase l, and its recall is only 59%",
+          "Each model trains in under 30 minutes on a 2-core CPU"
+        ],
+        "challenges": [
+          {
+            "problem": "No public handwriting dataset contains ç, ğ, İ, ö, ş or ü.",
+            "solution": "I synthesised them from real handwritten c, g, I, o, s and u by drawing randomised marks, and reported their accuracy separately from the real-handwriting score."
+          },
+          {
+            "problem": "Letters drawn on a canvas look different from scanned dataset letters, so a model that scores well on the test set can fail in the demo.",
+            "solution": "The page keeps the strokes as vectors and redraws them at the size and stroke width the datasets use; both browser models are checked against real test images in headless Chrome."
+          }
         ]
       }
     ],

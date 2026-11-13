@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-11-13T15:05:47.140Z",
+  "savedAt": "2026-11-13T15:16:15.071Z",
   "content": {
     "profile": {
       "name": "Read Aloush",
@@ -98,6 +98,18 @@
         "tag": "",
         "link": "",
         "image": "/assets/uploads/ekran-resmi-2026-09-02-10-26-47-d30a3e6d.png",
+        "files": [],
+        "pinned": false,
+        "published": true
+      },
+      {
+        "id": "a-2026-11-13",
+        "title": "Three deep learning projects published, each with a live demo",
+        "body": "I have published three open-source projects that work across Arabic, Turkish and English. Bahth is a photo search engine built on a fine-tuned CLIP text encoder: first-result accuracy for Arabic queries went from 24.8% to 46.5% on Flickr8k. Lawha reads Egyptian licence plates end to end at 92.3%. Harf recognises handwritten letters, at 97.8% for Arabic. All three run in the browser, with the code and the full results, including the weak spots, on GitHub.",
+        "date": "2026-11-13",
+        "tag": "Project",
+        "link": "#projects",
+        "image": "/assets/uploads/bahth-1-demo-english-dd865000.jpg",
         "files": [],
         "pinned": false,
         "published": true

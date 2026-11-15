@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-11-13T15:16:15.071Z",
+  "savedAt": "2026-11-15T19:38:46.974Z",
   "content": {
     "profile": {
       "name": "Read Aloush",
@@ -459,6 +459,54 @@
           "Real-time air-quality tracking from a multi-sensor payload",
           "Machine-learning prediction of local pollution patterns from telemetry"
         ]
+      },
+      {
+        "title": "Sanad: Saudi Law Questions Answered in Arabic, with the Article",
+        "period": "Nov 2026",
+        "image": "/assets/uploads/sanad-demo-96967911.jpg",
+        "tags": [
+          "PyTorch",
+          "ALLaM-7B",
+          "QLoRA",
+          "RAG",
+          "sentence-transformers",
+          "ONNX Runtime",
+          "FastAPI",
+          "Docker"
+        ],
+        "repo": "https://github.com/readaloush/sanad",
+        "link": "https://readaloush.github.io/sanad/",
+        "report": "/assets/uploads/sanad-report-72a1fba6.pdf",
+        "bullets": [
+          "Built retrieval-augmented question answering over Saudi statutes, comparing BM25, multilingual-e5, bge-m3 and a reranker on 5,929 passages, with 1,661 LLM-written and 79 human-written test questions.",
+          "Fine-tuned ALLaM-7B with QLoRA on one T4 GPU to cite the article it answers from and to say \"not found\" when the law is missing: correct citations rose from 27% to 93% on the test set.",
+          "Showed that every gain measured on LLM-written questions failed to carry over to the questions people actually ask, and chose the system by the human questions instead."
+        ],
+        "results": [
+          "Correct citation of the source article: 27% → 93% on the test set",
+          "Says \"not found\" when the law is missing: 16% → 84% on the test set",
+          "Right article among the top 3 for 5 of 6 demo questions with BM25 + bge-m3 + reranker",
+          "Default int8 quantisation cost 13 points of Recall@1 on human questions, so the service runs float32",
+          "10 Kaggle notebooks, a FastAPI service with Docker and tests, and a 7-page technical report"
+        ],
+        "challenges": [
+          {
+            "problem": "Fine-tuning the retriever raised Recall@1 from 74% to 82% on the benchmark, but on human questions Recall@5 fell from 86% to 71%. Selecting the model on the development set, which was LLM-written too, would have shipped the worse retriever.",
+            "solution": "I reported every result on both test sets and kept the retriever that served people better, the starting e5 model, even though the benchmark preferred the fine-tuned one."
+          },
+          {
+            "problem": "The fine-tuned model refused 44% of human questions whose answer was in front of it. Changing the share of \"not found\" examples in training moved this between 11% and 44% with no smooth trend, and two runs with the same setting gave 11% and 37%.",
+            "solution": "I tested a threshold on the model's own \"not found\" probability instead, and documented that neither retraining nor a threshold tuned on LLM-written questions can set this reliably without real user questions."
+          }
+        ],
+        "slug": "sanad",
+        "summary": "An Arabic assistant that answers questions about Saudi law from the statute text, cites the article, and says when the law is not there.",
+        "status": "Live demo · Open source",
+        "role": "Solo project",
+        "quote": "Every improvement I measured on LLM-written questions either failed to carry over to the questions people ask or made the system worse for them.",
+        "problem": "People ask legal questions in everyday words, while the answer sits in one article of one statute written in formal Arabic. A general chatbot answers anyway, does not say where its answer comes from, and is just as confident when it does not know. For legal questions both failures matter more than fluency.",
+        "approach": "I built the pipeline in steps and measured each one on two test sets: 1,661 questions an LLM wrote from the passages (ArabLegalEval) and 79 questions real people asked (Najiz). The search finds the three closest articles; ALLaM-7B, fine-tuned with QLoRA, answers only from them with a numbered citation, or with a fixed \"not found\" sentence. The service runs the retriever with ONNX Runtime on a CPU behind FastAPI and talks to any OpenAI-compatible LLM server.",
+        "reflection": "I would collect a few hundred real user questions before training anything. Every decision that mattered in this project was settled by 79 human questions, and with so few I could not tell a real improvement from a lucky training run. I would also repeat each training run with several seeds before comparing settings."
       },
       {
         "title": "Bahth: Photo Search in Arabic, Turkish and English",

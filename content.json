@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-11-15T19:39:59.431Z",
+  "savedAt": "2026-11-15T19:49:33.960Z",
   "content": {
     "profile": {
       "name": "Read Aloush",
@@ -488,7 +488,7 @@
         ],
         "repo": "https://github.com/readaloush/sanad",
         "link": "https://readaloush.github.io/sanad/",
-        "report": "/assets/uploads/sanad-report-72a1fba6.pdf",
+        "report": "/assets/uploads/sanad-report-f00c8fec.pdf",
         "bullets": [
           "Built retrieval-augmented question answering over Saudi statutes, comparing BM25, multilingual-e5, bge-m3 and a reranker on 5,929 passages, with 1,661 LLM-written and 79 human-written test questions.",
           "Fine-tuned ALLaM-7B with QLoRA on one T4 GPU to cite the article it answers from and to say \"not found\" when the law is missing: correct citations rose from 27% to 93% on the test set.",

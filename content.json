@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-11-15T19:59:21.431Z",
+  "savedAt": "2026-11-15T20:03:35.453Z",
   "content": {
     "profile": {
       "name": "Read Aloush",
@@ -405,7 +405,7 @@
       {
         "title": "Brain Tumor MRI Analysis System",
         "period": "Jun 2025 – Aug 2025",
-        "image": "/assets/img/project-mri.svg",
+        "image": "/assets/uploads/mri-tumor-marked-d049375d.png",
         "tags": [
           "PyTorch",
           "Medical Imaging",

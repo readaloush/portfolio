@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-11-15T19:38:46.974Z",
+  "savedAt": "2026-11-15T19:39:59.431Z",
   "content": {
     "profile": {
       "name": "Read Aloush",
@@ -110,6 +110,18 @@
         "tag": "Project",
         "link": "#projects",
         "image": "/assets/uploads/bahth-1-demo-english-dd865000.jpg",
+        "files": [],
+        "pinned": false,
+        "published": true
+      },
+      {
+        "id": "a-2026-11-15",
+        "title": "Sanad: Saudi law questions, answered from the statute in Arabic",
+        "body": "I have published Sanad, a question-answering system for Saudi law in Arabic. It finds the statute article, answers from it with a citation, and says when the law is not there. Fine-tuning ALLaM-7B with QLoRA raised correct citations from 27% to 93% on the test set. The main finding is about evaluation: every gain measured on LLM-written benchmark questions failed to carry over to the questions people actually ask. The demo, the code and a 7-page report are online.",
+        "date": "2026-11-15",
+        "tag": "Project",
+        "link": "#projects",
+        "image": "/assets/uploads/sanad-demo-96967911.jpg",
         "files": [],
         "pinned": false,
         "published": true

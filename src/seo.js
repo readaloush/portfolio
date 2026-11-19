@@ -41,6 +41,7 @@ function projectsHTML(c) {
   return (c.projects || []).map((p) => `<article class="project">
     <h3>${esc(p.title)}</h3>
     <p>${esc(p.period)}</p>
+    ${(p.advisors || []).filter((a) => a && a.name).length ? `<p>Advisor: ${(p.advisors || []).filter((a) => a && a.name).map((a) => a.url ? `<a href="${esc(a.url)}" rel="noopener">${esc(a.name)}</a>` : esc(a.name)).join(', ')}</p>` : ''}
     <ul>${li(p.bullets || [])}</ul>
     <ul>${li(p.tags || [])}</ul>
     ${p.repo ? `<a href="${esc(p.repo)}" rel="noopener">Code</a>` : ''}

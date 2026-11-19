@@ -1,5 +1,7 @@
 (function (root) {
   var dict = {
+"Advisor": "المشرف",
+"Advisors": "المشرفون",
 "(Sample text) A conveyor that sees what is on it and sorts it — trained, compressed and running on a Raspberry Pi.": "(نص تجريبي) سير ناقل يرى ما عليه ويفرزه — مُدرَّب ومضغوط ويعمل على Raspberry Pi.",
 "(Sample) 14 fps on a Raspberry Pi 4": "(مثال) 14 إطارًا في الثانية على Raspberry Pi 4",
 "(Sample) 97.69% accuracy across 5 waste streams": "(مثال) دقة 97.69% عبر 5 أنواع من النفايات",

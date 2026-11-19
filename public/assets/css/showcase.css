@@ -1113,69 +1113,35 @@ body.sh-on #cursorGlow { display: none; }
 #modeTabs.in-menu .mode-tab { flex: 1; min-height: 44px !important; }
 #modeTabs.in-menu .mode-tab .mt-label { display: inline; }
 
-.switch.ws { width: 38px; height: 52px; min-width: 0 !important; min-height: 0 !important; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.tg-plate {
-  position: absolute; inset: 0; border-radius: 11px; overflow: visible;
-  background:
-    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px),
-    linear-gradient(165deg, #34343a 0%, #1d1d21 55%, #121214 100%);
-  border: 1px solid rgba(255,255,255,.08);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), inset 0 -2px 3px rgba(0,0,0,.5), 0 6px 16px -8px rgba(0,0,0,.9);
-  transition: border-color .3s, box-shadow .3s;
+/* Light switch — same size and frame as the bell, a small wall rocker inside.
+   Light theme: rocker up and lit. Dark theme: rocker down. */
+.switch.ws {
+  position: relative; display: grid; place-items: center; flex: none;
+  width: 38px; height: 38px; padding: 0;
+  border-radius: 12px; border: 1px solid var(--line); color: var(--muted);
+  background-color: var(--bg); background-image: linear-gradient(var(--surface), var(--surface));
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: color .3s var(--ease), border-color .3s var(--ease);
 }
-html[data-theme="light"] .tg-plate {
-  background:
-    repeating-linear-gradient(90deg, rgba(0,0,0,.025) 0 1px, transparent 1px 3px),
-    linear-gradient(165deg, #ffffff 0%, #ececf0 60%, #dcdce2 100%);
-  border-color: rgba(16,12,32,.12);
-  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 3px rgba(16,12,32,.08), 0 6px 14px -8px rgba(16,12,32,.45);
+.switch.ws:hover { color: var(--text); border-color: var(--accent-ink, var(--accent)); }
+.ls-plate {
+  position: relative; width: 14px; height: 21px; border-radius: 4.5px;
+  border: 1.6px solid currentColor;
 }
-.tg-lamp {
-  position: absolute; top: 4px; left: 50%; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent) 35%, #fff) 0%, var(--accent) 45%, var(--accent-deep) 100%);
-  box-shadow: 0 0 0 1.5px rgba(0,0,0,.55), 0 0 8px 2px rgba(var(--accent-rgb),.75), 0 0 18px 4px rgba(var(--accent-rgb),.35);
-  transition: background .3s, box-shadow .3s;
+.ls-rocker {
+  position: absolute; left: 2px; right: 2px; height: 7px; border-radius: 2px;
+  top: calc(100% - 9px); background: currentColor;
+  transition: top .32s cubic-bezier(.3, 1.5, .45, 1), background .3s, box-shadow .3s;
 }
-html[data-theme="light"] .tg-lamp {
-  background: radial-gradient(circle at 35% 30%, #c9c9cf 0%, #8d8d96 60%, #5d5d66 100%);
-  box-shadow: 0 0 0 1.5px rgba(16,12,32,.25), inset 0 -1px 1px rgba(0,0,0,.25);
+html[data-theme="light"] .ls-rocker {
+  top: 2px; background: var(--accent-ink, var(--accent));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 60%, transparent);
 }
-.tg-mark {
-  position: absolute; left: 50%; transform: translateX(-50%); font: 700 6.5px/1 'JetBrains Mono', monospace; font-size-adjust: none;
-  color: rgba(255,255,255,.28); letter-spacing: 0; text-shadow: 0 1px 0 rgba(0,0,0,.6);
-}
-.tg-mark { left: 7px; transform: none; }
-.tg-mark.on { top: 16px; } .tg-mark.off { top: 40px; }
-html[data-theme="light"] .tg-mark { color: rgba(16,12,32,.35); text-shadow: 0 1px 0 #fff; }
-html[data-theme="light"] .tg-mark.on { color: #0c0a14; }
-html:not([data-theme="light"]) .tg-mark.off { color: var(--accent); text-shadow: 0 0 6px rgba(var(--accent-rgb),.6); }
-.tg-nut {
-  position: absolute; top: 23.5px; left: 50%; width: 15px; height: 15px; margin-left: -7.5px;
-  clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%);
-  background: linear-gradient(160deg, #d8d8de 0%, #8a8a94 45%, #4a4a52 100%);
-}
-.tg-nut::after { content: ''; position: absolute; inset: 3.5px; border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #3a3a40, #0d0d10 70%); box-shadow: inset 0 1px 1px rgba(0,0,0,.8); }
-.tg-lever {
-  position: absolute; left: 50%; top: 19px; width: 5px; height: 12px; margin-left: -2.5px;
-  transform-origin: 50% 100%; transform: scaleY(-1);
-  transition: transform .34s cubic-bezier(.3, 1.6, .45, 1);
-  border-radius: 3px 3px 2px 2px;
-  background: linear-gradient(90deg, #6e6e78 0%, #f6f6fa 38%, #b9b9c2 60%, #55555e 100%);
-  filter: drop-shadow(0 3px 2px rgba(0,0,0,.6));
-}
-.tg-lever i {
-  position: absolute; left: 50%; top: -4px; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #d4d4da 35%, #7a7a84 75%, #4b4b53 100%);
-}
-html[data-theme="light"] .tg-lever { transform: scaleY(1); filter: drop-shadow(0 -2px 2px rgba(16,12,32,.35)); }
-.switch.ws:hover .tg-plate { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
-html[data-theme="light"] .switch.ws:hover .tg-plate { border-color: rgba(16,12,32,.35); }
-.switch.ws:active .tg-lever { transition-duration: .16s; }
-.switch.ws:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 12px; }
-.switch.ws .switch-spark { inset: -10px; border-radius: 16px; }
-@media (pointer: coarse) { .switch.ws { width: 40px; height: 50px; } }
-@media (prefers-reduced-motion: reduce) { .tg-lever { transition-duration: .01s; } }
+html[data-theme="light"] .switch.ws { color: var(--text); }
+.switch.ws:active .ls-rocker { transition-duration: .14s; }
+.switch.ws:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.switch.ws .switch-spark { inset: -8px; border-radius: 16px; }
+@media (prefers-reduced-motion: reduce) { .ls-rocker { transition-duration: .01s; } }
 
 @media (max-width: 520px) {
   #nav { padding-left: 14px !important; padding-right: 14px !important; }

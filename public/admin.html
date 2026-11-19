@@ -7,7 +7,7 @@
 <title>Control room</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔒</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/admin.css?v=5">
+<link rel="stylesheet" href="/assets/css/admin.css?v=6">
 </head>
 <body>
 
@@ -29,6 +29,12 @@
     <div class="bar-l">
       <span class="badge">ADMIN</span>
       <strong id="whoami"></strong>
+    </div>
+    <div class="edit-lang" id="editLang" role="group" aria-label="Language you are editing">
+      <span>Editing</span>
+      <button type="button" data-editlang="en">EN</button>
+      <button type="button" data-editlang="tr">TR</button>
+      <button type="button" data-editlang="ar" lang="ar">ع</button>
     </div>
     <div class="bar-r">
       <span class="store" id="storeState" title="Checking where your edits are stored…">
@@ -68,14 +74,26 @@
   </div>
 </div>
 
+<div class="lang-pick" id="langPick" hidden role="dialog" aria-modal="true" aria-labelledby="langPickTitle">
+  <div class="lang-pick-card">
+    <h2 id="langPickTitle">Which language are you editing?</h2>
+    <p>Everything you type goes into this language only. The other languages keep their own text. You can switch any time from the bar at the top.</p>
+    <div class="lang-pick-grid">
+      <button type="button" data-editlang="en"><b>English</b><span>The main text of the site</span></button>
+      <button type="button" data-editlang="tr"><b>Türkçe</b><span>Turkish version</span></button>
+      <button type="button" data-editlang="ar" lang="ar" dir="rtl"><b>العربية</b><span>النسخة العربية</span></button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" hidden><span id="toastText"></span></div>
 <input type="file" id="hiddenFile" hidden
        accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.rtf,.csv,.txt,.zip">
 
 <script>window.I18N_CORE_ONLY = true;</script>
-<script src="/assets/js/i18n.js?v=10"></script>
-<script src="/assets/i18n/tr.js?v=6"></script>
-<script src="/assets/i18n/ar.js?v=6"></script>
-<script src="/assets/js/admin.js?v=11"></script>
+<script src="/assets/js/i18n.js?v=11"></script>
+<script src="/assets/i18n/tr.js?v=7"></script>
+<script src="/assets/i18n/ar.js?v=7"></script>
+<script src="/assets/js/admin.js?v=12"></script>
 </body>
 </html>

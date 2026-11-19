@@ -179,6 +179,17 @@
     { x: 7, y: 6, r: 3 }, { x: 14, y: 9, r: -7 }
   ];
 
+  function advisorLine(pr) {
+    const list = (pr.advisors || []).filter((a) => a && String(a.name || '').trim());
+    if (!list.length) return '';
+    const names = list.map((a) => {
+      const n = esc(String(a.name).trim());
+      const u = String(a.url || '').trim();
+      return /^(https?:|mailto:)/i.test(u) ? `<a href="${esc(u)}" target="_blank" rel="noopener">${n}</a>` : `<b>${n}</b>`;
+    });
+    return `<p class="pj-advisor"><span>${list.length > 1 ? 'Advisors' : 'Advisor'}</span> ${names.join('<i>·</i>')}</p>`;
+  }
+
   function buildProjects(c) {
     const host = $('#spread');
     if (!host) return;
@@ -196,7 +207,7 @@
         <div class="ss-cards">
           ${list.map((p, i) => `<a class="ss-card" href="#proj-${i + 1}" data-i="${i}" data-case="projects:${i}" style="z-index:${i + 2}">
             <span class="ss-face"><img src="${esc(p.image || '/assets/img/project-waste.svg')}" alt="${esc(p.title)}" draggable="false" loading="lazy"></span>
-            <span class="ss-label"><em>${String(i + 1).padStart(2, '0')}</em>${esc(p.title)}</span>
+            <span class="ss-label"><em>${String(i + 1).padStart(2, '0')}</em><span class="ss-name">${esc(p.title)}</span></span>
           </a>`).join('')}
         </div>
         <div class="ss-hint scroll-cue" aria-hidden="true"><span>Scroll down to spread the cards</span>
@@ -211,6 +222,7 @@
         <div class="pj-body">
           <p class="pj-num">Project ${String(i + 1).padStart(2, '0')} · ${esc(pr.period)}</p>
           <h3>${esc(pr.title)}</h3>
+          ${advisorLine(pr)}
           <ul class="pj-bullets">${(pr.bullets || []).filter(Boolean).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>
           <ul class="pj-tags">${(pr.tags || []).map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
           <div class="pj-links">
@@ -230,6 +242,18 @@
     measure() {
       const host = $('#spread');
       this.host = host;
+      // Phones: no scattered pile. The cards sit in a plain two-column grid with the
+      // name under the picture, so nothing covers anything on the first look.
+      const grid = innerWidth < 760;
+      if (host) host.classList.toggle('is-grid', grid);
+      if (host && grid) {
+        $$('.ss-card', host).forEach((el) => { el.style.width = el.style.height = el.style.transform = ''; });
+        const cp = $('.ss-copy', host);
+        if (cp) cp.style.opacity = cp.style.transform = '';
+        host.style.height = '';
+        this.live = false;
+        return;
+      }
       if (!host || !host.offsetParent) { this.live = false; return; }
       this.cards = $$('.ss-card', host);
       this.copy = $('.ss-copy', host);

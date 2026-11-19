@@ -67,6 +67,14 @@
       kind === 'projects' ? ['Role', it.role] : [kind === 'experience' ? 'Company' : 'School', v.org],
       ['When', v.when], ['Duration', it.duration], ['Team', it.team], ['Status', it.status], ['Stack', v.stack]
     ].filter(([, x]) => x && String(x).trim());
+    const advisors = kind === 'projects' ? (it.advisors || []).filter((a) => a && String(a.name || '').trim()) : [];
+    if (advisors.length) {
+      meta.unshift([advisors.length > 1 ? 'Advisors' : 'Advisor', advisors.map((a) => {
+        const n = esc(String(a.name).trim());
+        const u = String(a.url || '').trim();
+        return /^(https?:|mailto:)/i.test(u) ? `<a href="${esc(u)}" target="_blank" rel="noopener">${n}</a>` : n;
+      }).join(', '), true]);
+    }
     const links = (v.links || []).filter(([, u]) => u && String(u).trim());
     const challenges = (it.challenges || []).filter((x) => x && (x.problem || x.solution));
     const results = (it.results || []).filter(Boolean);
@@ -85,7 +93,7 @@
           ${v.sub ? `<p class="case-sub">${esc(v.sub)}</p>` : ''}
         </header>
 
-        ${meta.length ? `<dl class="case-meta">${meta.map(([k, x]) => `<div${k === 'Stack' ? ' class="case-meta-wide"' : ''}><dt>${esc(k)}</dt><dd>${esc(x)}</dd></div>`).join('')}</dl>` : ''}
+        ${meta.length ? `<dl class="case-meta">${meta.map(([k, x, raw]) => `<div${k === 'Stack' ? ' class="case-meta-wide"' : ''}><dt>${esc(k)}</dt><dd>${raw ? x : esc(x)}</dd></div>`).join('')}</dl>` : ''}
 
         ${links.length ? `<div class="case-links">${links.map(([k, u]) => {
           const ext = /^https?:/i.test(u);

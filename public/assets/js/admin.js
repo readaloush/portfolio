@@ -9,6 +9,148 @@
   let dirty = false;
   let trLang = 'tr', trItems = [], trQuery = '', trMissing = false;
 
+  // ── Editing language ────────────────────────────────────────────────
+  // The site's base text is English; Türkçe and العربية are stored as
+  // translations keyed by that English text. The admin picks one language
+  // after logging in and every text box then reads and writes that language.
+  const EDIT_KEY = 'rp_edit_lang';
+  const LANG_NAMES = { en: 'English', tr: 'Türkçe', ar: 'العربية' };
+  let editLang = (() => { try { const v = sessionStorage.getItem(EDIT_KEY); return LANG_NAMES[v] ? v : ''; } catch { return ''; } })();
+  const L = () => editLang || 'en';
+  const CORE = () => window.I18N_CORE || {};
+  const nrm = (x) => String(x == null ? '' : x).replace(/\s+/g, ' ').trim();
+  const lastKey = (path) => path.split('.').filter((k) => !/^\d+$/.test(k)).pop() || '';
+  function isTr(path) {
+    if (!path || /^(translations|socials)(\.|$)/.test(path) || path === 'profile.name') return false;
+    const k = lastKey(path);
+    const skip = CORE().SKIP;
+    return !(skip && skip.test(k));
+  }
+  const seedDict = (lang) => (window.I18N_DICTS || {})[lang] || {};
+  function trMap(lang) {
+    state.translations = state.translations || {};
+    return (state.translations[lang] = state.translations[lang] || {});
+  }
+  function originMap() {
+    state.translations = state.translations || {};
+    return (state.translations.origin = state.translations.origin || {});
+  }
+  const originOf = (text) => ((state.translations || {}).origin || {})[nrm(text)] || '';
+
+  // What a text box shows in the current editing language.
+  function shown(path, base) {
+    if (base === undefined) base = get(path);
+    if (L() === 'en' || !isTr(path) || typeof base !== 'string') return base;
+    const k = nrm(base);
+    if (!k) return '';
+    if (originOf(base) === L()) return base;
+    const own = ((state.translations || {})[L()] || {})[k];
+    if (own) return own;
+    const seed = seedDict(L())[k];
+    if (seed) return seed;
+    const core = CORE();
+    if (core.DATEISH && core.DATEISH.test(lastKey(path)) || core.LOOKS_DATE && core.LOOKS_DATE.test(k)) return core.localDate ? core.localDate(base, L()) : '';
+    return '';
+  }
+
+  function countText(text) {
+    const k = nrm(text);
+    let n = 0;
+    const walk = (o, path) => {
+      if (Array.isArray(o)) return o.forEach((v, i) => walk(v, path + '.' + i));
+      if (o && typeof o === 'object') return Object.keys(o).forEach((key) => walk(o[key], path ? path + '.' + key : key));
+      if (typeof o === 'string' && nrm(o) === k && isTr(path)) n++;
+    };
+    walk(state, '');
+    return n;
+  }
+
+  // English edits: carry the existing translations over to the new English text.
+  function rekey(oldText, newText) {
+    const ko = nrm(oldText), kn = nrm(newText);
+    if (!ko || !kn || ko === kn) return;
+    const tr = state.translations || {};
+    const shared = countText(oldText) > 0;
+    const origin = tr.origin || {};
+    if (origin[ko]) {
+      const lo = origin[ko];
+      if (lo !== 'en') { const m = trMap(lo); if (m[kn] == null) m[kn] = oldText; }
+      if (!shared) delete origin[ko];
+    }
+    for (const lang of Object.keys(LANG_NAMES)) {
+      if (lang === 'en') continue;
+      const m = tr[lang];
+      const had = m && m[ko] != null ? m[ko] : seedDict(lang)[ko];
+      if (had == null) continue;
+      const mm = trMap(lang);
+      if (mm[kn] == null && seedDict(lang)[kn] == null) mm[kn] = had;
+      if (!shared && m && m[ko] != null) delete m[ko];
+    }
+  }
+
+  // Typing changes one box; the bookkeeping (which English text a translation
+  // belongs to) is settled once the box is left, so half-typed words never
+  // become keys.
+  function beginEdit(el, path) {
+    if (el._edit) return el._edit;
+    const base = get(path);
+    const tr = L() !== 'en' && isTr(path);
+    el._edit = {
+      path,
+      base: Array.isArray(base) ? base.slice() : base,
+      mirror: tr && typeof base !== 'object' && (!nrm(base) || originOf(base) === L())
+    };
+    return el._edit;
+  }
+
+  function typeText(el, path, v) {
+    const ed = beginEdit(el, path);
+    if (L() === 'en' || !isTr(path) || ed.mirror) { set(path, v); return; }
+    const kb = nrm(ed.base);
+    const m = trMap(L());
+    if (nrm(v)) m[kb] = v; else delete m[kb];
+    dirty = true;
+    markDirty();
+  }
+
+  function csvNext(el) { return el.value.split(',').map((x) => x.trim()).filter(Boolean); }
+
+  function finishEdit(el) {
+    const ed = el && el._edit;
+    if (!ed) return;
+    el._edit = null;
+    const { path } = ed;
+    if (el.dataset.csv) {
+      const next = csvNext(el);
+      const orig = Array.isArray(ed.base) ? ed.base : [];
+      if (L() === 'en' || !isTr(path)) {
+        set(path, next);
+        if (L() === 'en') orig.forEach((o, i) => { if (i < next.length) rekey(o, next[i]); });
+        return;
+      }
+      const arr = orig.slice();
+      const o = originMap();
+      const m = trMap(L());
+      next.forEach((t, i) => {
+        if (i >= orig.length) { arr.push(t); o[nrm(t)] = L(); return; }
+        const b = orig[i];
+        if (originOf(b) === L()) { arr[i] = t; o[nrm(t)] = L(); }
+        else if (nrm(t) && nrm(t) !== nrm(shown(`${path}.${i}`, b) || b)) m[nrm(b)] = t;
+      });
+      arr.splice(next.length);
+      set(path, arr);
+      return;
+    }
+    const now = get(path);
+    if (L() === 'en') { if (isTr(path) && typeof ed.base === 'string') rekey(ed.base, now); return; }
+    if (!ed.mirror) return;
+    const o = originMap();
+    const kb = nrm(ed.base), kn = nrm(now);
+    if (kb === kn) return;
+    if (kb && countText(ed.base) === 0) delete o[kb];
+    if (kn) o[kn] = L();
+  }
+
   const get = (path) => path.split('.').reduce((o, k) => (o == null ? o : o[/^\d+$/.test(k) ? Number(k) : k]), state);
   function set(path, value) {
     const keys = path.split('.');
@@ -62,14 +204,31 @@
     return data;
   };
 
+  const dirAttr = (path) => (L() === 'ar' && isTr(path) ? ' dir="rtl" lang="ar"' : '');
+  function srcHint(path) {
+    if (!isTr(path)) return '';
+    const base = get(path);
+    if (typeof base !== 'string' || !nrm(base)) return '';
+    const o = originOf(base);
+    const cut = (x) => (x.length > 140 ? x.slice(0, 140) + '…' : x);
+    if (L() === 'en') return o && o !== 'en' ? `<small class="src-hint warn">Written in ${esc(LANG_NAMES[o])} — type the English here and the ${esc(LANG_NAMES[o])} stays as its translation</small>` : '';
+    if (o === L()) return `<small class="src-hint warn">No English yet — the site shows this text in every language until you add it</small>`;
+    return `<small class="src-hint"><b>EN</b> ${esc(cut(nrm(base)))}</small>`;
+  }
+  const phFor = (path, ph) => {
+    if (L() === 'en' || !isTr(path)) return ph;
+    const base = nrm(get(path));
+    return base ? `Not translated — the English is shown: ${base}` : ph;
+  };
+
   const text = (label, path, ph = '') =>
-    `<label>${esc(label)}<input type="text" data-path="${path}" value="${esc(get(path) ?? '')}" placeholder="${esc(ph)}"></label>`;
+    `<label>${esc(label)}<input type="text" data-path="${path}" value="${esc(shown(path) ?? '')}" placeholder="${esc(phFor(path, ph))}"${dirAttr(path)}>${srcHint(path)}</label>`;
 
   const num = (label, path, ph = '') =>
     `<label>${esc(label)}<input type="number" step="any" data-path="${path}" data-num="1" value="${esc(get(path) ?? '')}" placeholder="${esc(ph)}"></label>`;
 
   const area = (label, path, rows = 4, ph = '') =>
-    `<label>${esc(label)}<textarea rows="${rows}" data-path="${path}" placeholder="${esc(ph)}">${esc(get(path) ?? '')}</textarea></label>`;
+    `<label>${esc(label)}<textarea rows="${rows}" data-path="${path}" placeholder="${esc(phFor(path, ph))}"${dirAttr(path)}>${esc(shown(path) ?? '')}</textarea>${srcHint(path)}</label>`;
 
   const date = (label, path) =>
     `<label>${esc(label)}<input type="date" data-path="${path}" value="${esc(String(get(path) || '').slice(0, 10))}"></label>`;
@@ -79,7 +238,7 @@
       <span>${esc(label)}${hint ? `<em>${esc(hint)}</em>` : ''}</span></label>`;
 
   const csv = (label, path, ph = '') =>
-    `<label>${esc(label)}<input type="text" data-path="${path}" data-csv="1" value="${esc((get(path) || []).join(', '))}" placeholder="${esc(ph)}"></label>`;
+    `<label>${esc(label)}<input type="text" data-path="${path}" data-csv="1" value="${esc((get(path) || []).map((t, i) => shown(`${path}.${i}`, t) || t).join(', '))}" placeholder="${esc(ph)}"${dirAttr(path)}></label>`;
 
   const head = (i, title, arrPath) => `<div class="item-head">
       <b>${esc(title)} ${String(i + 1).padStart(2, '0')}</b>
@@ -99,7 +258,7 @@
       ${arr
         .map(
           (v, i) => `<div class="line-row">
-            <textarea rows="2" data-path="${arrPath}.${i}">${esc(v)}</textarea>
+            <textarea rows="2" data-path="${arrPath}.${i}" placeholder="${esc(phFor(`${arrPath}.${i}`, ''))}"${dirAttr(arrPath)}>${esc(shown(`${arrPath}.${i}`, v))}</textarea>
             <button class="icon-btn del" data-del="${arrPath}" data-i="${i}" title="Delete">✕</button>
           </div>`
         )
@@ -174,6 +333,20 @@
         </div>`).join('')}
       </div>
       ${addBtn(arrPath, 'Attach a file or link', 'attachment')}`;
+  };
+
+  const advisors = (arrPath) => {
+    const arr = get(arrPath) || [];
+    return `<label>Advisor — who supervised this project (optional)</label>
+      <div class="lines">
+        ${arr.map((a, i) => `<div class="attach-row advisor-row">
+          <input type="text" data-path="${arrPath}.${i}.name" value="${esc(shown(`${arrPath}.${i}.name`) ?? '')}" placeholder="${esc(phFor(`${arrPath}.${i}.name`, 'Prof. Dr. Ali Yaşar'))}"${dirAttr(`${arrPath}.${i}.name`)}>
+          <input type="text" data-path="${arrPath}.${i}.url" value="${esc(a.url || '')}" placeholder="Link opened when the name is clicked — https://…">
+          ${a.url ? `<a class="btn ghost tiny" href="${esc(a.url)}" target="_blank" rel="noopener">Open</a>` : ''}
+          <button class="icon-btn del" data-del="${arrPath}" data-i="${i}" title="Delete">✕</button>
+        </div>`).join('')}
+      </div>
+      ${addBtn(arrPath, arr.length ? 'Add another advisor' : 'Add advisor', 'advisor')}`;
   };
 
   const TABS = {
@@ -440,6 +613,7 @@
                 ${text('Period', `projects.${i}.period`)}
               </div>
               ${image('Project image', `projects.${i}.image`)}
+              ${advisors(`projects.${i}.advisors`)}
               ${csv('Tags (comma separated)', `projects.${i}.tags`)}
               <div class="grid two">
                 ${text('Code — GitHub repository', `projects.${i}.repo`, 'https://github.com/readaloush/...')}
@@ -606,8 +780,40 @@
     project: () => ({ title: 'New project', period: '', image: '/assets/img/project-waste.svg', tags: [], repo: '', link: '', report: '', bullets: [''] }),
     education: () => ({ degree: 'New degree', school: '', period: '', note: '', image: '' }),
     certificate: () => ({ title: 'New certificate', issuer: '', date: '', url: '', image: '', pdf: '' }),
-    attachment: () => ({ label: '', url: '' })
+    attachment: () => ({ label: '', url: '' }),
+    advisor: () => ({ name: '', url: '' })
   };
+
+  // New items get English placeholder text ("New project"). When editing another
+  // language those placeholders would become the English, so start them empty.
+  function blankText(o, path) {
+    if (Array.isArray(o)) return o.map((v, i) => blankText(v, path + '.' + i));
+    if (o && typeof o === 'object') { const out = {}; for (const k of Object.keys(o)) out[k] = blankText(o[k], path + '.' + k); return out; }
+    return typeof o === 'string' && isTr(path) ? '' : o;
+  }
+
+  function paintLang() {
+    $$('#editLang [data-editlang]').forEach((b) => {
+      const on = b.dataset.editlang === L();
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    document.body.dataset.editLang = L();
+  }
+  function chooseLang(lang) {
+    if (!LANG_NAMES[lang]) return;
+    finishEdit(document.activeElement);
+    editLang = lang;
+    try { sessionStorage.setItem(EDIT_KEY, lang); } catch {  }
+    if (lang !== 'en') trLang = lang;
+    $('#langPick').hidden = true;
+    paintLang();
+    renderTab();
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-editlang]');
+    if (b) { e.preventDefault(); chooseLang(b.dataset.editlang); }
+  });
 
   function renderTab() {
     $('#pane').innerHTML = TABS[tab] ? TABS[tab]() : '';
@@ -637,9 +843,9 @@
     if (!path) return;
     if (el.dataset.bool) return;
     let v = el.value;
-    if (el.dataset.num) v = v === '' ? 0 : Number(v);
-    if (el.dataset.csv) v = v.split(',').map((s) => s.trim()).filter(Boolean);
-    set(path, v);
+    if (el.dataset.num) { set(path, v === '' ? 0 : Number(v)); return; }
+    if (el.dataset.csv) { beginEdit(el, path); dirty = true; markDirty(); return; }
+    if (typeof get(path) === 'string' || get(path) == null) typeText(el, path, v); else set(path, v);
     if (path.endsWith('.image') || path === 'profile.photo') {
       const thumb = el.closest('.thumb-row')?.querySelector('.thumb');
       if (thumb) thumb.innerHTML = v ? `<img src="${esc(v)}" alt="">` : '';
@@ -650,6 +856,7 @@
     const el = e.target;
     if (el.id === 'trMissing') { trMissing = el.checked; renderTab(); return; }
     if (!el.dataset.path) return;
+    if (el._edit) { finishEdit(el); return; }
     if (el.tagName === 'SELECT') return set(el.dataset.path, el.value);
 
     if (el.dataset.bool) {
@@ -669,7 +876,9 @@
     if (add) {
       e.preventDefault();
       const arr = get(add.dataset.add) || [];
-      arr.push(TEMPLATES[add.dataset.tpl] ? TEMPLATES[add.dataset.tpl]() : '');
+      let item = TEMPLATES[add.dataset.tpl] ? TEMPLATES[add.dataset.tpl]() : '';
+      if (L() !== 'en') item = blankText(item, add.dataset.add + '.' + arr.length);
+      arr.push(item);
       set(add.dataset.add, arr);
       renderTab();
     }
@@ -822,6 +1031,7 @@
   }
 
   async function save() {
+    finishEdit(document.activeElement);
     try {
       const data = await api('/api/content', { method: 'PUT', body: JSON.stringify({ content: state }) });
       dirty = false;
@@ -844,6 +1054,7 @@
   $('#logoutBtn').addEventListener('click', async () => {
     try { await api('/api/auth/logout', { method: 'POST' }); } catch {  }
     setToken('');
+    try { sessionStorage.removeItem(EDIT_KEY); } catch {  }
     location.href = '/';
   });
 
@@ -904,8 +1115,11 @@
     const wanted = location.hash.replace('#', '');
     if (wanted && TABS[wanted]) tab = wanted;
 
+    if (editLang && editLang !== 'en') trLang = editLang;
+    paintLang();
     renderTab();
     paintStorage();
+    if (!editLang) $('#langPick').hidden = false;
   }
 
   async function paintStorage() {

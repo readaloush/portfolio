@@ -1768,3 +1768,52 @@ html[data-palette="forest"][data-theme="light"] #cursorGlow.on { opacity: 1; }
 @media (max-width: 720px) {
   .lg-title { width: 92vw; white-space: normal !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: clip !important; font-size: 22px !important; line-height: 1.2 !important; }
 }
+
+/* Long project names wrap; a pill shape turned them into a dark disc over the picture. */
+.ss-label { border-radius: 10px; }
+.ss-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; min-width: 0; }
+
+/* Projects on phones: a calm two-column grid, the name under each picture. */
+.ss.is-grid { height: auto !important; }
+.ss.is-grid .ss-sticky { position: relative; height: auto; overflow: visible; padding-inline: clamp(16px, 4.5vw, 28px); }
+.ss.is-grid .ss-copy {
+  position: relative; inset: auto; opacity: 1 !important; transform: none !important;
+  display: block; padding: 0 0 18px; text-align: start;
+}
+.ss.is-grid .ss-head { max-width: none; font-size: clamp(1.9rem, 8.5vw, 2.6rem); }
+.ss.is-grid .ss-sub { margin-top: 10px; }
+.ss.is-grid .ss-cards {
+  position: relative; inset: auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 18px 12px;
+}
+.ss.is-grid .ss-card {
+  position: relative; left: auto; top: auto;
+  width: auto !important; height: auto !important; transform: none !important;
+  z-index: auto !important; border-radius: 12px;
+}
+.ss.is-grid .ss-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.ss.is-grid .ss-face { position: relative; display: block; aspect-ratio: 4 / 3; border-radius: 12px; }
+.ss.is-grid .ss-card:last-child:nth-child(odd) .ss-face { aspect-ratio: 16 / 9; }
+.ss.is-grid .ss-label {
+  position: static; display: flex;
+  margin-top: 8px; padding: 0 2px; border-radius: 0;
+  background: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+  color: var(--text); font-size: 14px; font-weight: 600; line-height: 1.25;
+  opacity: 1; transform: none;
+}
+.ss.is-grid .ss-label em { flex: none; }
+.ss.is-grid .ss-hint { display: none; }
+
+/* Who supervised a project — shown under its title. */
+.pj-advisor {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px;
+  margin: -6px 0 18px; color: var(--muted); font-size: .95rem;
+}
+.pj-advisor > span {
+  font: 500 11px/1 'JetBrains Mono', monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--label, var(--muted));
+}
+.pj-advisor a, .pj-advisor b { color: var(--text); font-weight: 600; }
+.pj-advisor a { text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 70%, transparent); text-underline-offset: 3px; }
+.pj-advisor a:hover { color: var(--accent); }
+.pj-advisor i { font-style: normal; opacity: .5; }
+.case-meta dd a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
